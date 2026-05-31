@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Avventure a Roma - Papà e Figlia</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: #1a1228;
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #game {
+    background: #0d2b3e;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    max-width: 100%;
+    max-height: 100%;
+    touch-action: none;
+  }
+  #hint {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: rgba(255,255,255,.45);
+    text-align: center;
+    pointer-events: none;
+  }
+  /* Touch controls */
+  #touch {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: none;
+  }
+  .pad {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    width: 150px;
+    height: 150px;
+    pointer-events: auto;
+  }
+  .pad button {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    font-size: 22px;
+    backdrop-filter: blur(4px);
+  }
+  .pad button:active { background: rgba(255,255,255,.4); }
+  .pad .up { left: 50px; top: 0; }
+  .pad .down { left: 50px; top: 100px; }
+  .pad .left { left: 0; top: 50px; }
+  .pad .right { left: 100px; top: 50px; }
+  #act {
+    position: absolute;
+    bottom: 40px;
+    right: 28px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,180,60,.85);
+    color: #3a2400;
+    font-size: 16px;
+    font-weight: bold;
+    pointer-events: auto;
+  }
+  #act:active { transform: scale(.92); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="900" height="600"></canvas>
+  <div id="touch">
+    <div class="pad">
+      <button class="up" data-k="ArrowUp">▲</button>
+      <button class="down" data-k="ArrowDown">▼</button>
+      <button class="left" data-k="ArrowLeft">◀</button>
+      <button class="right" data-k="ArrowRight">▶</button>
+    </div>
+    <button id="act" data-k="Space">AZIONE</button>
+  </div>
+  <div id="hint">Frecce / WASD per muoverti &nbsp;·&nbsp; SPAZIO per azione &nbsp;·&nbsp; ESC per tornare alla mappa</div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   LE AVVENTURE A ROMA — un gioco per papà e figlia
+   Unico file, nessuna dipendenza. Tutto disegnato su canvas.
+   ===================================================================== */
+
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+/* ---------- Input ---------- */
+const keys = {};
+const justPressed = {};
+window.addEventListener('keydown', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+  const k = norm(e.key);
+  if (!keys[k]) justPressed[k] = true;
+  keys[k] = true;
+});
+window.addEventListener('keyup', e => { keys[norm(e.key)] = false; });
+function norm(k){
+  if (k === ' ') return 'Space';
+  if (k === 'w'||k==='W') return 'ArrowUp';
+  if (k === 's'||k==='S') return 'ArrowDown';
+  if (k === 'a'||k==='A') return 'ArrowLeft';
+  if (k === 'd'||k==='D') return 'ArrowRight';
+  return k;
+}
+function pressed(k){ if (justPressed[k]){ return true; } return false; }
+function clearJust(){ for (const k in justPressed) justPressed[k] = false; }
+
+/* Touch controls */
+if ('ontouchstart' in window || navigator.maxTouchPoints) {
+  document.getElementById('touch').style.display = 'block';
+  document.querySelectorAll('#touch button').forEach(b => {
+    const k = b.dataset.k === 'Space' ? 'Space' : b.dataset.k;
+    const down = ev => { ev.preventDefault(); if(!keys[k]) justPressed[k]=true; keys[k]=true; };
+    const up   = ev => { ev.preventDefault(); keys[k]=false; };
+    b.addEventListener('touchstart', down);
+    b.addEventListener('touchend', up);
+    b.addEventListener('mousedown', down);
+    b.addEventListener('mouseup', up);
+  });
+}
+
+/* ---------- Audio (semplici beep generati) ---------- */
+let AC = null;
+function beep(freq=440, dur=0.08, type='square', vol=0.04){
+  try {
+    if (!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(AC.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+    o.stop(AC.currentTime + dur);
+  } catch(e){}
+}
+
+/* ---------- Util ---------- */
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const rand = (a,b)=>a+Math.random()*(b-a);
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* =====================================================================
+   PERSONAGGI — disegnati a mano (cartoon) ispirati alla foto.
+   Figlia: capelli castani lunghi, maglia bianca "95", shorts jeans.
+   Papà: capelli corti, barba leggera, maglia blu, jeans.
+   ===================================================================== */
+function drawDaughter(x, y, s=1, face=0, walk=0){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  const bob = Math.sin(walk)*1.5;
+  ctx.translate(0, bob);
+  // gambe
+  const legSw = Math.sin(walk)*4;
+  ctx.fillStyle = '#f0c9a8';
+  rr(-7, 26, 6, 16+legSw, 3); ctx.fill();
+  rr(1, 26, 6, 16-legSw, 3); ctx.fill();
+  // scarpe
+  ctx.fillStyle = '#fff';
+  rr(-9, 40+legSw, 9, 5, 2); ctx.fill();
+  rr(0, 40-legSw, 9, 5, 2); ctx.fill();
+  // shorts jeans
+  ctx.fillStyle = '#4a6fa5';
+  rr(-9, 18, 18, 12, 3); ctx.fill();
+  ctx.fillStyle = '#3a5a8a';
+  ctx.fillRect(-1, 19, 2, 10);
+  // maglia bianca
+  ctx.fillStyle = '#f7f7f7';
+  rr(-10, 0, 20, 20, 5); ctx.fill();
+  // numero 95
+  ctx.fillStyle = '#5a6470';
+  ctx.font = 'bold 7px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('95', 0, 13);
+  // braccia
+  const armSw = Math.sin(walk)*3;
+  ctx.strokeStyle = '#f0c9a8';
+  ctx.lineWidth = 4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-9,3); ctx.lineTo(-12, 14+armSw); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9,3); ctx.lineTo(12, 14-armSw); ctx.stroke();
+  // testa
+  ctx.fillStyle = '#f3cda9';
+  ctx.beginPath(); ctx.arc(0, -10, 9, 0, Math.PI*2); ctx.fill();
+  // capelli castani lunghi
+  ctx.fillStyle = '#7a4a28';
+  ctx.beginPath(); ctx.arc(0, -12, 10, Math.PI, 0); ctx.fill();
+  rr(-10, -13, 5, 22, 3); ctx.fill();   // ciocca sx lunga
+  rr(5, -13, 5, 22, 3); ctx.fill();     // ciocca dx lunga
+  // viso
+  if (face >= 0){ // fronte
+    ctx.fillStyle = '#3a2a1a';
+    ctx.beginPath(); ctx.arc(-3.2, -10, 1.3, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(3.2, -10, 1.3, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#c47a6a'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(0, -6, 3, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDad(x, y, s=1, face=0, walk=0){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  const bob = Math.sin(walk)*1.5;
+  ctx.translate(0, bob);
+  // gambe (jeans)
+  const legSw = Math.sin(walk)*4;
+  ctx.fillStyle = '#6a8fc0';
+  rr(-8, 26, 7, 18+legSw, 3); ctx.fill();
+  rr(1, 26, 7, 18-legSw, 3); ctx.fill();
+  // scarpe
+  ctx.fillStyle = '#dadada';
+  rr(-10, 42+legSw, 10, 5, 2); ctx.fill();
+  rr(0, 42-legSw, 10, 5, 2); ctx.fill();
+  // maglia blu/grigia
+  ctx.fillStyle = '#5a6b85';
+  rr(-12, -2, 24, 30, 5); ctx.fill();
+  // braccia
+  const armSw = Math.sin(walk)*3;
+  ctx.strokeStyle = '#e8b894';
+  ctx.lineWidth = 5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-11,2); ctx.lineTo(-15, 16+armSw); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(11,2); ctx.lineTo(15, 16-armSw); ctx.stroke();
+  // testa
+  ctx.fillStyle = '#e8b894';
+  ctx.beginPath(); ctx.arc(0, -13, 10, 0, Math.PI*2); ctx.fill();
+  // barba leggera
+  ctx.fillStyle = 'rgba(80,60,45,.45)';
+  ctx.beginPath(); ctx.arc(0, -9, 9, 0.1*Math.PI, 0.9*Math.PI); ctx.fill();
+  // capelli corti brizzolati
+  ctx.fillStyle = '#52443a';
+  ctx.beginPath(); ctx.arc(0, -16, 10, Math.PI, 0); ctx.fill();
+  ctx.fillRect(-10, -16, 20, 3);
+  // viso
+  ctx.fillStyle = '#2a2018';
+  ctx.beginPath(); ctx.arc(-3.5, -13, 1.4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(3.5, -13, 1.4, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#a86a5a'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.arc(0, -9, 3.5, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
+  ctx.restore();
+}
+
+/* =====================================================================
+   STATO GLOBALE
+   ===================================================================== */
+let scene = null;          // scena corrente
+let stars = 0;             // stelle raccolte (progresso)
+const visited = {};        // attività completate
+let toast = null, toastT = 0;
+function showToast(msg){ toast = msg; toastT = 150; }
+
+function setScene(s){
+  scene = s;
+  if (scene.enter) scene.enter();
+}
+
+/* sfondo a gradiente riutilizzabile */
+function sky(top, bottom){
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, top); g.addColorStop(1, bottom);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+}
+
+function header(title, color='#ffd86b'){
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  rr(W/2-180, 14, 360, 40, 12); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.font = 'bold 24px Trebuchet MS';
+  ctx.textAlign = 'center';
+  ctx.fillText(title, W/2, 42);
+  // stelle
+  ctx.font = '18px Arial'; ctx.textAlign = 'right';
+  ctx.fillStyle = '#ffd86b';
+  ctx.fillText('★ ' + stars + '/' + LOCATIONS.length, W-20, 36);
+}
+
+function backHint(){
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = '13px Trebuchet MS'; ctx.textAlign = 'center';
+  ctx.fillText('ESC per tornare alla mappa di Roma', W/2, H-14);
+}
+
+function completeActivity(id){
+  if (!visited[id]){
+    visited[id] = true;
+    stars++;
+    beep(880,0.1); setTimeout(()=>beep(1100,0.12),100);
+    showToast('★ Attività completata! +1 stella');
+  } else {
+    showToast('Già completata — ben rigiocata!');
+  }
+}
+
+/* =====================================================================
+   LE LOCATION
+   ===================================================================== */
+const LOCATIONS = [
+  { id:'roma',    name:'Colosseo',    x:140, y:200, emoji:'🏛️', color:'#d9a441' },
+  { id:'mare',    name:'Al Mare',     x:300, y:140, emoji:'🏖️', color:'#37b6c9' },
+  { id:'moto',    name:'In Moto',     x:470, y:170, emoji:'🏍️', color:'#e0533d' },
+  { id:'bowling', name:'Bowling',     x:640, y:140, emoji:'🎳', color:'#9b59b6' },
+  { id:'scuola',  name:'A Scuola',    x:760, y:240, emoji:'🏫', color:'#5d8def' },
+  { id:'lavoro',  name:'Al Lavoro',   x:700, y:380, emoji:'💼', color:'#7f8c8d' },
+  { id:'acqua',   name:'Acqua Park',  x:520, y:430, emoji:'🌊', color:'#2dc3e8' },
+  { id:'bici',    name:'In Bici',     x:360, y:400, emoji:'🚲', color:'#27ae60' },
+  { id:'cavallo', name:'A Cavallo',   x:200, y:450, emoji:'🐴', color:'#b5651d' },
+  { id:'danza',   name:'A Danza',     x:130, y:340, emoji:'💃', color:'#e84393' },
+];
+
+/* =====================================================================
+   MENU INIZIALE
+   ===================================================================== */
+const Menu = {
+  t: 0,
+  enter(){ this.t = 0; },
+  update(){
+    this.t++;
+    if (pressed('Space') || pressed('Enter')){ beep(660,0.1); setScene(Hub); }
+  },
+  draw(){
+    sky('#2c1a4a', '#7b3f8f');
+    // sole/luna
+    ctx.fillStyle = '#ffd86b';
+    ctx.beginPath(); ctx.arc(W-130, 120, 50, 0, 7); ctx.fill();
+    // skyline Roma stilizzato
+    ctx.fillStyle = 'rgba(0,0,0,.3)';
+    for (let i=0;i<10;i++){
+      const bx = i*100, bh = 80+((i*53)%90);
+      ctx.fillRect(bx, H-bh, 90, bh);
+    }
+    // Colosseo silhouette
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    rr(W/2-90, H-150, 180, 110, 30); ctx.fill();
+
+    // personaggi che salutano
+    const wv = Math.sin(this.t*0.08);
+    drawDaughter(W/2-60, 330, 2.4, 0, this.t*0.04);
+    drawDad(W/2+60, 330, 2.4, 0, this.t*0.04);
+
+    // titolo
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 46px Trebuchet MS';
+    ctx.fillText('LE AVVENTURE A ROMA', W/2, 110);
+    ctx.fillStyle = '#ffd86b';
+    ctx.font = 'bold 22px Trebuchet MS';
+    ctx.fillText('Papà & Figlia', W/2, 145);
+
+    if (Math.floor(this.t/30)%2===0){
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 22px Trebuchet MS';
+      ctx.fillText('▶ premi SPAZIO per iniziare', W/2, 470);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.font = '15px Trebuchet MS';
+    ctx.fillText('Visita 10 luoghi e raccogli tutte le stelle ★', W/2, 510);
+  }
+};
+
+/* =====================================================================
+   HUB — mappa di Roma esplorabile dall'alto
+   ===================================================================== */
+const Hub = {
+  px: 140, py: 280, dad: {x:120, y:300}, walk:0, near:null,
+  enter(){ this.near = null; },
+  update(){
+    let dx=0, dy=0;
+    if (keys['ArrowLeft']) dx=-1;
+    if (keys['ArrowRight']) dx=1;
+    if (keys['ArrowUp']) dy=-1;
+    if (keys['ArrowDown']) dy=1;
+    const sp = 3.2;
+    if (dx||dy){
+      const m = Math.hypot(dx,dy)||1;
+      this.px = clamp(this.px + dx/m*sp, 30, W-30);
+      this.py = clamp(this.py + dy/m*sp, 90, H-40);
+      this.walk += 0.25;
+      this.facing = dx<0?-1:(dx>0?1:this.facing);
+    }
+    // papà segue
+    const fdx = this.px - this.dad.x - 28, fdy = this.py - this.dad.y;
+    const fd = Math.hypot(fdx,fdy);
+    if (fd > 5){ this.dad.x += fdx*0.06; this.dad.y += fdy*0.06; }
+
+    // luogo più vicino
+    this.near = null;
+    for (const L of LOCATIONS){
+      if (Math.hypot(L.x-this.px, L.y-this.py) < 42){ this.near = L; break; }
+    }
+    if (this.near && pressed('Space')){
+      beep(700,0.08);
+      setScene(SCENES[this.near.id]);
+    }
+  },
+  draw(){
+    // terreno
+    sky('#cfe8c0', '#a9d49a');
+    // fiume Tevere
+    ctx.strokeStyle = '#6fb7d8'; ctx.lineWidth = 26; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(0, 320); ctx.bezierCurveTo(250, 260, 400, 520, 650, 470);
+    ctx.bezierCurveTo(780, 440, 850, 520, 900, 500);
+    ctx.stroke();
+    // strade che collegano i luoghi
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 6;
+    ctx.setLineDash([10,8]);
+    ctx.beginPath();
+    for (let i=0;i<LOCATIONS.length;i++){
+      const L=LOCATIONS[i];
+      if(i===0) ctx.moveTo(L.x,L.y); else ctx.lineTo(L.x,L.y);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // marker dei luoghi
+    for (const L of LOCATIONS){
+      const done = visited[L.id];
+      ctx.fillStyle = L.color;
+      ctx.beginPath(); ctx.arc(L.x, L.y, 26, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.25)';
+      ctx.beginPath(); ctx.arc(L.x, L.y, 26, 0, 7); ctx.fill();
+      ctx.font = '26px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(L.emoji, L.x, L.y+1);
+      ctx.textBaseline='alphabetic';
+      // nome
+      ctx.fillStyle = '#3a2a4a'; ctx.font = 'bold 12px Trebuchet MS';
+      ctx.fillText(L.name, L.x, L.y+42);
+      if (done){
+        ctx.fillStyle = '#ffd000'; ctx.font='16px Arial';
+        ctx.fillText('★', L.x+20, L.y-18);
+      }
+    }
+
+    // personaggi
+    drawDad(this.dad.x, this.dad.y, 1, 0, this.walk*0.8);
+    drawDaughter(this.px, this.py, 1, 0, this.walk);
+
+    header('MAPPA DI ROMA');
+
+    // prompt
+    if (this.near){
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      rr(W/2-150, H-58, 300, 36, 10); ctx.fill();
+      ctx.fillStyle = '#ffd86b'; ctx.font='bold 16px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText('SPAZIO ▶ ' + this.near.name, W/2, H-34);
+    } else {
+      ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='13px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText('Cammina fino a un luogo e premi SPAZIO', W/2, H-30);
+    }
+
+    if (stars === LOCATIONS.length){
+      ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#ffd86b'; ctx.font='bold 34px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText('🎉 AVVENTURA COMPLETATA! 🎉', W/2, H/2-20);
+      ctx.fillStyle='#fff'; ctx.font='20px Trebuchet MS';
+      ctx.fillText('Avete visitato tutta Roma insieme!', W/2, H/2+20);
+    }
+  }
+};
+
+/* helper: gestisce ESC e disegna duo statico */
+function escToHub(){ if (pressed('Escape')) { beep(300,0.08); setScene(Hub); return true; } return false; }
+
+/* =====================================================================
+   SCENA: COLOSSEO (visita guidata + quiz veloce)
+   ===================================================================== */
+const RomaScene = {
+  t:0, q:0, answered:false, msg:'',
+  quiz:[
+    {q:'In che città siamo?', a:['Roma','Milano','Napoli'], c:0},
+    {q:'Come si chiama questo monumento?', a:['Torre','Colosseo','Duomo'], c:1},
+    {q:'I gladiatori combattevano qui?', a:['Sì','No','Forse'], c:0},
+  ],
+  enter(){ this.t=0; this.q=0; this.answered=false; this.msg=''; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    for (let i=1;i<=3;i++){
+      if (pressed(String(i)) || pressed('Digit'+i)){ this.choose(i-1); }
+    }
+    // tasti 1/2/3 via frecce per touch: usa sinistra/su/destra
+    if (pressed('ArrowLeft')) this.choose(0);
+    if (pressed('ArrowUp')) this.choose(1);
+    if (pressed('ArrowRight')) this.choose(2);
+    if (this.q>=this.quiz.length && pressed('Space')){ completeActivity('roma'); setScene(Hub); }
+  },
+  choose(i){
+    if (this.q>=this.quiz.length) return;
+    if (this.quiz[this.q].c===i){ beep(900,0.1); this.msg='Esatto! ✔'; this.q++; }
+    else { beep(200,0.15); this.msg='Riprova! ✘'; }
+  },
+  draw(){
+    sky('#ffe0a3','#ff9e6d');
+    // colosseo grande
+    ctx.fillStyle='#c9a06a';
+    rr(W/2-160, 180, 320, 200, 40); ctx.fill();
+    ctx.fillStyle='#8a6a40';
+    for (let r=0;r<3;r++) for(let a=0;a<9;a++){
+      rr(W/2-150+a*34, 200+r*55, 24, 38, 8); ctx.fill();
+    }
+    drawDad(W/2-50, 470, 1.6, 0, this.t*0.03);
+    drawDaughter(W/2+50, 470, 1.6, 0, this.t*0.03);
+
+    header('IL COLOSSEO', '#fff');
+    // pannello quiz
+    ctx.fillStyle='rgba(0,0,0,.6)'; rr(W/2-260, 70, 520, 90, 12); ctx.fill();
+    ctx.textAlign='center';
+    if (this.q < this.quiz.length){
+      const Q = this.quiz[this.q];
+      ctx.fillStyle='#fff'; ctx.font='bold 18px Trebuchet MS';
+      ctx.fillText(Q.q, W/2, 100);
+      ctx.font='15px Trebuchet MS'; ctx.fillStyle='#ffd86b';
+      ctx.fillText('◀ '+Q.a[0]+'   ▲ '+Q.a[1]+'   ▶ '+Q.a[2], W/2, 130);
+      ctx.fillStyle='#fff'; ctx.fillText(this.msg, W/2, 152);
+    } else {
+      ctx.fillStyle='#9fff9f'; ctx.font='bold 20px Trebuchet MS';
+      ctx.fillText('Bravissimi! Quiz superato 🎓', W/2, 110);
+      ctx.fillStyle='#fff'; ctx.font='15px Trebuchet MS';
+      ctx.fillText('SPAZIO per raccogliere la stella ★', W/2, 140);
+    }
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: AL MARE (nuota e raccogli conchiglie)
+   ===================================================================== */
+const MareScene = {
+  enter(){ this.t=0; this.dx=W/2; this.dy=400; this.shells=[]; this.got=0; this.need=6; this.spawn=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    const sp=3.5;
+    if (keys['ArrowLeft']) this.dx-=sp;
+    if (keys['ArrowRight']) this.dx+=sp;
+    if (keys['ArrowUp']) this.dy-=sp;
+    if (keys['ArrowDown']) this.dy+=sp;
+    this.dx=clamp(this.dx,20,W-20); this.dy=clamp(this.dy,230,H-30);
+    if (--this.spawn<=0){ this.spawn=40; this.shells.push({x:rand(40,W-40),y:rand(250,H-40),e:Math.random()<.5?'🐚':'⭐'}); }
+    this.shells=this.shells.filter(s=>{
+      if (Math.hypot(s.x-this.dx,s.y-this.dy)<26){ this.got++; beep(800,0.07); return false; }
+      return true;
+    });
+    if (this.got>=this.need){ completeActivity('mare'); setScene(Hub); }
+  },
+  draw(){
+    sky('#7ed4ff','#bfe9ff');
+    // spiaggia
+    ctx.fillStyle='#f3dca0'; ctx.fillRect(0,180,W,60);
+    // ombrellone
+    ctx.fillStyle='#e0533d'; ctx.beginPath(); ctx.arc(120,180,40,Math.PI,0); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.fillRect(118,180,4,40);
+    // mare
+    const g=ctx.createLinearGradient(0,240,0,H); g.addColorStop(0,'#2aa7d8'); g.addColorStop(1,'#0a6ba0');
+    ctx.fillStyle=g; ctx.fillRect(0,240,W,H-240);
+    // onde
+    ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=2;
+    for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(0,260+i*60+Math.sin(this.t*0.05+i)*4);
+      for(let x=0;x<=W;x+=20) ctx.lineTo(x,260+i*60+Math.sin(this.t*0.05+i+x*0.02)*4); ctx.stroke(); }
+    // conchiglie
+    ctx.font='24px Arial'; ctx.textAlign='center';
+    for(const s of this.shells) ctx.fillText(s.e,s.x,s.y);
+    // nuotatori (solo teste che spuntano)
+    drawDaughter(this.dx, this.dy, 1.1, 0, this.t*0.2);
+    drawDad(this.dx-40, this.dy+10, 1.1, 0, this.t*0.2);
+
+    header('AL MARE','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-130,64,260,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 16px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Raccogli conchiglie: '+this.got+'/'+this.need, W/2, 85);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: IN MOTO (schiva il traffico)
+   ===================================================================== */
+const MotoScene = {
+  enter(){ this.lane=1; this.lanes=[W/2-120,W/2,W/2+120]; this.cars=[]; this.dist=0; this.spawn=0; this.crash=0; this.t=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (this.crash>0){ this.crash--; if(this.crash===0){} }
+    if (pressed('ArrowLeft')) this.lane=clamp(this.lane-1,0,2);
+    if (pressed('ArrowRight')) this.lane=clamp(this.lane+1,0,2);
+    this.dist += 0.25;
+    if (--this.spawn<=0){ this.spawn=Math.max(22,60-this.dist*0.2); this.cars.push({l:Math.floor(rand(0,3)),y:-60}); }
+    const px=this.lanes[this.lane], py=H-90;
+    for(const c of this.cars){ c.y+=5+this.dist*0.05;
+      if (Math.abs(c.y-py)<40 && c.l===this.lane && this.crash===0){ this.crash=60; beep(150,0.2); this.dist=Math.max(0,this.dist-15);} }
+    this.cars=this.cars.filter(c=>c.y<H+60);
+    if (this.dist>=100){ completeActivity('moto'); setScene(Hub); }
+  },
+  draw(){
+    sky('#6a7a8a','#aab8c4');
+    // strada
+    ctx.fillStyle='#3a3a42'; ctx.fillRect(W/2-180,0,360,H);
+    // strisce
+    ctx.strokeStyle='#ffd86b'; ctx.lineWidth=6; ctx.setLineDash([30,30]);
+    ctx.lineDashOffset = -(this.t*8)%60;
+    for(const lx of [W/2-60,W/2+60]){ ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,H); ctx.stroke(); }
+    ctx.setLineDash([]);
+    // auto traffico
+    for(const c of this.cars){ ctx.fillStyle='#d23'; rr(this.lanes[c.l]-22,c.y-30,44,60,8); ctx.fill();
+      ctx.fillStyle='#fbd'; rr(this.lanes[c.l]-16,c.y-18,32,16,4); ctx.fill(); }
+    // moto coi due
+    const px=this.lanes[this.lane], py=H-90;
+    ctx.save(); ctx.translate(px,py);
+    if(this.crash>0 && Math.floor(this.t/4)%2) ctx.globalAlpha=0.4;
+    ctx.fillStyle='#222'; rr(-18,10,36,40,10); ctx.fill();
+    ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(0,52,12,0,7); ctx.fill();
+    ctx.restore();
+    drawDad(px, py-6, 0.85, 0, 0);
+    drawDaughter(px, py-26, 0.7, 0, 0);
+
+    header('IN MOTO','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-110,64,220,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 16px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Distanza: '+Math.floor(this.dist)+'/100', W/2, 85);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: BOWLING (mira e tira)
+   ===================================================================== */
+const BowlingScene = {
+  enter(){ this.phase='aim'; this.angle=0; this.dir=1; this.power=0; this.ball=null; this.pins=this.newPins(); this.score=0; this.rolls=0; this.t=0; },
+  newPins(){ const p=[]; const cx=W/2, top=120;
+    let n=0; for(let r=0;r<4;r++) for(let c=0;c<=r;c++){ p.push({x:cx-(r*18)+c*36, y:top+r*30, down:false}); n++; } return p; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (this.phase==='aim'){
+      this.angle+=this.dir*0.9; if(Math.abs(this.angle)>35) this.dir*=-1;
+      if (pressed('Space')) this.phase='power';
+    } else if (this.phase==='power'){
+      this.power+=this.dir2||(this.dir2=2); this.power+= 0;
+      this.pw=(this.pw||0)+ (this.pwd||(this.pwd=1))*3;
+      if(this.pw>100||this.pw<0) this.pwd*=-1;
+      if (pressed('Space')){ this.phase='roll'; const a=this.angle*Math.PI/180;
+        this.ball={x:W/2,y:H-80,vx:Math.sin(a)*6,vy:-(4+this.pw*0.08)}; }
+    } else if (this.phase==='roll'){
+      const b=this.ball; b.x+=b.vx; b.y+=b.vy;
+      for(const p of this.pins){ if(!p.down && Math.hypot(p.x-b.x,p.y-b.y)<18){ p.down=true; this.score++; beep(600+this.score*40,0.06);} }
+      if (b.y<80 || b.x<60 || b.x>W-60){ this.rolls++; this.pw=0; this.power=0;
+        if (this.rolls>=2 || this.pins.every(p=>p.down)){
+          completeActivity('bowling'); setScene(Hub);
+        } else this.phase='aim';
+      }
+    }
+  },
+  draw(){
+    sky('#3a2a5a','#1a1430');
+    // pista
+    ctx.fillStyle='#caa472'; ctx.beginPath();
+    ctx.moveTo(W/2-40,H); ctx.lineTo(W/2-150,80); ctx.lineTo(W/2+150,80); ctx.lineTo(W/2+40,H); ctx.closePath(); ctx.fill();
+    // canaline
+    ctx.strokeStyle='#222'; ctx.lineWidth=8;
+    ctx.beginPath(); ctx.moveTo(W/2-40,H); ctx.lineTo(W/2-150,80); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W/2+40,H); ctx.lineTo(W/2+150,80); ctx.stroke();
+    // birilli
+    for(const p of this.pins){ if(p.down) continue;
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(p.x,p.y,8,14,0,0,7); ctx.fill();
+      ctx.strokeStyle='#e0533d'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(p.x-5,p.y-4); ctx.lineTo(p.x+5,p.y-4); ctx.stroke();
+    }
+    // palla
+    if(this.ball){ ctx.fillStyle='#3a6ed8'; ctx.beginPath(); ctx.arc(this.ball.x,this.ball.y,12,0,7); ctx.fill(); }
+    // mira
+    if(this.phase==='aim'||this.phase==='power'){
+      const a=this.angle*Math.PI/180;
+      ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=3; ctx.setLineDash([6,6]);
+      ctx.beginPath(); ctx.moveTo(W/2,H-80); ctx.lineTo(W/2+Math.sin(a)*200, H-80-Math.cos(a)*200); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    // giocatori
+    drawDaughter(W/2-30,H-50,1,0,0);
+    drawDad(W/2+30,H-50,1,0,0);
+
+    header('BOWLING','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W-200,64,180,54,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='left';
+    ctx.fillText('Birilli: '+this.score, W-188, 84);
+    ctx.fillText('Tiro: '+(this.rolls+1)+'/2', W-188, 104);
+    ctx.textAlign='center'; ctx.fillStyle='#ffd86b'; ctx.font='bold 15px Trebuchet MS';
+    if(this.phase==='aim') ctx.fillText('SPAZIO per fissare la direzione', W/2, H-14);
+    else if(this.phase==='power'){ ctx.fillText('SPAZIO per tirare! Potenza: '+Math.floor(this.pw||0)+'%', W/2, H-14);
+      ctx.fillStyle='#0c0'; ctx.fillRect(W/2-100,H-40,(this.pw||0),10); ctx.strokeStyle='#fff'; ctx.strokeRect(W/2-100,H-40,100,10);}
+  }
+};
+
+/* =====================================================================
+   SCENA: A SCUOLA (mini-quiz di matematica)
+   ===================================================================== */
+const ScuolaScene = {
+  enter(){ this.t=0; this.score=0; this.need=5; this.newQ(); this.msg=''; },
+  newQ(){ const a=Math.floor(rand(1,10)), b=Math.floor(rand(1,10)), op=Math.random()<.5?'+':'×';
+    this.a=a; this.b=b; this.op=op; this.ans=op==='+'?a+b:a*b;
+    const opts=new Set([this.ans]); while(opts.size<3) opts.add(this.ans+Math.floor(rand(-5,6))||this.ans+1);
+    this.opts=[...opts].sort(()=>Math.random()-0.5); },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    const pick=(i)=>{ if(this.opts[i]===this.ans){ beep(900,0.1); this.score++; this.msg='Giusto! ✔';
+        if(this.score>=this.need){ completeActivity('scuola'); setScene(Hub); return;} this.newQ(); }
+      else { beep(200,0.15); this.msg='No, riprova ✘'; } };
+    if (pressed('ArrowLeft')||pressed('1')) pick(0);
+    if (pressed('ArrowUp')||pressed('2')) pick(1);
+    if (pressed('ArrowRight')||pressed('3')) pick(2);
+  },
+  draw(){
+    sky('#cfe3ff','#9fc0ef');
+    // edificio scuola / lavagna
+    ctx.fillStyle='#2e5d3e'; rr(W/2-220,90,440,200,10); ctx.fill();
+    ctx.strokeStyle='#caa472'; ctx.lineWidth=10; ctx.strokeRect(W/2-220,90,440,200);
+    ctx.fillStyle='#fff'; ctx.font='bold 48px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText(this.a+' '+this.op+' '+this.b+' = ?', W/2, 200);
+    // opzioni
+    const labels=['◀','▲','▶'];
+    for(let i=0;i<3;i++){ const bx=W/2-180+i*120;
+      ctx.fillStyle='#ffd86b'; rr(bx,320,100,50,10); ctx.fill();
+      ctx.fillStyle='#3a2a1a'; ctx.font='bold 22px Trebuchet MS';
+      ctx.fillText(this.opts[i], bx+50, 352);
+      ctx.font='14px Trebuchet MS'; ctx.fillText(labels[i], bx+50, 388);
+    }
+    ctx.fillStyle='#1a4a2a'; ctx.font='bold 18px Trebuchet MS'; ctx.fillText(this.msg, W/2, 280);
+    drawDaughter(W/2-40,520,1.4,0,0); drawDad(W/2+40,520,1.4,0,0);
+    header('A SCUOLA');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-90,420,180,28,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.fillText('Risposte giuste: '+this.score+'/'+this.need, W/2, 439);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: AL LAVORO (prendi i documenti che cadono)
+   ===================================================================== */
+const LavoroScene = {
+  enter(){ this.t=0; this.x=W/2; this.items=[]; this.got=0; this.miss=0; this.need=10; this.spawn=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (keys['ArrowLeft']) this.x-=6;
+    if (keys['ArrowRight']) this.x+=6;
+    this.x=clamp(this.x,40,W-40);
+    if(--this.spawn<=0){ this.spawn=45; this.items.push({x:rand(40,W-40),y:-20,bad:Math.random()<.25,e:'📄'}); }
+    for(const it of this.items){ it.y+=4+this.t*0.002;
+      if(it.y>H-90 && Math.abs(it.x-this.x)<40){ it.dead=true;
+        if(it.bad){ beep(180,0.15); this.miss++; } else { beep(800,0.07); this.got++; } } }
+    this.items=this.items.filter(it=>!it.dead && it.y<H);
+    if(this.got>=this.need){ completeActivity('lavoro'); setScene(Hub); }
+  },
+  draw(){
+    sky('#dfe6ee','#b9c4d0');
+    // ufficio: scrivanie
+    ctx.fillStyle='#7f8c8d'; for(let i=0;i<3;i++) rr(80+i*280,140,180,16,4),ctx.fill();
+    ctx.font='28px Arial'; ctx.textAlign='center';
+    for(const it of this.items){ ctx.fillText(it.bad?'☕':'📄', it.x, it.y); }
+    // cestino/giocatori
+    drawDaughter(this.x-18,H-50,1,0,0); drawDad(this.x+18,H-50,1,0,0);
+    ctx.fillStyle='rgba(0,0,0,.2)'; rr(this.x-40,H-44,80,10,4); ctx.fill();
+    header('AL LAVORO','#2a3a4a');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-150,64,300,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Prendi i documenti 📄 ('+this.got+'/'+this.need+') — evita il caffè ☕', W/2, 85);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: ACQUA PARK (scivolo — sterza per restare sull'acqua)
+   ===================================================================== */
+const AcquaScene = {
+  enter(){ this.t=0; this.x=W/2; this.prog=0; this.off=0; this.bad=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (keys['ArrowLeft']) this.x-=5;
+    if (keys['ArrowRight']) this.x+=5;
+    this.x=clamp(this.x,30,W-30);
+    this.off+=4; this.prog+=0.3;
+    // centro dello scivolo serpeggia
+    this.center = W/2 + Math.sin(this.t*0.03)*180;
+    if (Math.abs(this.x-this.center) > 90){ this.bad++; if(this.bad%10===0) beep(200,0.1); }
+    if(this.prog>=100){ completeActivity('acqua'); setScene(Hub); }
+  },
+  draw(){
+    sky('#7ed4ff','#3aa7d8');
+    // scivolo serpeggiante
+    ctx.strokeStyle='#2dc3e8'; ctx.lineWidth=180; ctx.lineCap='round';
+    ctx.beginPath();
+    for(let y=-20;y<=H+20;y+=10){ const cx=W/2+Math.sin((y+this.off)*0.01)*180; if(y===-20) ctx.moveTo(cx,y); else ctx.lineTo(cx,y);}
+    ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=170;
+    ctx.beginPath();
+    for(let y=-20;y<=H+20;y+=10){ const cx=W/2+Math.sin((y+this.off)*0.01)*180; if(y===-20) ctx.moveTo(cx,y); else ctx.lineTo(cx,y);}
+    ctx.stroke();
+    // schizzi
+    ctx.fillStyle='rgba(255,255,255,.7)';
+    for(let i=0;i<8;i++){ ctx.beginPath(); ctx.arc(this.x+rand(-20,20), H-100+rand(-10,10), rand(2,5),0,7); ctx.fill(); }
+    // ciambella coi due
+    ctx.fillStyle='#ffce3a'; ctx.beginPath(); ctx.arc(this.x,H-110,30,0,7); ctx.fill();
+    ctx.fillStyle='#3aa7d8'; ctx.beginPath(); ctx.arc(this.x,H-110,12,0,7); ctx.fill();
+    drawDaughter(this.x-10,H-118,0.8,0,0); drawDad(this.x+12,H-114,0.8,0,0);
+
+    header('ACQUA PARK','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-130,64,260,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Resta sullo scivolo! Discesa: '+Math.floor(this.prog)+'%', W/2, 85);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: IN BICI (gara: pedala evitando i sassi)
+   ===================================================================== */
+const BiciScene = {
+  enter(){ this.t=0; this.y=H/2; this.obs=[]; this.dist=0; this.spawn=0; this.bad=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (keys['ArrowUp']) this.y-=4.5;
+    if (keys['ArrowDown']) this.y+=4.5;
+    this.y=clamp(this.y,200,H-40);
+    this.dist+=0.3;
+    if(--this.spawn<=0){ this.spawn=40; this.obs.push({x:W+20,y:rand(200,H-40),e:Math.random()<.5?'🪨':'🌳'}); }
+    for(const o of this.obs){ o.x-=5+this.dist*0.03;
+      if(Math.hypot(o.x-160,o.y-this.y)<28){ o.hit=true; beep(180,0.12); this.dist=Math.max(0,this.dist-8);} }
+    this.obs=this.obs.filter(o=>o.x>-30 && !o.hit);
+    if(this.dist>=100){ completeActivity('bici'); setScene(Hub); }
+  },
+  draw(){
+    sky('#bfe9ff','#cfe8c0');
+    ctx.fillStyle='#a9d49a'; ctx.fillRect(0,180,W,H-180);
+    // strada sterrata
+    ctx.fillStyle='#c9a06a'; ctx.fillRect(0,200,W,H-200);
+    ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=4; ctx.setLineDash([20,20]);
+    ctx.lineDashOffset=-(this.t*8)%40; ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font='28px Arial'; ctx.textAlign='center';
+    for(const o of this.obs) ctx.fillText(o.e,o.x,o.y);
+    // bici
+    ctx.strokeStyle='#222'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(150,this.y+18,12,0,7); ctx.arc(178,this.y+18,12,0,7); ctx.stroke();
+    drawDaughter(165,this.y-4,0.95,0,this.t*0.4);
+    header('IN BICI','#2a3a4a');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-100,64,200,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Pedala: '+Math.floor(this.dist)+'/100', W/2, 85);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: A CAVALLO (salta gli ostacoli — un tasto)
+   ===================================================================== */
+const CavalloScene = {
+  enter(){ this.t=0; this.vy=0; this.y=0; this.ground=H-80; this.obs=[]; this.spawn=0; this.jumped=0; this.need=8; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if ((pressed('Space')||pressed('ArrowUp')) && this.y===0){ this.vy=-13; beep(500,0.08); }
+    this.vy+=0.7; this.y+=this.vy; if(this.y>0){ this.y=0; this.vy=0; }
+    if(--this.spawn<=0){ this.spawn=Math.floor(rand(60,100)); this.obs.push({x:W+20,passed:false}); }
+    for(const o of this.obs){ o.x-=5;
+      if(!o.passed && o.x<170){ o.passed=true;
+        // collisione se non in salto sufficiente
+        if(this.y> -35){ beep(180,0.15); } else { this.jumped++; beep(800,0.08); } } }
+    this.obs=this.obs.filter(o=>o.x>-30);
+    if(this.jumped>=this.need){ completeActivity('cavallo'); setScene(Hub); }
+  },
+  draw(){
+    sky('#ffe0a3','#cfe8c0');
+    ctx.fillStyle='#8fbf6a'; ctx.fillRect(0,this.ground+30,W,H);
+    // ostacoli (staccionate)
+    ctx.fillStyle='#a0522d';
+    for(const o of this.obs){ rr(o.x-12,this.ground-10,24,40,3); ctx.fill(); ctx.fillRect(o.x-18,this.ground,36,6); }
+    // cavallo + figlia
+    const hy=this.ground+this.y;
+    ctx.save(); ctx.translate(160,hy);
+    ctx.fillStyle='#b5651d';
+    rr(-30,-10,60,28,12); ctx.fill();          // corpo
+    rr(20,-30,20,24,8); ctx.fill();             // collo/testa
+    ctx.fillRect(-20,15,6,18); ctx.fillRect(14,15,6,18); // zampe
+    ctx.fillStyle='#4a2f10'; rr(34,-32,10,8,3); ctx.fill(); // muso
+    ctx.restore();
+    drawDaughter(160,hy-26,0.9,0,this.t*0.3);
+    header('A CAVALLO','#3a2a1a');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-130,64,260,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('SPAZIO per saltare! Ostacoli: '+this.jumped+'/'+this.need, W/2, 85);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: A DANZA (rhythm game — premi al momento giusto)
+   ===================================================================== */
+const DanzaScene = {
+  enter(){ this.t=0; this.notes=[]; this.spawn=0; this.score=0; this.need=12; this.msg=''; this.cols=['ArrowLeft','ArrowUp','ArrowDown','ArrowRight']; this.colsym=['◀','▲','▼','▶']; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if(--this.spawn<=0){ this.spawn=Math.floor(rand(30,55)); this.notes.push({c:Math.floor(rand(0,4)),y:-20}); }
+    for(const n of this.notes){ n.y+=4; }
+    // input
+    const hitLine=H-90;
+    for(let i=0;i<4;i++){ if(pressed(this.cols[i])){
+      let best=null,bd=1e9;
+      for(const n of this.notes){ if(n.c===i && !n.dead){ const d=Math.abs(n.y-hitLine); if(d<bd){bd=d;best=n;} } }
+      if(best && bd<35){ best.dead=true; this.score++; this.msg='PERFECT!'; beep(700+i*80,0.08);
+        if(this.score>=this.need){ completeActivity('danza'); setScene(Hub); return; } }
+      else { this.msg='miss'; beep(200,0.08); }
+    }}
+    this.notes=this.notes.filter(n=>!n.dead && n.y<H+20);
+  },
+  draw(){
+    sky('#3a1a4a','#7b2f8f');
+    // luci discoteca
+    for(let i=0;i<6;i++){ ctx.fillStyle='hsla('+((this.t*3+i*60)%360)+',70%,55%,.15)';
+      ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(i*180-100,H); ctx.lineTo(i*180+40,H); ctx.fill(); }
+    const colX=[W/2-150,W/2-50,W/2+50,W/2+150];
+    // colonne
+    for(let i=0;i<4;i++){ ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fillRect(colX[i]-30,0,60,H);
+      ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.strokeRect(colX[i]-30,0,60,H); }
+    // linea hit
+    ctx.fillStyle='rgba(255,216,107,.3)'; ctx.fillRect(0,H-100,W,20);
+    for(let i=0;i<4;i++){ ctx.fillStyle='#ffd86b'; ctx.font='22px Arial'; ctx.textAlign='center';
+      ctx.fillText(this.colsym[i],colX[i],H-84); }
+    // note
+    for(const n of this.notes){ ctx.fillStyle=['#e84393','#5d8def','#27ae60','#e0533d'][n.c];
+      ctx.beginPath(); ctx.arc(colX[n.c],n.y,16,0,7); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='16px Arial'; ctx.fillText(this.colsym[n.c],colX[n.c],n.y+5); }
+    // ballerini
+    drawDaughter(W/2-90,H-30,1.3,0,this.t*0.5);
+    drawDad(W/2+90,H-30,1.3,0,this.t*0.5+1);
+    header('A DANZA','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-120,64,240,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Combo a ritmo: '+this.score+'/'+this.need+'  '+this.msg, W/2, 85);
+    backHint();
+  }
+};
+
+/* mappa id -> scena */
+const SCENES = {
+  roma: RomaScene, mare: MareScene, moto: MotoScene, bowling: BowlingScene,
+  scuola: ScuolaScene, lavoro: LavoroScene, acqua: AcquaScene, bici: BiciScene,
+  cavallo: CavalloScene, danza: DanzaScene
+};
+
+/* =====================================================================
+   LOOP
+   ===================================================================== */
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  scene.update();
+  scene.draw();
+  // toast
+  if (toastT>0){ toastT--;
+    ctx.globalAlpha = Math.min(1, toastT/40);
+    ctx.fillStyle='rgba(0,0,0,.8)'; rr(W/2-180,H/2-26,360,52,12); ctx.fill();
+    ctx.fillStyle='#ffd86b'; ctx.font='bold 20px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText(toast, W/2, H/2+6);
+    ctx.globalAlpha=1;
+  }
+  clearJust();
+  requestAnimationFrame(loop);
+}
+
+/* responsive: scala il canvas mantenendo le proporzioni */
+function fit(){
+  const pad = 20;
+  const sw = (window.innerWidth-pad)/W, sh=(window.innerHeight-pad)/H;
+  const s = Math.min(sw, sh, 1.4);
+  cv.style.width = (W*s)+'px';
+  cv.style.height = (H*s)+'px';
+}
+window.addEventListener('resize', fit); fit();
+
+setScene(Menu);
+loop();
+</script>
+</body>
+</html>
