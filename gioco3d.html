@@ -678,9 +678,9 @@ const THEMES = {
       // maestra seduta alla cattedra
       B(.8,.5,.7,0x6a4a2a,0,.25,-7.9); const fem=['letizia','giorgia','eleonora','eleonora'].find(i=>i!==hero)||otherChar(); const teach=buildCousin(fem); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; world.add(teach); },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,.45),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.2; return b; },
-    activities(){ const oc=otherCousins(); const A=[];
-      A.push(aNPC(oc[0],-4,.5,0,'write')); A.push(aNPC(oc[1],-4,3,0,'jump'));
-      A.push(aNPC(oc[2],0,-8.2,Math.PI,'draw')); A.push(aNPC(oc[3],4,3,0,'throw'));
+    activities(){ const oc=otherCousins(); const A=[]; const P=['write','jump','throw','talk','draw'];
+      A.push(aNPC(oc[0],-4,.5,0,'write',P)); A.push(aNPC(oc[1],-4,3,0,'jump',P));
+      A.push(aNPC(oc[2],0,-8.2,Math.PI,'draw',P)); A.push(aNPC(oc[3],4,3,0,'throw',P));
       return A; }},
   parco:{emoji:'🎈',ground:0x6fae5a,size:20,goal:10,time:45,instr:'Raccogli i palloncini nel parco!',win:'Che festa al parco! 🎈',
     decor(){ for(let i=0;i<7;i++){ const x=rand(-8,8),z=rand(-8,8); const tr=cyl(.2,.26,1.4,0x7a4a28); tr.position.set(x,.7,z); tr.castShadow=true; world.add(tr); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.1,2,9),M(0x2f8f4a)); lv.position.set(x,2.2,z); lv.castShadow=true; world.add(lv); } B(2.5,.4,.6,0x8a5a2b,-4,.4,3); B(2.5,.4,.6,0x8a5a2b,4,.4,-3); },
@@ -693,23 +693,23 @@ const THEMES = {
       const px=6,pz=-2; B(2,.3,1,0x6fc0e0,px,1.4,pz); B(.12,2.6,.12,0x6a4a2a,px-.8,1.3,pz-.5); B(.12,2.6,.12,0x6a4a2a,px+.8,1.3,pz-.5);
       const ramp=B(1,.12,3.4,0x8fd0e6,px,.9,pz+2); ramp.rotation.x=.5;
       const sl=buildCousin(oc[1]); sl.position.set(px,2,pz); world.add(sl); A.push({m:sl,type:'slide',phase:0,x0:px,z0:pz});
-      A.push(aNPC(oc[2],-2,6,0,'talk')); A.push(aNPC(oc[3],-1.1,6.2,Math.PI,'talk'));
+      const PT=['talk','drink','jump','write','draw']; A.push(aNPC(oc[2],-2,6,0,'talk',PT)); A.push(aNPC(oc[3],-1.1,6.2,Math.PI,'talk',PT));
       return A; }},
   bar:{emoji:'🍹',ground:0xb0a8c8,size:16,goal:7,time:50,deliver:true,drop:[0,-6],dropLabel:'🍹 Bancone',instr:'Raccogli un bicchiere e portalo al bancone! 🎵',win:'Servizio perfetto! 🍹',music:true,
     decor(){ B(8,1.1,1.4,0x5a3a2a,0,.55,-6); for(let i=0;i<4;i++){ const st=cyl(.3,.3,.9,0x333333); st.position.set(-3+i*2,.45,-4.4); st.castShadow=true; world.add(st); }
       B(.9,1.5,.6,0xb0306a,7,.75,-5); B(.7,.4,.5,0x222,7,1.65,-4.7); for(let i=0;i<3;i++){ const note=labelSprite('🎵',.7); note.position.set(7,2.4+i*.1,-4.6); world.add(note); } },  // jukebox
     item(){ const c=cyl(.22,.16,.5,TC[Math.floor(Math.random()*TC.length)]); c.position.y=.3; return c; },
     activities(){ const oc=otherCousins(); const A=[]; const treats=['gelato','patatine','caffe','yogurt','cornetto','cocktail']; const pos=[[-4,-3.4],[-2,-2.6],[0,-3.4],[2,-2.6],[4,-3.4],[-3,3]];
-      treats.forEach((k,i)=>{ const n=aNPC(oc[i%oc.length],pos[i][0],pos[i][1],Math.PI,'drink'); const tr=makeTreat(k); n.m.userData.arms[0].add(tr); tr.position.set(0,-.32,.06); A.push(n); });
+      treats.forEach((k,i)=>{ const n=aNPC(oc[i%oc.length],pos[i][0],pos[i][1],Math.PI,'drink',['drink','talk']); const tr=makeTreat(k); n.m.userData.arms[0].add(tr); tr.position.set(0,-.32,.06); A.push(n); });
       return A; }},
   ristorante:{emoji:'🍝',ground:0xcaa68a,size:18,goal:8,time:55,deliver:true,drop:[0,-7],dropLabel:'🍝 Cucina',instr:'Prendi un piatto e portalo in cucina!',win:'Buon appetito! 🍝',
     decor(){ B(5,1.3,1.6,0x6a4a3a,0,.65,-7); for(let i=0;i<5;i++){ const x=rand(-6,6),z=rand(-3,5); const t=cyl(1,1,.2,0xffffff); t.position.set(x,1,z); t.castShadow=true; world.add(t); const leg=cyl(.12,.12,1,0x8a5a2b); leg.position.set(x,.5,z); world.add(leg); } },
     item(){ const p=new THREE.Mesh(new THREE.CylinderGeometry(.34,.3,.1,16),M(0xffffff,.4)); p.position.y=.3; const food=new THREE.Mesh(new THREE.SphereGeometry(.18,10,10),M(TC[Math.floor(Math.random()*TC.length)],.5)); food.position.y=.12; p.add(food); return p; },
-    activities(){ const oc=otherCousins(); const A=[];
-      B(1.4,.9,.8,0x888888,-3,.45,-7); A.push(aNPC(oc[0],-3,-6.1,0,'cook'));
-      B(.9,.9,.7,0x6a4a3a,5.5,.45,-6); A.push(aNPC(oc[1],5.5,-5.2,0,'cash'));
+    activities(){ const oc=otherCousins(); const A=[]; const R=['cook','cash','talk','drink','write'];
+      B(1.4,.9,.8,0x888888,-3,.45,-7); A.push(aNPC(oc[0],-3,-6.1,0,'cook',R));
+      B(.9,.9,.7,0x6a4a3a,5.5,.45,-6); A.push(aNPC(oc[1],5.5,-5.2,0,'cash',R));
       const w=aNPC(oc[2],-1,5,Math.PI,'serve'); w.z0=5; w.span=10; A.push(w);
-      B(1,2,.2,0x5a3a2a,-7.6,1,-2); A.push(aNPC(oc[3],-6.6,-1,Math.PI/2,'talk'));
+      B(1,2,.2,0x5a3a2a,-7.6,1,-2); A.push(aNPC(oc[3],-6.6,-1,Math.PI/2,'talk',R));
       return A; }},
   cinese:{emoji:'🏮',ground:0xc04040,size:16,goal:7,time:52,deliver:true,drop:[0,-6],dropLabel:'🏮 Scaffale',instr:'Raccogli un pacco e portalo allo scaffale!',win:'Negozio cinese rifornito! 🏮',
     decor(){ B(.4,3,12,0x7a2020,-6,1.5,0); B(.4,3,12,0x7a2020,6,1.5,0); B(12,3,.4,0x7a2020,0,1.5,-6); B(5,1.8,1,0x8a3030,0,.9,-6); for(let i=0;i<5;i++){ const lan=new THREE.Mesh(new THREE.SphereGeometry(.35,12,12),new THREE.MeshStandardMaterial({color:0xff3b3b,emissive:0xaa0000,emissiveIntensity:.4})); lan.position.set(-5+i*2.5,3,-5.6); world.add(lan); } },
