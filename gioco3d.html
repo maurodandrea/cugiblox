@@ -115,7 +115,7 @@ const CITIES = {
   matera: {name:'Matera', sky:0xf3e3c8, ground:0xc9ad86, accent:0xb5651d},
 };
 const CITY_GAMES = {
-  roma:    ['colosseo','scuola','casa','parco','danza','piscina','color_hotel','guida','moto','bici'],
+  roma:    ['bowling','scuola','casa','parco','danza','piscina','color_hotel','guida','moto','bici'],
   matera:  ['cavallo','scuola','parco','cinese','bar','casa','parco_avventure','calcio','basket','piscina'],
   rossano: ['mare','piscina','acquapark','pesca','giostre','bar','bici','piazzetta','gavettoni','ristorante'],
 };
@@ -125,7 +125,7 @@ const META = {
   moto:{e:'🏍️',n:'Moto'}, bici:{e:'🚲',n:'Bici'}, cavallo:{e:'🐴',n:'Cavallo'}, cinese:{e:'🏮',n:'Cinese'},
   bar:{e:'🍹',n:'Bar'}, parco_avventure:{e:'🧗',n:'Parco Avventure'}, calcio:{e:'⚽',n:'Calcio'}, basket:{e:'🏀',n:'Basket'},
   mare:{e:'🏖️',n:'Mare'}, acquapark:{e:'🎢',n:'Acquapark'}, pesca:{e:'🎣',n:'Pesca'}, giostre:{e:'🎠',n:'Giostre'},
-  piazzetta:{e:'⛲',n:'Piazzetta'}, gavettoni:{e:'🎈',n:'Gavettoni'}, ristorante:{e:'🍝',n:'Ristorante'},
+  piazzetta:{e:'⛲',n:'Piazzetta'}, gavettoni:{e:'🎈',n:'Gavettoni'}, ristorante:{e:'🍝',n:'Ristorante'}, bowling:{e:'🎳',n:'Bowling'},
 };
 let hero='giorgia', city='roma', mode='hub';
 let total = parseInt(localStorage.getItem('cugini3d_total')||'0',10);
@@ -532,6 +532,36 @@ function GameBasket(){
     hoop.rotation.z+=dt*.3;
   }};
 }
+function GameBowling(){
+  applyTheme();
+  const lane=new THREE.Mesh(new THREE.BoxGeometry(3.6,.2,18),M(0xcaa472,.5)); lane.position.set(0,-.1,-7); lane.receiveShadow=true; world.add(lane);
+  [[-1.95],[1.95]].forEach(([x])=>{ B(.34,.28,18,0x222a33,x,-.12,-7); });
+  addGround2(0x20283a);
+  const pins=[]; const pinGeo=new THREE.CylinderGeometry(.1,.19,.78,14);
+  const FRONTZ=-10.5, ROWDZ=.62, COLDX=.66, HITR=.5, CHAINR=.66;
+  for(let r=0;r<4;r++) for(let c=0;c<=r;c++){ const p=new THREE.Mesh(pinGeo,M(0xffffff,.5));
+    p.position.set((c-r/2)*COLDX,.39,FRONTZ-r*ROWDZ); p.castShadow=true; p.userData.fallen=false; world.add(p); pins.push(p);
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(.155,.16,.1,14),M(0xd33,.5)); b.position.y=.16; p.add(b); }
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.34,24,24),M(0x2244cc,.2)); ball.position.set(0,.34,.5); ball.castShadow=true; world.add(ball);
+  const player=buildCousin(hero); player.position.set(-1.1,0,2.1); player.rotation.y=Math.PI; world.add(player);
+  camera.position.set(0,3.4,5.2); camera.lookAt(0,.2,-9);
+  let phase='aim', aimX=0, dir=1, pw=0, pdir=1, rolls=0, vz=0, knocked=0, settleT=0, tRoll=0; const FR=4.5;
+  showPower(true); setScore('Birilli: 0');
+  function reset(){ ball.position.set(0,.34,.5); vz=0; aimX=0; phase='aim'; pw=0; tRoll=0; showPower(true); }
+  function knock(p,from){ if(p.userData.fallen)return; p.userData.fallen=true; p.userData.ftime=tRoll; p.userData.fdir=(p.position.x-from.x)>=0?1:-1; knocked++; beep(440+knocked*30,.06); }
+  return { update(dt){
+    if(phase==='aim'){ aimX+=dir*dt*1.5; if(Math.abs(aimX)>1.35)dir*=-1; ball.position.x=aimX;
+      setInstr('Mira: '+(aimX<-.3?'◀ sinistra':aimX>.3?'destra ▶':'centro')); if(hit('Space')){ phase='power'; setInstr('Dai la potenza, poi SPAZIO'); } }
+    else if(phase==='power'){ pw+=pdir*dt*85; if(pw>100){pw=100;pdir=-1;} if(pw<0){pw=0;pdir=1;} setPower(pw); if(hit('Space')){ phase='roll'; showPower(false); vz=-(7+pw*.095); beep(300,.1); } }
+    else if(phase==='roll'){ tRoll+=dt; vz=Math.min(0,vz+FR*dt); ball.position.z+=vz*dt; ball.rotation.x+=vz*dt*2;
+      for(const p of pins){ if(!p.userData.fallen && ball.position.distanceTo(p.position)<HITR) knock(p,ball.position); }
+      for(const p of pins){ if(!p.userData.fallen||tRoll-p.userData.ftime>.3)continue; for(const q of pins){ if(!q.userData.fallen && p.position.distanceTo(q.position)<CHAINR) knock(q,p.position); } }
+      if(ball.position.z<-14||Math.abs(ball.position.x)>1.75||vz>-0.4){ phase='settle'; settleT=.9; } }
+    else if(phase==='settle'){ settleT-=dt; if(settleT<=0){ rolls++; if(rolls>=2||pins.every(p=>p.userData.fallen)){ finishGame(8+knocked*2,'Hai abbattuto '+knocked+' birilli! 🎳'); phase='done'; } else reset(); } }
+    pins.forEach(p=>{ if(p.userData.fallen){ p.rotation.z=THREE.MathUtils.lerp(p.rotation.z,Math.PI/2*p.userData.fdir,.25); p.position.y=THREE.MathUtils.lerp(p.position.y,.1,.25); } });
+    setScore('🎳 Birilli: '+knocked+'/10   ·   Tiro '+(rolls+1)+'/2');
+  }};
+}
 function GameCalcio(){
   applyTheme(); addGround2(0x4caf50); const goalZ=-9, gw=7, gh=2.6; const bar=M(0xffffff,.3);
   const post=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,gh,10),bar);
@@ -718,7 +748,7 @@ const GAME_FN={
   acquapark:()=>DriveGame({veh:'tube',terrain:'slide',goal:520,maxspeed:32}),
   parco_avventure:ParcoAvventure,
   cavallo:()=>RunnerGame({mode:'fence'}),
-  calcio:GameCalcio, basket:GameBasket, piscina:GamePiscina, danza:GameDanza, pesca:GamePesca, giostre:GameGiostre, gavettoni:GameGavettoni, mare:GameMare,
+  calcio:GameCalcio, basket:GameBasket, piscina:GamePiscina, danza:GameDanza, pesca:GamePesca, giostre:GameGiostre, gavettoni:GameGavettoni, mare:GameMare, bowling:GameBowling,
   casa:()=>walkCollect(THEMES.casa), scuola:()=>walkCollect(THEMES.scuola), parco:()=>walkCollect(THEMES.parco),
   bar:()=>walkCollect(THEMES.bar), ristorante:()=>walkCollect(THEMES.ristorante), cinese:()=>walkCollect(THEMES.cinese),
   color_hotel:()=>walkCollect(THEMES.color_hotel), piazzetta:()=>walkCollect(THEMES.piazzetta), colosseo:()=>walkCollect(THEMES.colosseo),
