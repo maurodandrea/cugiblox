@@ -43,8 +43,9 @@
   .tbtn:active{background:rgba(255,255,255,.4);} #bL{left:24px;} #bR{left:112px;}
   #bA{right:28px;width:96px;height:96px;border-radius:50%;background:rgba(255,180,60,.85);color:#3a2400;font-weight:bold;font-size:17px;}
   #bU,#bD{right:28px;display:none;font-size:26px;background:rgba(255,180,60,.7);color:#3a2400;}
-  #bU{bottom:120px;} #bD{bottom:26px;}
+  #bU{bottom:132px;} #bD{bottom:26px;}
   #pad.drive #bA{display:none;} #pad.drive #bU,#pad.drive #bD{display:block;}
+  #pad.race #bU{display:block;}
   #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#0b1020;z-index:50;text-align:center;padding:30px;}
 </style>
 </head>
@@ -143,7 +144,7 @@ function bindTouch(id,key){ const b=document.getElementById(id);
   const d=e=>{e.preventDefault(); if(!keys[key])just[key]=true; keys[key]=true;}; const u=e=>{e.preventDefault(); keys[key]=false;};
   b.addEventListener('touchstart',d); b.addEventListener('touchend',u); b.addEventListener('mousedown',d); b.addEventListener('mouseup',u); }
 bindTouch('bL','ArrowLeft'); bindTouch('bR','ArrowRight'); bindTouch('bA','Space'); bindTouch('bU','ArrowUp'); bindTouch('bD','ArrowDown');
-function setPad(drive){ document.getElementById('pad').classList.toggle('drive',!!drive); }
+function setPad(mode){ const p=document.getElementById('pad'); p.classList.remove('drive','race'); if(mode)p.classList.add(mode); }
 const isTouch=('ontouchstart'in window)||navigator.maxTouchPoints>0;
 let AC=null;
 function beep(f=440,d=.08,t='square',v=.05){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
@@ -350,8 +351,8 @@ function DriveGame(opts){
   const scenery=[]; for(let i=0;i<22;i++){ const t=slide?palmMesh():treeMesh(); t.position.set((i%2?1:-1)*(ROADW/2+2+rand(0,3)),0,-i*5-rand(0,4)); world.add(t); scenery.push(t); }
   const haz=[], money=[]; const COL=[0x2980b9,0x27ae60,0xf1c40f,0x8e44ad,0xe67e22,0xecf0f1];
   let dist=0, speed=slide?20:16, spawn=0, cspawn=0, crashT=0, passed=0, won=false, tt=0;
-  const race=!!opts.race; const opps=race?makeOpponents(3,(rid)=>makeVehicle(opts.veh,rid),MAXS*0.72,8):[]; opps.forEach(o=>o.lane=[-LANEX,LANEX,0][o.idx%3]);
-  setInstr(bike?'◀ ▶ pedala ed evita alberi, sassi e ostacoli! 🚲':slide?'◀ ▶ guida sullo scivolo, prendi le ciambelle 🛟':race?'◀ ▶ sterza · batti gli avversari! 🏍️':'◀ ▶ sterza · supera/schiva · 🪙 = punti');
+  const race=!!opts.race; const opps=race?makeOpponents(3,(rid)=>makeVehicle(opts.veh,rid),MAXS*0.6,8):[]; opps.forEach(o=>o.lane=[-LANEX,LANEX,0][o.idx%3]);
+  setInstr(bike?'◀ ▶ pedala ed evita alberi, sassi e ostacoli! 🚲':slide?'◀ ▶ guida sullo scivolo, prendi le ciambelle 🛟':race?'◀▶ sterza · ▲ accelera · ▼ frena · batti gli avversari! 🏍️':'◀ ▶ sterza · supera/schiva · 🪙 = punti');
   camera.position.set(0,4.2,12); camera.lookAt(0,1,0);
   function coin(){ const m=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.08,18),M(0xffd700,.3)); m.rotation.x=Math.PI/2; m.castShadow=true; return m; }
   function ringFloat(){ const m=new THREE.Mesh(new THREE.TorusGeometry(.4,.14,8,16),M([0xff6b6b,0x6bd0ff,0xffd24a][Math.floor(Math.random()*3)],.4)); m.castShadow=true; return m; }
@@ -362,7 +363,9 @@ function DriveGame(opts){
     else { g=new THREE.Group(); const c=new THREE.Mesh(new THREE.ConeGeometry(.35,.8,12),M(0xff7733,.5)); c.position.y=.4; g.add(c); }
     g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); g.userData.own=0; return g; }
   return { update(dt){ if(won)return; tt+=dt;
-    speed=Math.min(MAXS,(slide?20:16)+dist*0.02); dist+=speed*dt;
+    let cruise=(slide?20:16)+dist*0.02;
+    if(race){ cruise=(keys['ArrowUp']||keys['Space'])?MAXS:MAXS*0.78; if(keys['ArrowDown'])cruise=MAXS*0.45; }
+    speed += (Math.min(MAXS,cruise)-speed)*Math.min(1,dt*1.6); dist+=speed*dt;
     const tx=veh.position.x+(keys['ArrowLeft']?-1:0)*speed*dt*0.9+(keys['ArrowRight']?1:0)*speed*dt*0.9;
     veh.position.x=THREE.MathUtils.clamp(tx,-LANEX,LANEX);
     veh.rotation.z=THREE.MathUtils.lerp(veh.rotation.z,(keys['ArrowLeft']?0.12:0)+(keys['ArrowRight']?-0.12:0),0.2);
@@ -458,7 +461,7 @@ function DrivingSchool(){
   const st=curve.getPointAt(0.02), stT=curve.getTangentAt(0.02); car.position.set(st.x,0,st.z); let h=Math.atan2(stT.x,stT.z); car.rotation.y=h;
   camera.position.set(car.position.x,9,car.position.z+10);
   const L=curve.getLength(), oc=otherCousins(), COLs=[0x2980b9,0x27ae60,0xf1c40f], ai=[];
-  for(let i=0;i<3;i++){ const c=makeCar(COLs[i]); c.scale.setScalar(.8); const rd=buildCousin(oc[i]); rd.scale.multiplyScalar(.55); rd.position.set(0,.55,-.1); c.add(rd); world.add(c); ai.push({c,u:(0.985-(i+1)*0.02),laps:0,base:rand(9,11.5),phase:rand(0,6)}); }
+  for(let i=0;i<3;i++){ const c=makeCar(COLs[i]); c.scale.setScalar(.8); const rd=buildCousin(oc[i]); rd.scale.multiplyScalar(.55); rd.position.set(0,.55,-.1); c.add(rd); world.add(c); ai.push({c,u0:i*0.012,prog:0,base:rand(10,12),phase:rand(0,6)}); }
   let s=0, nextCp=1, laps=0, won=false, t=0; const LAPS=1;
   setInstr('▲ accelera · ▼ frena · ◀▶ sterza · batti gli avversari, passa i cancelli!');
   return { update(dt){ if(won)return; t+=dt;
@@ -470,9 +473,9 @@ function DrivingSchool(){
     let nd=1e9; for(let i=0;i<samples.length;i++){ const d=samples[i].distanceToSquared(car.position); if(d<nd)nd=d; } nd=Math.sqrt(nd);
     if(nd>W/2){ s*=Math.pow(.2,dt); }
     // avversari che seguono la pista
-    ai.forEach((a,i)=>{ const sp=Math.max(4,a.base+2.2*Math.sin(t*0.6+a.phase)+0.8*Math.sin(t*2+i)); a.u+=(sp*dt)/L; if(a.u>=1){a.u-=1;a.laps++;}
-      const p=curve.getPointAt(a.u), tg=curve.getTangentAt(a.u); a.c.position.set(p.x,0,p.z); a.c.rotation.y=Math.atan2(tg.x,tg.z); a.c.userData.wheels.forEach(w=>w.rotation.x-=sp*dt); });
-    const pProg=laps+(nextCp%NCP)/NCP, pos=1+ai.filter(a=>(a.laps+a.u)>pProg).length;
+    ai.forEach((a,i)=>{ const sp=Math.max(4,a.base+2.2*Math.sin(t*0.6+a.phase)+0.8*Math.sin(t*2+i)); a.prog+=(sp*dt)/L;
+      const uu=(a.u0+a.prog)%1; const p=curve.getPointAt(uu), tg=curve.getTangentAt(uu); a.c.position.set(p.x,0,p.z); a.c.rotation.y=Math.atan2(tg.x,tg.z); a.c.userData.wheels.forEach(w=>w.rotation.x-=sp*dt); });
+    const pProg=laps+(nextCp%NCP)/NCP, pos=1+ai.filter(a=>a.prog>pProg).length;
     if(car.position.distanceTo(cps[nextCp])<W*0.8){ beep(760,.07); nextCp++; if(nextCp>=NCP){ nextCp=0; laps++; beep(1050,.13); if(laps>=LAPS){ won=true; finishGame(placePts(pos),placeText(pos)+' 🏁'); return; } } }
     const cx=car.position.x-Math.sin(h)*9, cz=car.position.z-Math.cos(h)*9;
     camera.position.lerp(new THREE.Vector3(cx,7,cz),0.1); camera.lookAt(car.position.x,1,car.position.z);
@@ -491,16 +494,18 @@ function RunnerGame(opts){
   player.position.set(0,0,5); player.rotation.y=Math.PI; world.add(player);
   const opps = fence ? makeOpponents(3,(rid)=>{ const h=buildHorse(); const r=buildCousin(rid); r.scale.multiplyScalar(.7); r.position.set(0,1.4,-.1); h.add(r); h.rotation.y=Math.PI; return h; },12,6) : [];
   opps.forEach(o=>o.lane=[-3.4,3.4,-1.8][o.idx]);
-  const obs=[]; let dist=0, speed=fence?9:8, vy=0, grounded=true, inv=0, won=false, t=0, spawn=0; const GOAL=240, JUMP=fence?9:8, GRAV=22, CLEAR=fence?1.0:0.9;
-  setInstr('AZIONE / ▲ per SALTARE l\'ostacolo!');
+  const obs=[]; let dist=0, speed=fence?12:8, vy=0, grounded=true, inv=0, won=false, t=0, spawn=0; const GOAL=240, JUMP=fence?9:8, GRAV=22, CLEAR=fence?1.0:0.9;
+  setInstr(fence?'AZIONE salta gli ostacoli · ▲ accelera!':'AZIONE / ▲ per saltare i vuoti!');
   camera.position.set(0,4,11);
   function mkObs(){ const g=new THREE.Group();
-    if(fence){ B2(g,2.2,.9,.25,0xffffff,0,.45,0); B2(g,2.2,.18,.3,0xdd3333,0,.78,0); }
+    if(fence){ B2(g,9,.9,.25,0xffffff,0,.45,0); B2(g,9,.18,.3,0xdd3333,0,.78,0); }
     else { const log=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,2.4,12),M(0x7a4a28)); log.rotation.z=Math.PI/2; log.position.y=.4; g.add(log); }
     g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); g.userData.hit=false; return g; }
-  return { update(dt){ if(won)return; t+=dt; speed=Math.min(15,(fence?9:8)+dist*.01); dist+=speed*dt;
+  return { update(dt){ if(won)return; t+=dt;
+    const cruise=fence?(keys['ArrowUp']?17:12):Math.min(15,8+dist*.01);
+    speed += (cruise-speed)*Math.min(1,dt*1.8); speed=Math.max(4,speed); dist+=speed*dt;
     spawn-=dt; if(spawn<=0){ spawn=Math.max(1.0, (fence?2.0:1.9)-dist*0.003); const o=mkObs(); o.position.set(0,0,-60); world.add(o); obs.push(o); }
-    if((keys['Space']||keys['ArrowUp']) && grounded){ vy=JUMP; grounded=false; beep(520,.08); }
+    if((keys['Space']||(!fence&&keys['ArrowUp'])) && grounded){ vy=JUMP; grounded=false; beep(520,.08); }
     vy-=GRAV*dt; player.position.y+=vy*dt;
     if(player.position.y<=groundY){ player.position.y=groundY; vy=0; grounded=true; }
     if(inv>0)inv-=dt;
@@ -510,7 +515,12 @@ function RunnerGame(opts){
       if(o.position.z>10){ world.remove(o); obs.splice(i,1); } }
     if(fence){ player.userData.hlegs.forEach((l,k)=>l.rotation.x=Math.sin(t*12+k*1.5)*0.6); if(rider)rider.position.y=1.4+ (grounded?Math.abs(Math.sin(t*12))*0.04:0); }
     else if(grounded) walkAnim(player,t*14);
-    if(fence){ stepOpponents(opps,dt,t); opps.forEach(o=>{ const rel=o.od-dist, vis=rel>-10 && rel<55; o.m.visible=vis; if(vis){ o.m.position.set(o.lane,0,5-rel); o.m.userData.hlegs.forEach((l,k)=>l.rotation.x=Math.sin(t*12+k+o.idx)*0.6); } }); }
+    if(fence){ stepOpponents(opps,dt,t); opps.forEach(o=>{ const rel=o.od-dist, zAI=5-rel, vis=rel>-10 && rel<55; o.m.visible=vis;
+      if(o.oy===undefined){o.oy=0;o.ovy=0;}
+      let near=false; for(const ob of obs){ if(Math.abs(ob.position.z-zAI)<1.6){ near=true; break; } }
+      if(near && o.oy<=0.02) o.ovy=JUMP;
+      o.ovy-=GRAV*dt; o.oy=Math.max(0,o.oy+o.ovy*dt);
+      if(vis){ o.m.position.set(o.lane,o.oy,zAI); o.m.userData.hlegs.forEach((l,k)=>l.rotation.x=Math.sin(t*12+k+o.idx)*0.6); } }); }
     const pos=fence?rankAhead(opps,dist):1;
     camera.position.set(0,player.position.y+3.4,11); camera.lookAt(0,1.4,-6);
     setScore((fence?'🐴 ':'🧗 ')+Math.floor(dist)+'m/'+GOAL+(fence?'  ·  '+pos+'º':'')+(inv>0?'  💥':''));
@@ -934,7 +944,7 @@ let activeGame=null, gameOver=false;
 function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); document.getElementById('hud').classList.remove('on'); document.getElementById('pad').classList.remove('on'); if(id) document.getElementById(id).classList.add('on'); }
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(false); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
-function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(gid==='guida'); gameOver=false; mode='game'; activeGame=(GAME_FN[gid]||(()=>walkCollect(THEMES.casa)))(); show(null); hudOn(); }
+function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(gid==='guida'||gid==='moto'?'drive':gid==='cavallo'?'race':''); gameOver=false; mode='game'; activeGame=(GAME_FN[gid]||(()=>walkCollect(THEMES.casa)))(); show(null); hudOn(); }
 function finishGame(points,text){ if(gameOver)return; gameOver=true;
   points=Math.round(Number(points)); if(!Number.isFinite(points))points=0; if(!Number.isFinite(total))total=0;
   total+=points; localStorage.setItem('cugini3d_total',String(total));
