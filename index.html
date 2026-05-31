@@ -46,46 +46,81 @@
     inset: 0;
     pointer-events: none;
     display: none;
+    z-index: 5;
   }
   .pad {
     position: absolute;
-    bottom: 24px;
-    left: 24px;
-    width: 150px;
-    height: 150px;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    left: calc(20px + env(safe-area-inset-left, 0px));
+    width: 180px;
+    height: 180px;
     pointer-events: auto;
   }
   .pad button {
     position: absolute;
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     border: none;
-    border-radius: 12px;
-    background: rgba(255,255,255,.15);
+    border-radius: 14px;
+    background: rgba(255,255,255,.18);
     color: #fff;
-    font-size: 22px;
+    font-size: 26px;
     backdrop-filter: blur(4px);
+    touch-action: none;
   }
-  .pad button:active { background: rgba(255,255,255,.4); }
-  .pad .up { left: 50px; top: 0; }
-  .pad .down { left: 50px; top: 100px; }
-  .pad .left { left: 0; top: 50px; }
-  .pad .right { left: 100px; top: 50px; }
+  .pad button:active { background: rgba(255,255,255,.45); }
+  .pad .up { left: 60px; top: 0; }
+  .pad .down { left: 60px; top: 120px; }
+  .pad .left { left: 0; top: 60px; }
+  .pad .right { left: 120px; top: 60px; }
   #act {
     position: absolute;
-    bottom: 40px;
-    right: 28px;
-    width: 90px;
-    height: 90px;
+    bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+    right: calc(24px + env(safe-area-inset-right, 0px));
+    width: 110px;
+    height: 110px;
     border-radius: 50%;
     border: none;
-    background: rgba(255,180,60,.85);
+    background: rgba(255,180,60,.88);
     color: #3a2400;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     pointer-events: auto;
+    touch-action: none;
   }
   #act:active { transform: scale(.92); }
+  #backbtn {
+    position: absolute;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: calc(14px + env(safe-area-inset-right, 0px));
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,.45);
+    color: #fff;
+    font-size: 20px;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  #backbtn:active { background: rgba(0,0,0,.7); }
+  /* Avviso rotazione su cellulare in verticale */
+  #rotate {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #1a1228;
+    z-index: 20;
+    text-align: center;
+    padding: 20px;
+  }
+  #rotate .ico { font-size: 64px; animation: spin 2s ease-in-out infinite; }
+  #rotate p { margin-top: 16px; font-size: 18px; color: #ffd86b; }
+  #rotate small { margin-top: 8px; color: rgba(255,255,255,.6); }
+  @keyframes spin { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
 </style>
 </head>
 <body>
@@ -99,8 +134,14 @@
       <button class="right" data-k="ArrowRight">▶</button>
     </div>
     <button id="act" data-k="Space">AZIONE</button>
+    <button id="backbtn" data-k="Escape">✕</button>
   </div>
   <div id="hint">Frecce / WASD per muoverti &nbsp;·&nbsp; SPAZIO per azione &nbsp;·&nbsp; ESC per tornare alla mappa</div>
+  <div id="rotate">
+    <div class="ico">📱</div>
+    <p>Ruota il telefono in orizzontale</p>
+    <small>per giocare al meglio a schermo intero</small>
+  </div>
 </div>
 
 <script>
@@ -138,6 +179,7 @@ function clearJust(){ for (const k in justPressed) justPressed[k] = false; }
 /* Touch controls */
 if ('ontouchstart' in window || navigator.maxTouchPoints) {
   document.getElementById('touch').style.display = 'block';
+  document.getElementById('hint').style.display = 'none';
   document.querySelectorAll('#touch button').forEach(b => {
     const k = b.dataset.k === 'Space' ? 'Space' : b.dataset.k;
     const down = ev => { ev.preventDefault(); if(!keys[k]) justPressed[k]=true; keys[k]=true; };
@@ -284,8 +326,39 @@ function drawDad(x, y, s=1, face=0, walk=0){
 let scene = null;          // scena corrente
 let stars = 0;             // stelle raccolte (progresso)
 const visited = {};        // attività completate
+let heroChoice = 'daughter'; // personaggio scelto: 'daughter' | 'dad'
 let toast = null, toastT = 0;
 function showToast(msg){ toast = msg; toastT = 150; }
+
+/* ---------- Salvataggio progressi (localStorage) ---------- */
+const SAVE_KEY = 'roma_adventure_save_v1';
+function saveGame(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ stars, visited, hero: heroChoice })); } catch(e){}
+}
+function loadGame(){
+  try {
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (d){
+      Object.assign(visited, d.visited||{});
+      stars = Object.keys(visited).filter(k=>visited[k]).length;
+      if (d.hero === 'dad' || d.hero === 'daughter') heroChoice = d.hero;
+    }
+  } catch(e){}
+}
+function resetGame(){
+  for (const k in visited) delete visited[k];
+  stars = 0;
+  try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+  showToast('Progressi azzerati');
+}
+
+/* ---------- Disegna il personaggio scelto / il compagno ---------- */
+function drawPlayer(x,y,s,face,walk){
+  if (heroChoice === 'dad') drawDad(x,y,s,face,walk); else drawDaughter(x,y,s,face,walk);
+}
+function drawCompanion(x,y,s,face,walk){
+  if (heroChoice === 'dad') drawDaughter(x,y,s,face,walk); else drawDad(x,y,s,face,walk);
+}
 
 function setScene(s){
   scene = s;
@@ -324,6 +397,7 @@ function completeActivity(id){
     stars++;
     beep(880,0.1); setTimeout(()=>beep(1100,0.12),100);
     showToast('★ Attività completata! +1 stella');
+    saveGame();
   } else {
     showToast('Già completata — ben rigiocata!');
   }
@@ -353,7 +427,8 @@ const Menu = {
   enter(){ this.t = 0; },
   update(){
     this.t++;
-    if (pressed('Space') || pressed('Enter')){ beep(660,0.1); setScene(Hub); }
+    if (pressed('Space') || pressed('Enter')){ beep(660,0.1); setScene(CharSelect); }
+    if (pressed('r') || pressed('R')) resetGame();
   },
   draw(){
     sky('#2c1a4a', '#7b3f8f');
@@ -387,11 +462,64 @@ const Menu = {
     if (Math.floor(this.t/30)%2===0){
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 22px Trebuchet MS';
-      ctx.fillText('▶ premi SPAZIO per iniziare', W/2, 470);
+      ctx.fillText('▶ premi SPAZIO / AZIONE per iniziare', W/2, 460);
     }
     ctx.fillStyle = 'rgba(255,255,255,.7)';
     ctx.font = '15px Trebuchet MS';
-    ctx.fillText('Visita 10 luoghi e raccogli tutte le stelle ★', W/2, 510);
+    ctx.fillText('Visita 10 luoghi e raccogli tutte le stelle ★', W/2, 498);
+    // progresso salvato
+    if (stars > 0){
+      ctx.fillStyle = '#ffd86b';
+      ctx.font = 'bold 16px Trebuchet MS';
+      ctx.fillText('Progresso salvato: ★ ' + stars + '/' + LOCATIONS.length + '   (premi R per azzerare)', W/2, 530);
+    }
+  }
+};
+
+/* =====================================================================
+   SELEZIONE PERSONAGGIO
+   ===================================================================== */
+const CharSelect = {
+  t:0, sel:0, // 0 = figlia, 1 = babbo
+  enter(){ this.t=0; this.sel = heroChoice === 'dad' ? 1 : 0; },
+  update(){
+    this.t++;
+    if (pressed('ArrowLeft')){ this.sel = 0; beep(500,0.06); }
+    if (pressed('ArrowRight')){ this.sel = 1; beep(500,0.06); }
+    if (pressed('Escape')){ beep(300,0.08); setScene(Menu); return; }
+    if (pressed('Space') || pressed('Enter')){
+      heroChoice = this.sel === 1 ? 'dad' : 'daughter';
+      saveGame(); beep(700,0.1); setScene(Hub);
+    }
+  },
+  draw(){
+    sky('#2c1a4a', '#5b3f8f');
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 32px Trebuchet MS';
+    ctx.fillText('SCEGLI IL PERSONAGGIO', W/2, 80);
+
+    // due riquadri
+    const opts = [
+      { x: W*0.32, label:'LA FIGLIA', draw: drawDaughter },
+      { x: W*0.68, label:'IL BABBO',  draw: drawDad }
+    ];
+    opts.forEach((o,i)=>{
+      const on = this.sel === i;
+      ctx.fillStyle = on ? 'rgba(255,216,107,.22)' : 'rgba(255,255,255,.06)';
+      rr(o.x-130, 130, 260, 320, 18); ctx.fill();
+      ctx.lineWidth = on ? 5 : 2;
+      ctx.strokeStyle = on ? '#ffd86b' : 'rgba(255,255,255,.25)';
+      rr(o.x-130, 130, 260, 320, 18); ctx.stroke();
+      o.draw(o.x, 360, 3.2, 0, on ? this.t*0.06 : 0);
+      ctx.fillStyle = on ? '#ffd86b' : '#fff';
+      ctx.font = 'bold 24px Trebuchet MS';
+      ctx.fillText(o.label, o.x, 175);
+    });
+
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '16px Trebuchet MS';
+    ctx.fillText('◀ ▶ per scegliere   ·   SPAZIO / AZIONE per confermare', W/2, 500);
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '13px Trebuchet MS';
+    ctx.fillText("L'altro personaggio vi accompagnerà nell'avventura", W/2, 528);
   }
 };
 
@@ -468,9 +596,9 @@ const Hub = {
       }
     }
 
-    // personaggi
-    drawDad(this.dad.x, this.dad.y, 1, 0, this.walk*0.8);
-    drawDaughter(this.px, this.py, 1, 0, this.walk);
+    // personaggi: il compagno segue, il giocatore guida
+    drawCompanion(this.dad.x, this.dad.y, 1, 0, this.walk*0.8);
+    drawPlayer(this.px, this.py, 1, 0, this.walk);
 
     header('MAPPA DI ROMA');
 
@@ -878,7 +1006,7 @@ const BiciScene = {
     // bici
     ctx.strokeStyle='#222'; ctx.lineWidth=3;
     ctx.beginPath(); ctx.arc(150,this.y+18,12,0,7); ctx.arc(178,this.y+18,12,0,7); ctx.stroke();
-    drawDaughter(165,this.y-4,0.95,0,this.t*0.4);
+    drawPlayer(165,this.y-4,0.95,0,this.t*0.4);
     header('IN BICI','#2a3a4a');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-100,64,200,30,8); ctx.fill();
     ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
@@ -920,7 +1048,7 @@ const CavalloScene = {
     ctx.fillRect(-20,15,6,18); ctx.fillRect(14,15,6,18); // zampe
     ctx.fillStyle='#4a2f10'; rr(34,-32,10,8,3); ctx.fill(); // muso
     ctx.restore();
-    drawDaughter(160,hy-26,0.9,0,this.t*0.3);
+    drawPlayer(160,hy-26,0.9,0,this.t*0.3);
     header('A CAVALLO','#3a2a1a');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-130,64,260,30,8); ctx.fill();
     ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
@@ -1005,15 +1133,29 @@ function loop(){
 }
 
 /* responsive: scala il canvas mantenendo le proporzioni */
+const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 function fit(){
-  const pad = 20;
+  // su touch riempi tutto lo schermo, su desktop lascia un piccolo margine
+  const pad = isTouch ? 0 : 24;
+  const maxScale = isTouch ? 10 : 1.4;
   const sw = (window.innerWidth-pad)/W, sh=(window.innerHeight-pad)/H;
-  const s = Math.min(sw, sh, 1.4);
+  const s = Math.min(sw, sh, maxScale);
   cv.style.width = (W*s)+'px';
   cv.style.height = (H*s)+'px';
-}
-window.addEventListener('resize', fit); fit();
 
+  // avviso "ruota il telefono" se cellulare in verticale
+  const rot = document.getElementById('rotate');
+  if (isTouch && window.innerHeight > window.innerWidth){
+    rot.style.display = 'flex';
+  } else {
+    rot.style.display = 'none';
+  }
+}
+window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', fit);
+fit();
+
+loadGame();      // ripristina i progressi salvati
 setScene(Menu);
 loop();
 </script>
