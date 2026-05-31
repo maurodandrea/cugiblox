@@ -515,7 +515,7 @@ function DrivingSchool(){
   camera.position.set(car.position.x,9,car.position.z+10);
   const L=curve.getLength(), oc=otherCousins(), COLs=[0x2980b9,0x27ae60,0xf1c40f], ai=[];
   for(let i=0;i<3;i++){ const c=makeCar(COLs[i]); c.scale.setScalar(.8); const rd=buildCousin(oc[i]); rd.scale.multiplyScalar(.55); rd.position.set(0,.55,-.1); c.add(rd); world.add(c); ai.push({c,u0:i*0.012,prog:0,base:rand(10,12),phase:rand(0,6),name:CHARS[oc[i]].name}); }
-  let s=0, nextCp=1, laps=0, won=false, t=0; const LAPS=1;
+  let s=0, nextCp=1, laps=0, won=false, t=0; const LAPS=3;
   setInstr('▲ accelera · ▼ frena · ◀▶ sterza · batti gli avversari, passa i cancelli!');
   return { update(dt){ if(won)return; t+=dt;
     if(keys['ArrowUp']||keys['Space']) s=Math.min(15,s+12*dt); else if(keys['ArrowDown']) s=Math.max(-4,s-16*dt); else s*=Math.pow(.45,dt);
@@ -532,7 +532,7 @@ function DrivingSchool(){
     if(car.position.distanceTo(cps[nextCp])<W*0.8){ beep(760,.07); nextCp++; if(nextCp>=NCP){ nextCp=0; laps++; beep(1050,.13); if(laps>=LAPS){ won=true; const rows=[{n:CHARS[hero].name,you:1,p:pProg}].concat(ai.map(a=>({n:a.name,p:a.prog}))).sort((x,y)=>y.p-x.p); finishGame(placePts(pos),placeText(pos)+' 🏁',rows); return; } } }
     const cx=car.position.x-Math.sin(h)*9, cz=car.position.z-Math.cos(h)*9;
     camera.position.lerp(new THREE.Vector3(cx,7,cz),0.1); camera.lookAt(car.position.x,1,car.position.z);
-    setScore('🚗 '+pos+'º  ·  Cancello '+(nextCp||NCP)+'/'+NCP+'  ·  '+Math.max(0,s*3.6|0)+' km/h'+(nd>W/2?'  ⚠️':''));
+    setScore('🚗 '+pos+'º  ·  Giro '+Math.min(laps+1,LAPS)+'/'+LAPS+'  ·  Cancello '+(nextCp||NCP)+'/'+NCP+'  ·  '+Math.max(0,s*3.6|0)+' km/h'+(nd>W/2?'  ⚠️':''));
   }};
 }
 
@@ -666,12 +666,12 @@ const THEMES = {
   casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[6,5.5],dropLabel:'🧺 Scatolone',instr:'Raccogli un gioco e portalo nello scatolone!',win:'Cameretta in ordine! 🏠',
     decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5); },
     item(){ const b=smallBox(TC[Math.floor(Math.random()*TC.length)]); b.position.y=.3; return b; },
-    activities(){ const oc=otherCousins(); const A=[];
-      B(1.2,.5,.8,0x9c6b3f,-3,.25,-3.2); A.push(aNPC(oc[0],-3,-2.4,0,'draw'));
-      B(.4,.4,.4,0x4aa3ff,6.7,.2,-4); A.push(aNPC(oc[1],6.5,-4,Math.PI/2,'paint'));
-      A.push(aNPC(oc[2],-5,3,.6,'drink'));
-      for(let i=0;i<4;i++) B(.38,.38,.38,TC[i],2+(i%2)*.42,.2+((i/2)|0)*.4,4); A.push(aNPC(oc[3],2.3,4.9,Math.PI,'build'));
-      A.push(aNPC(oc[4],-1,0,2.3,'talk')); A.push(aNPC(oc[0],.6,.2,2.3+Math.PI,'fight'));
+    activities(){ const oc=otherCousins(); const A=[]; const P=['draw','drink','build','paint','talk','jump','write','throw','fight'];
+      B(1.2,.5,.8,0x9c6b3f,-3,.25,-3.2); A.push(aNPC(oc[0],-3,-2.4,0,'draw',P));
+      B(.4,.4,.4,0x4aa3ff,6.7,.2,-4); A.push(aNPC(oc[1],6.5,-4,Math.PI/2,'paint',P));
+      A.push(aNPC(oc[2],-5,3,.6,'drink',P));
+      for(let i=0;i<4;i++) B(.38,.38,.38,TC[i],2+(i%2)*.42,.2+((i/2)|0)*.4,4); A.push(aNPC(oc[3],2.3,4.9,Math.PI,'build',P));
+      A.push(aNPC(oc[4],-1,0,2.3,'talk',P)); A.push(aNPC(oc[0],.6,.2,2.3+Math.PI,'fight',P));
       return A; }},
   scuola:{emoji:'📚',ground:0xd8c8a0,size:18,goal:8,time:60,deliver:true,drop:[0,-7],dropLabel:'📕 Cattedra',instr:'Raccogli un libro e portalo in cattedra!',win:'Tutti i libri a posto! 📚',
     decor(){ B(18,4,.3,0xeae0c8,0,2,-9); B(6,2.5,.2,0x224422,0,2,-8.8); B(3,1.1,1.2,0x9c6b3f,0,.55,-7); for(let r=0;r<3;r++)for(let c=0;c<3;c++){ B(1.6,.9,1,0xa6794a,-4+c*4,.45,0+r*3); }
@@ -732,8 +732,11 @@ function ballTexture(kind){ const c=document.createElement('canvas'); c.width=12
   else { x.fillStyle='#ffffff'; x.fillRect(0,0,128,128); const cols=['#1f6fd0','#ffd24a','#ffffff']; for(let i=0;i<3;i++){ x.fillStyle=cols[i]; x.fillRect(0,i*43,128,40); } x.strokeStyle='#9aa'; x.lineWidth=2; for(let i=0;i<=3;i++){ x.beginPath(); x.moveTo(0,i*43); x.lineTo(128,i*43); x.stroke(); } }
   return new THREE.CanvasTexture(c); }
 function makeBall(r,kind){ return new THREE.Mesh(new THREE.SphereGeometry(r,22,22),new THREE.MeshStandardMaterial({map:ballTexture(kind),roughness:.55})); }
-function aNPC(id,x,z,ry,type){ const m=buildCousin(id); m.position.set(x,0,z); m.rotation.y=ry||0; world.add(m); return {m,type,phase:rand(0,6),x0:x,z0:z}; }
-function stepActivity(n,t){ const m=n.m, a=m.userData.arms, l=m.userData.legs, T=t+n.phase;
+function aNPC(id,x,z,ry,type,pool){ const m=buildCousin(id); m.position.set(x,0,z); m.rotation.y=ry||0; world.add(m); return {m,type,phase:rand(0,6),x0:x,z0:z,pool:pool||null,vary:!!pool,nextChange:rand(5,10)}; }
+function stepActivity(n,t){ const m=n.m, a=m.userData.arms, l=m.userData.legs;
+  if(n.vary && t>n.nextChange){ n.type=n.pool[Math.floor(Math.random()*n.pool.length)]; n.phase=rand(0,6); n.nextChange=t+rand(5,10);
+    m.position.y=0; m.rotation.z=0; a[0].rotation.set(0,0,0); a[1].rotation.set(0,0,0); l[0].rotation.x=0; l[1].rotation.x=0; }
+  const T=t+n.phase;
   switch(n.type){
     case 'draw': case 'write': a[0].rotation.x=-1.3+Math.sin(T*6)*0.45; a[1].rotation.x=-0.3; break;
     case 'paint': a[0].rotation.x=-2.3+Math.sin(T*4)*0.6; break;
