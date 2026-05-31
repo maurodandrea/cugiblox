@@ -47,6 +47,14 @@
   #pad.drive #bA{display:none;} #pad.drive #bU,#pad.drive #bD{display:block;}
   #pad.race #bU{display:block;}
   #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#0b1020;z-index:50;text-align:center;padding:30px;}
+  #results{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,12,28,.82);pointer-events:none;}
+  #results.on{display:flex;}
+  #results h3{font-size:min(7vw,30px);color:#ffd86b;margin-bottom:14px;text-shadow:0 3px 12px #000;}
+  #results .row{display:flex;align-items:center;gap:12px;width:min(82vw,360px);padding:9px 14px;margin:4px 0;border-radius:12px;background:rgba(255,255,255,.08);font-size:18px;}
+  #results .row.you{background:rgba(255,216,107,.25);border:2px solid #ffd86b;}
+  #results .pos{width:36px;font-weight:bold;font-size:20px;text-align:center;}
+  #results .nm{flex:1;text-align:left;}
+  #results .pts{color:#9fe6c8;font-size:15px;margin-top:14px;}
 </style>
 </head>
 <body>
@@ -93,6 +101,8 @@
 </div>
 
 <div id="err"><h2>3D non disponibile</h2><p style="margin-top:12px;color:#bcd">Non è stato possibile caricare la libreria 3D (Three.js).<br>Serve una connessione internet per la versione 3D.</p></div>
+
+<div id="results"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -329,7 +339,7 @@ function makeVehicle(veh,rid){ const g=new THREE.Group(); g.userData.wheels=[]; 
     const d=buildCousin(rid); d.scale.multiplyScalar(.55); d.position.set(0,.55,-.1); g.add(d); }
   g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); return g; }
 function otherCousins(n){ const ids=CHAR_IDS.filter(i=>i!==hero); const out=[]; for(let i=0;i<(n||ids.length);i++) out.push(ids[i%ids.length]); return out; }
-function makeOpponents(n,build,base,spread){ const list=[], oc=otherCousins(); for(let i=0;i<n;i++){ const m=build(oc[i%oc.length],i); world.add(m); list.push({m,od:rand(-(spread||5),spread||7),base:base*rand(.9,1.08),phase:rand(0,6),idx:i,lane:0}); } return list; }
+function makeOpponents(n,build,base,spread){ const list=[], oc=otherCousins(); for(let i=0;i<n;i++){ const rid=oc[i%oc.length]; const m=build(rid,i); world.add(m); list.push({m,rid,od:rand(-(spread||5),spread||7),base:base*rand(.9,1.08),phase:rand(0,6),idx:i,lane:0}); } return list; }
 function stepOpponents(list,dt,t){ list.forEach((o,i)=>{ o.sp=Math.max(2,o.base+o.base*0.22*Math.sin(t*0.7+o.phase)+o.base*0.09*Math.sin(t*2.2+i)); o.od+=o.sp*dt; }); }
 function rankAhead(list,dist){ return 1+list.filter(o=>o.od>dist).length; }
 function placeText(p){ return p===1?'🥇 1º posto!':p===2?'🥈 2º posto':p===3?'🥉 3º posto':p+'º posto'; }
@@ -393,7 +403,7 @@ function DriveGame(opts){
     const pos=race?rankAhead(opps,dist):1;
     setScore((slide?'🛟 ':'🪙 ')+coins+(race?('   ·   '+pos+'º'):(bike||slide?'':('   ·   superate: '+passed)))+'   ·   '+Math.floor(dist)+'m / '+GOAL);
     camera.position.x=THREE.MathUtils.lerp(camera.position.x,veh.position.x*0.5,0.1); camera.lookAt(veh.position.x*0.3,1,0);
-    if(dist>=GOAL){ won=true; finishGame(race?placePts(pos):(20+coins+passed), race?(placeText(pos)+' 🏍️'):'Traguardo! 🏁'); }
+    if(dist>=GOAL){ won=true; if(race){ const rows=[{n:CHARS[hero].name,you:1,p:dist}].concat(opps.map(o=>({n:CHARS[o.rid].name,p:o.od}))).sort((a,b)=>b.p-a.p); finishGame(placePts(pos),placeText(pos)+' 🏍️',rows); } else finishGame(20+coins+passed,'Traguardo! 🏁'); }
   }};
 }
 
@@ -447,7 +457,7 @@ function GameBiciMontagna(){
     const pos=rankAhead(opps,dist);
     camera.position.lerp(new THREE.Vector3(0,4.4,13),0.1); camera.lookAt(0,1,-4);
     setScore('🚵 '+Math.floor(dist)+'m/'+GOAL+'  ·  '+pos+'º  ·  '+names[ter]+(slope<-0.05?' ⬇️':slope>0.05?' ⬆️':'')+(onTrail?'':' ⚠️'));
-    if(dist>=GOAL){ won=true; finishGame(placePts(pos),placeText(pos)+' 🚵 '+Math.floor(dist)+'m'); }
+    if(dist>=GOAL){ won=true; const rows=[{n:CHARS[hero].name,you:1,p:dist}].concat(opps.map(o=>({n:CHARS[o.rid].name,p:o.od}))).sort((a,b)=>b.p-a.p); finishGame(placePts(pos),placeText(pos)+' 🚵',rows); }
   }};
 }
 
@@ -467,7 +477,7 @@ function DrivingSchool(){
   const st=curve.getPointAt(0.02), stT=curve.getTangentAt(0.02); car.position.set(st.x,0,st.z); let h=Math.atan2(stT.x,stT.z); car.rotation.y=h;
   camera.position.set(car.position.x,9,car.position.z+10);
   const L=curve.getLength(), oc=otherCousins(), COLs=[0x2980b9,0x27ae60,0xf1c40f], ai=[];
-  for(let i=0;i<3;i++){ const c=makeCar(COLs[i]); c.scale.setScalar(.8); const rd=buildCousin(oc[i]); rd.scale.multiplyScalar(.55); rd.position.set(0,.55,-.1); c.add(rd); world.add(c); ai.push({c,u0:i*0.012,prog:0,base:rand(10,12),phase:rand(0,6)}); }
+  for(let i=0;i<3;i++){ const c=makeCar(COLs[i]); c.scale.setScalar(.8); const rd=buildCousin(oc[i]); rd.scale.multiplyScalar(.55); rd.position.set(0,.55,-.1); c.add(rd); world.add(c); ai.push({c,u0:i*0.012,prog:0,base:rand(10,12),phase:rand(0,6),name:CHARS[oc[i]].name}); }
   let s=0, nextCp=1, laps=0, won=false, t=0; const LAPS=1;
   setInstr('▲ accelera · ▼ frena · ◀▶ sterza · batti gli avversari, passa i cancelli!');
   return { update(dt){ if(won)return; t+=dt;
@@ -482,7 +492,7 @@ function DrivingSchool(){
     ai.forEach((a,i)=>{ const sp=Math.max(4,a.base+2.2*Math.sin(t*0.6+a.phase)+0.8*Math.sin(t*2+i)); a.prog+=(sp*dt)/L;
       const uu=(a.u0+a.prog)%1; const p=curve.getPointAt(uu), tg=curve.getTangentAt(uu); a.c.position.set(p.x,0,p.z); a.c.rotation.y=Math.atan2(tg.x,tg.z); a.c.userData.wheels.forEach(w=>w.rotation.x-=sp*dt); });
     const pProg=laps+(nextCp%NCP)/NCP, pos=1+ai.filter(a=>a.prog>pProg).length;
-    if(car.position.distanceTo(cps[nextCp])<W*0.8){ beep(760,.07); nextCp++; if(nextCp>=NCP){ nextCp=0; laps++; beep(1050,.13); if(laps>=LAPS){ won=true; finishGame(placePts(pos),placeText(pos)+' 🏁'); return; } } }
+    if(car.position.distanceTo(cps[nextCp])<W*0.8){ beep(760,.07); nextCp++; if(nextCp>=NCP){ nextCp=0; laps++; beep(1050,.13); if(laps>=LAPS){ won=true; const rows=[{n:CHARS[hero].name,you:1,p:pProg}].concat(ai.map(a=>({n:a.name,p:a.prog}))).sort((x,y)=>y.p-x.p); finishGame(placePts(pos),placeText(pos)+' 🏁',rows); return; } } }
     const cx=car.position.x-Math.sin(h)*9, cz=car.position.z-Math.cos(h)*9;
     camera.position.lerp(new THREE.Vector3(cx,7,cz),0.1); camera.lookAt(car.position.x,1,car.position.z);
     setScore('🚗 '+pos+'º  ·  Cancello '+(nextCp||NCP)+'/'+NCP+'  ·  '+Math.max(0,s*3.6|0)+' km/h'+(nd>W/2?'  ⚠️':''));
@@ -530,7 +540,7 @@ function RunnerGame(opts){
     const pos=fence?rankAhead(opps,dist):1;
     camera.position.set(0,player.position.y+3.4,11); camera.lookAt(0,1.4,-6);
     setScore((fence?'🐴 ':'🧗 ')+Math.floor(dist)+'m/'+GOAL+(fence?'  ·  '+pos+'º':'')+(inv>0?'  💥':''));
-    if(dist>=GOAL){ won=true; finishGame(fence?placePts(pos):22, fence?placeText(pos)+' 🐴':'Percorso completato! 🎉'); }
+    if(dist>=GOAL){ won=true; if(fence){ const rows=[{n:CHARS[hero].name,you:1,p:dist}].concat(opps.map(o=>({n:CHARS[o.rid].name,p:o.od}))).sort((a,b)=>b.p-a.p); finishGame(placePts(pos),placeText(pos)+' 🐴',rows); } else finishGame(22,'Percorso completato! 🎉'); }
   }};
 }
 
@@ -951,11 +961,17 @@ function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.r
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(false); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
 function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(gid==='guida'||gid==='moto'?'drive':gid==='cavallo'?'race':''); gameOver=false; mode='game'; activeGame=(GAME_FN[gid]||(()=>walkCollect(THEMES.casa)))(); show(null); hudOn(); }
-function finishGame(points,text){ if(gameOver)return; gameOver=true;
+function showResults(text,rows,points){ const el=document.getElementById('results'); let html='<h3>'+text+'</h3>';
+  rows.forEach((r,i)=>{ const m=['🥇','🥈','🥉'][i]||((i+1)+'º'); html+='<div class="row'+(r.you?' you':'')+'"><div class="pos">'+m+'</div><div class="nm">'+r.n+(r.you?' (tu)':'')+'</div></div>'; });
+  html+='<div class="pts">+'+points+' ★</div>'; el.innerHTML=html; el.classList.add('on'); }
+function hideResults(){ document.getElementById('results').classList.remove('on'); }
+function finishGame(points,text,rows){ if(gameOver)return; gameOver=true;
   points=Math.round(Number(points)); if(!Number.isFinite(points))points=0; if(!Number.isFinite(total))total=0;
   total+=points; localStorage.setItem('cugini3d_total',String(total));
-  showMsg(text+'  +'+points+'★'); beep(700,.12); setTimeout(()=>beep(1000,.14),120);
-  setTimeout(()=>{ activeGame=null; gameOver=false; enterHub(); },2200); }
+  beep(700,.12); setTimeout(()=>beep(1000,.14),120);
+  let delay=2200;
+  if(rows&&rows.length){ showResults(text,rows,points); delay=4200; } else { showMsg(text+'  +'+points+'★'); }
+  setTimeout(()=>{ activeGame=null; gameOver=false; hideResults(); enterHub(); },delay); }
 document.getElementById('back').addEventListener('click',()=>{ if(mode==='game'){ enterHub(); } else { activeGame=null; clearWorld(); show('s_map'); } });
 
 /* anteprime avatar */
