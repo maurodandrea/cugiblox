@@ -102,7 +102,7 @@ else { startApp(); }
 function startApp(){
 /* ===================== DATI ===================== */
 const CHARS = {
-  giorgia:{name:'Giorgia',age:10,skin:0xf3cda9,hair:0x7a4a28,style:'long',  shirt:0xf7f7f7,pants:0x4a6fa5},
+  giorgia:{name:'Giorgia',age:10,skin:0xf3cda9,hair:0xc79655,style:'long',  shirt:0xf7f7f7,pants:0x4a6fa5},
   babbo:  {name:'Babbo',  age:30,skin:0xe8b894,hair:0x52443a,style:'adult', shirt:0x5a6b85,pants:0x6a8fc0,beard:true},
   letizia:{name:'Letizia',age:12,skin:0xf6d6b8,hair:0xb8895a,style:'long',  shirt:0xff9ec4,pants:0xd56fa0},
   eleonora:{name:'Eleonora',age:10,skin:0xf3cda9,hair:0xc79a5b,style:'long',shirt:0xb07cd6,pants:0x5b4a8a},
@@ -199,7 +199,8 @@ function addHair(g,cfg,ha){ const cy=1.28;
   // capelli dietro/ai lati, spostati indietro: non coprono mai la faccia
   if(cfg.style!=='buzz'){ const back=new THREE.Mesh(new THREE.SphereGeometry(.235,16,16),ha); back.scale.set(1.02,1.02,.72); back.position.set(0,cy,-0.07); g.add(back); }
   if(cfg.style==='buzz'){ crown.scale.set(1,.82,1); const b2=new THREE.Mesh(new THREE.SphereGeometry(.232,14,14),ha); b2.scale.set(1,.66,.7); b2.position.set(0,cy+.02,-.05); g.add(b2); }
-  else if(cfg.style==='adult'){ if(cfg.beard){ const beard=new THREE.Mesh(new THREE.SphereGeometry(.205,14,14),new THREE.MeshStandardMaterial({color:cfg.hair,roughness:1})); beard.scale.set(1.05,.85,.7); beard.position.set(0,1.15,.085); g.add(beard); const cut=new THREE.Mesh(new THREE.BoxGeometry(.34,.2,.2),M(cfg.skin,.6)); cut.position.set(0,1.30,.2); g.add(cut); } }
+  else if(cfg.style==='adult'){ if(cfg.beard){ const beard=new THREE.Mesh(new THREE.SphereGeometry(.2,14,14),new THREE.MeshStandardMaterial({color:cfg.hair,roughness:1})); beard.scale.set(1.02,.72,.6); beard.position.set(0,1.085,.07); g.add(beard);
+    const must=new THREE.Mesh(new THREE.BoxGeometry(.16,.04,.05),new THREE.MeshStandardMaterial({color:cfg.hair,roughness:1})); must.position.set(0,1.22,.205); g.add(must); } }
   else if(cfg.style==='curly'){ for(let i=0;i<12;i++){ const b=new THREE.Mesh(new THREE.SphereGeometry(.085,8,8),ha); const a=i/12*Math.PI*2; b.position.set(Math.cos(a)*.215, cy+.07+(i%2?.05:-.03), Math.sin(a)*.15-.05); g.add(b); } }
   else if(cfg.style==='medium'){ const bk=new THREE.Mesh(new THREE.BoxGeometry(.44,.42,.22),ha); bk.position.set(0,cy-.13,-.13); g.add(bk); }
   else if(cfg.style==='long'){ const bk=new THREE.Mesh(new THREE.BoxGeometry(.46,.74,.24),ha); bk.position.set(0,cy-.30,-.12); g.add(bk);
@@ -567,9 +568,14 @@ function GameBasket(){
 }
 function GameBowling(){
   applyTheme();
-  const lane=new THREE.Mesh(new THREE.BoxGeometry(3.6,.2,18),M(0xcaa472,.5)); lane.position.set(0,-.1,-7); lane.receiveShadow=true; world.add(lane);
-  [[-1.95],[1.95]].forEach(([x])=>{ B(.34,.28,18,0x222a33,x,-.12,-7); });
-  addGround2(0x20283a);
+  addGround2(0x10141c);
+  const lane=new THREE.Mesh(new THREE.BoxGeometry(3.6,.2,18),new THREE.MeshStandardMaterial({color:0xe7b86a,roughness:.35,metalness:.05})); lane.position.set(0,-.1,-7); lane.receiveShadow=true; world.add(lane);
+  // doghe del parquet (linee piu scure lungo la pista)
+  for(const x of [-1.5,-0.9,-0.3,0.3,0.9,1.5]){ B(.05,.01,18,0xb07a35,x,.005,-7); }
+  // freccette di mira
+  for(let i=0;i<5;i++){ const ar=new THREE.Mesh(new THREE.ConeGeometry(.12,.5,3),M(0xa05a1a,.5)); ar.position.set(-1+i*.5,.012,-4.5); ar.rotation.x=-Math.PI/2; world.add(ar); }
+  // canaline laterali scure (contrasto)
+  [[-1.95],[1.95]].forEach(([x])=>{ B(.34,.3,18,0x161c28,x,-.12,-7); });
   const pins=[]; const pinGeo=new THREE.CylinderGeometry(.1,.19,.78,14);
   const FRONTZ=-10.5, ROWDZ=.62, COLDX=.66, HITR=.5, CHAINR=.66;
   for(let r=0;r<4;r++) for(let c=0;c<=r;c++){ const p=new THREE.Mesh(pinGeo,M(0xffffff,.5));
