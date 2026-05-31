@@ -635,7 +635,9 @@ const THEMES = {
     decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5); },
     item(){ const b=smallBox(TC[Math.floor(Math.random()*TC.length)]); b.position.y=.3; return b; }},
   scuola:{emoji:'📚',ground:0xd8c8a0,size:18,goal:8,time:60,deliver:true,drop:[0,-7],dropLabel:'📕 Cattedra',instr:'Raccogli un libro e portalo in cattedra!',win:'Tutti i libri a posto! 📚',
-    decor(){ B(18,4,.3,0xeae0c8,0,2,-9); B(6,2.5,.2,0x224422,0,2,-8.8); B(3,1.1,1.2,0x9c6b3f,0,.55,-7); for(let r=0;r<3;r++)for(let c=0;c<3;c++){ B(1.6,.9,1,0xa6794a,-4+c*4,.45,0+r*3); } },
+    decor(){ B(18,4,.3,0xeae0c8,0,2,-9); B(6,2.5,.2,0x224422,0,2,-8.8); B(3,1.1,1.2,0x9c6b3f,0,.55,-7); for(let r=0;r<3;r++)for(let c=0;c<3;c++){ B(1.6,.9,1,0xa6794a,-4+c*4,.45,0+r*3); }
+      // maestra seduta alla cattedra
+      B(.8,.5,.7,0x6a4a2a,0,.25,-7.9); const fem=['letizia','giorgia','eleonora','eleonora'].find(i=>i!==hero)||otherChar(); const teach=buildCousin(fem); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; world.add(teach); },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,.45),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.2; return b; }},
   parco:{emoji:'🎈',ground:0x6fae5a,size:20,goal:10,time:45,instr:'Raccogli i palloncini nel parco!',win:'Che festa al parco! 🎈',
     decor(){ for(let i=0;i<7;i++){ const x=rand(-8,8),z=rand(-8,8); const tr=cyl(.2,.26,1.4,0x7a4a28); tr.position.set(x,.7,z); tr.castShadow=true; world.add(tr); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.1,2,9),M(0x2f8f4a)); lv.position.set(x,2.2,z); lv.castShadow=true; world.add(lv); } B(2.5,.4,.6,0x8a5a2b,-4,.4,3); B(2.5,.4,.6,0x8a5a2b,4,.4,-3); },
@@ -803,6 +805,9 @@ function GamePiscina(){
     if(i%2===0){ const uL=umbrella(COLS[i%COLS.length]); uL.position.set(-10.4,0,z); world.add(uL); const uR=umbrella(COLS[(i+2)%COLS.length]); uR.position.set(10.4,0,z); world.add(uR); } }
   // qualche palla in acqua per decoro
   for(let i=0;i<3;i++){ const ball=new THREE.Mesh(new THREE.SphereGeometry(.3,12,12),M(COLS[i],.4)); ball.position.set(rand(-4,4),.55,rand(Z1+4,Z0-4)); world.add(ball); }
+  // spalti con tribune e tifosi
+  for(const side of [-1,1]){ for(const sz of [2,-12,-26]){ const st=buildStand(); st.position.set(side*11.5,0,sz); st.rotation.y=side>0?-Math.PI/2:Math.PI/2; world.add(st); } }
+  const fans=[]; const ocp=otherCousins(); for(let i=0;i<8;i++){ const side=i<4?-1:1; const f=buildCousin(ocp[i%ocp.length]); f.position.set(side*10.2,.7,4-(i%4)*8); f.rotation.y=side>0?-Math.PI/2:Math.PI/2; world.add(f); fans.push(f); }
   // pareti interne piastrellate (bordi ben visibili)
   B(.4,.8,len+1,0x2a7fbf, POOLW/2,.0,midZ); B(.4,.8,len+1,0x2a7fbf, -POOLW/2,.0,midZ);
   B(POOLW,.8,.4,0x2a7fbf, 0,.0,Z0); B(POOLW,.8,.4,0x2a7fbf, 0,.0,Z1);
@@ -822,6 +827,7 @@ function GamePiscina(){
   let speed=0, lastSide=0, won=false, time=0; const START=Z0-1.5, END=Z1+1.5, LEN=START-END;
   setInstr('Alterna ◀ e ▶ (o AZIONE) per nuotare: batti gli avversari!');
   return { update(dt){ if(won)return; time+=dt;
+    fans.forEach((f,i)=>f.position.y=.7+Math.abs(Math.sin(time*3+i))*0.14);
     // bracciata del giocatore
     let stroke=0; if(hit('ArrowLeft'))stroke=-1; else if(hit('ArrowRight'))stroke=1; else if(hit('Space'))stroke=-lastSide||1;
     if(stroke){ if(stroke!==lastSide){ speed=Math.min(9,speed+1.7); beep(520,.05); } else speed=Math.min(9,speed+.5); lastSide=stroke; }
@@ -844,9 +850,18 @@ function GamePiscina(){
   }};
 }
 function GameDanza(){
-  applyTheme(); addGround2(CITIES[city].ground);
-  B(8,.3,5,CITIES[city].accent,0,.15,-2);
-  const dancer=buildCousin(hero); dancer.position.set(0,.3,-3); world.add(dancer);
+  applyTheme(); scene.background=new THREE.Color(0x160b22); scene.fog=null; addGround2(0x241a2e);
+  const stageW=8; B(stageW,.4,5,0x8a5a2b,0,.2,-2);                 // palco di legno
+  B(stageW+2,4.6,.3,0x2a1230,0,2.3,-5.4);                          // fondale
+  B(1.3,4.6,.6,0xb01030,-(stageW/2+0.3),2.3,-3); B(1.3,4.6,.6,0xb01030,(stageW/2+0.3),2.3,-3);  // tende laterali rosse
+  B(stageW+2.8,1.2,.6,0x8a0c26,0,4.3,-3);                          // mantovana
+  for(const x of [-2.6,2.6]){ const sl=new THREE.Mesh(new THREE.ConeGeometry(.9,1.6,16,1,true),new THREE.MeshStandardMaterial({color:0xfff3b0,transparent:true,opacity:.18,side:THREE.DoubleSide})); sl.position.set(x,3.4,-2); world.add(sl); } // fasci di luce
+  // platea: spettatori seduti ai lati
+  const aud=[]; const oca=otherCousins(); let an=0;
+  for(const side of [-1,1]){ for(let r=0;r<2;r++){ for(let s=0;s<2;s++){ B(.7,.45,.7,0x5a2a3a, side*(5+r*1.5), .22, 4-s*1.7);
+    const f=buildCousin(oca[an++%oca.length]); f.position.set(side*(5+r*1.5),.5,4-s*1.7); f.rotation.y=Math.PI;
+    f.userData.legs[0].rotation.x=-1.2; f.userData.legs[1].rotation.x=-1.2; world.add(f); aud.push(f); } } }
+  const dancer=buildCousin(hero); dancer.position.set(0,.4,-3); world.add(dancer);
   const laneX=[-2,0,2], laneKey=['ArrowLeft','Space','ArrowRight'], laneCol=[0xff5b8a,0xffd84a,0x5bc0ff], laneTxt=['◀','AZIONE','▶'];
   const HITZ=2.6;
   // pedane + barra colpo
@@ -858,6 +873,7 @@ function GameDanza(){
   setInstr('Premi ◀ / AZIONE / ▶ quando il disco arriva sulla pedana del suo colore!');
   function move(i){ if(i===0){ dancer.rotation.z=.4; } else if(i===2){ dancer.rotation.z=-.4; } else { dancer.position.y=.7; } }
   return { update(dt){ if(done)return; t+=dt; if(fb>0)fb-=dt; else showMsg('');
+    aud.forEach((f,i)=>{ f.position.y=.5+Math.abs(Math.sin(t*2+i))*0.07; f.rotation.z=Math.sin(t*3+i)*0.06; });
     spawn-=dt; if(spawn<=0){ spawn=rand(.7,1.15); const ln=Math.floor(Math.random()*3); const n=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.18,18),new THREE.MeshStandardMaterial({color:laneCol[ln],emissive:laneCol[ln],emissiveIntensity:.4})); n.rotation.x=Math.PI/2; n.position.set(laneX[ln],.5,-9); n.userData.ln=ln; world.add(n); notes.push(n); }
     for(let i=0;i<3;i++){ if(hit(laneKey[i])){ move(i); let best=-1,bd=99; notes.forEach((n,j)=>{ if(n.userData.ln===i && !n.userData.dead){ const d=Math.abs(n.position.z-HITZ); if(d<bd){bd=d;best=j;} } });
       if(best>=0 && bd<GOODW){ const n=notes[best]; n.userData.dead=true; world.remove(n); notes.splice(best,1); pads[i].material.emissiveIntensity=1.2;
