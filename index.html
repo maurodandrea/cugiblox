@@ -337,39 +337,38 @@ function drawDad(x, y, s=1, face=0, walk=0){ drawCharId('babbo', x, y, s, face, 
    STATO GLOBALE
    ===================================================================== */
 let scene = null;          // scena corrente
-let stars = 0;             // stelle raccolte (progresso)
-const visited = {};        // attività completate
-let heroChoice = 'giorgia';  // id del personaggio scelto (vedi CHARACTERS)
+const visited = {};        // attività completate (per id)
+let heroChoice = 'giorgia';   // personaggio giocante
+let companionChoice = 'babbo';// accompagnatore scelto
 let toast = null, toastT = 0;
 function showToast(msg){ toast = msg; toastT = 150; }
 
 /* ---------- Salvataggio progressi (localStorage) ---------- */
-const SAVE_KEY = 'roma_adventure_save_v1';
+const SAVE_KEY = 'cugini_adventure_save_v1';
 function saveGame(){
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ stars, visited, hero: heroChoice })); } catch(e){}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({
+    visited, hero: heroChoice, comp: companionChoice, city: currentCity })); } catch(e){}
 }
 function loadGame(){
   try {
     const d = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (d){
       Object.assign(visited, d.visited||{});
-      stars = Object.keys(visited).filter(k=>visited[k]).length;
       if (d.hero && CHARACTERS.some(c=>c.id===d.hero)) heroChoice = d.hero;
+      if (d.comp && CHARACTERS.some(c=>c.id===d.comp)) companionChoice = d.comp;
+      if (d.city && CITIES.some(c=>c.id===d.city)) currentCity = d.city;
     }
   } catch(e){}
 }
 function resetGame(){
   for (const k in visited) delete visited[k];
-  stars = 0;
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
   showToast('Progressi azzerati');
 }
 
 /* ---------- Disegna il personaggio scelto / il compagno ---------- */
-// Il Babbo accompagna sempre; se giochi col Babbo ti accompagna Giorgia.
-function companionId(){ return heroChoice === 'babbo' ? 'giorgia' : 'babbo'; }
 function drawPlayer(x,y,s,face,walk){ drawCharId(heroChoice, x,y,s,face,walk); }
-function drawCompanion(x,y,s,face,walk){ drawCharId(companionId(), x,y,s,face,walk); }
+function drawCompanion(x,y,s,face,walk){ drawCharId(companionChoice, x,y,s,face,walk); }
 
 function setScene(s){
   scene = s;
@@ -393,19 +392,18 @@ function header(title, color='#ffd86b'){
   // stelle
   ctx.font = '18px Arial'; ctx.textAlign = 'right';
   ctx.fillStyle = '#ffd86b';
-  ctx.fillText('★ ' + stars + '/' + LOCATIONS.length, W-20, 36);
+  ctx.fillText('★ ' + cityDone() + '/' + LOCATIONS.length, W-20, 36);
 }
 
 function backHint(){
   ctx.fillStyle = 'rgba(255,255,255,.5)';
   ctx.font = '13px Trebuchet MS'; ctx.textAlign = 'center';
-  ctx.fillText('ESC per tornare alla mappa di Roma', W/2, H-14);
+  ctx.fillText('ESC per tornare alla mappa', W/2, H-14);
 }
 
 function completeActivity(id){
   if (!visited[id]){
     visited[id] = true;
-    stars++;
     beep(880,0.1); setTimeout(()=>beep(1100,0.12),100);
     showToast('★ Attività completata! +1 stella');
     saveGame();
@@ -415,34 +413,64 @@ function completeActivity(id){
 }
 
 /* =====================================================================
-   LE LOCATION
+   LE LOCATION — info per ogni attività e composizione per città
    ===================================================================== */
-const LOCATIONS = [
-  { id:'roma',    name:'Colosseo',     emoji:'🏛️', color:'#d9a441' },
-  { id:'mare',    name:'Al Mare',      emoji:'🏖️', color:'#37b6c9' },
-  { id:'moto',    name:'In Moto',      emoji:'🏍️', color:'#e0533d' },
-  { id:'bowling', name:'Bowling',      emoji:'🎳', color:'#9b59b6' },
-  { id:'scuola',  name:'A Scuola',     emoji:'🏫', color:'#5d8def' },
-  { id:'lavoro',  name:'Al Lavoro',    emoji:'💼', color:'#7f8c8d' },
-  { id:'acqua',   name:'Acqua Park',   emoji:'🌊', color:'#2dc3e8' },
-  { id:'bici',    name:'In Bici',      emoji:'🚲', color:'#27ae60' },
-  { id:'cavallo', name:'A Cavallo',    emoji:'🐴', color:'#b5651d' },
-  { id:'danza',   name:'A Danza',      emoji:'💃', color:'#e84393' },
-  { id:'basket',  name:'Basket',       emoji:'🏀', color:'#e67e22' },
-  { id:'calcio',  name:'Calcio',       emoji:'⚽', color:'#2ecc71' },
-  { id:'piscina', name:'Piscina',      emoji:'🏊', color:'#3498db' },
-  { id:'casa',    name:'Casa',         emoji:'🏠', color:'#e74c3c' },
-  { id:'disegno', name:'Disegno',      emoji:'🎨', color:'#f1c40f' },
-  { id:'parco',   name:'Al Parco',     emoji:'🌳', color:'#16a085' },
-  { id:'bar',     name:'Al Bar',       emoji:'🍦', color:'#fd79a8' },
-  { id:'cinese',  name:'Negozio Cinese', emoji:'🏮', color:'#c0392b' },
-  { id:'criceto', name:'Il Criceto',   emoji:'🐹', color:'#d35400' },
+const LOC_INFO = {
+  roma:    { name:'Colosseo',      emoji:'🏛️', color:'#d9a441' },
+  mare:    { name:'Al Mare',       emoji:'🏖️', color:'#37b6c9' },
+  moto:    { name:'In Moto',       emoji:'🏍️', color:'#e0533d' },
+  bowling: { name:'Bowling',       emoji:'🎳', color:'#9b59b6' },
+  scuola:  { name:'A Scuola',      emoji:'🏫', color:'#5d8def' },
+  lavoro:  { name:'Al Lavoro',     emoji:'💼', color:'#7f8c8d' },
+  acqua:   { name:'Acqua Park',    emoji:'🌊', color:'#2dc3e8' },
+  bici:    { name:'In Bici',       emoji:'🚲', color:'#27ae60' },
+  cavallo: { name:'A Cavallo',     emoji:'🐴', color:'#b5651d' },
+  danza:   { name:'A Danza',       emoji:'💃', color:'#e84393' },
+  basket:  { name:'Basket',        emoji:'🏀', color:'#e67e22' },
+  calcio:  { name:'Calcio',        emoji:'⚽', color:'#2ecc71' },
+  piscina: { name:'Piscina',       emoji:'🏊', color:'#3498db' },
+  casa:    { name:'Casa',          emoji:'🏠', color:'#e74c3c' },
+  disegno: { name:'Disegno',       emoji:'🎨', color:'#f1c40f' },
+  parco:   { name:'Al Parco',      emoji:'🌳', color:'#16a085' },
+  bar:     { name:'Al Bar',        emoji:'🍦', color:'#fd79a8' },
+  cinese:  { name:'Negozio Cinese',emoji:'🏮', color:'#c0392b' },
+  criceto: { name:'Il Criceto',    emoji:'🐹', color:'#d35400' },
+  parcoavventura: { name:'Parco Avventure', emoji:'🧗', color:'#2d8659' },
+  colorhotel:     { name:'Color Hotel',     emoji:'🏨', color:'#8e44ad' },
+  scuolaguida:    { name:'Scuola Guida',    emoji:'🚗', color:'#34495e' },
+  pesca:          { name:'Pesca',           emoji:'🎣', color:'#1f7a8c' },
+  giostre:        { name:'Giostre',         emoji:'🎠', color:'#e84393' },
+  piazzetta:      { name:'Piazzetta',       emoji:'⛲', color:'#e67e22' },
+  gavettoni:      { name:'Gavettoni',       emoji:'🎈', color:'#3498db' },
+  ristorante:     { name:'Ristorante',      emoji:'🍝', color:'#c0392b' },
+};
+
+const CITIES = [
+  { id:'matera',  name:'Matera',  emoji:'🪨',
+    locs:['cavallo','scuola','parco','cinese','bar','casa','parcoavventura','calcio','basket','piscina'] },
+  { id:'roma',    name:'Roma',    emoji:'🏛️',
+    locs:['roma','scuola','casa','parco','danza','piscina','colorhotel','scuolaguida','moto','bici'] },
+  { id:'rossano', name:'Rossano', emoji:'🌅',
+    locs:['mare','piscina','acqua','pesca','giostre','bar','bici','piazzetta','gavettoni','ristorante'] },
 ];
-// Disposizione automatica a griglia (5 colonne)
-(function(){
-  const cols = 5, x0 = 110, dx = 175, y0 = 150, dy = 105;
-  LOCATIONS.forEach((L,i)=>{ L.x = x0 + (i%cols)*dx; L.y = y0 + Math.floor(i/cols)*dy; });
-})();
+
+let LOCATIONS = [];        // luoghi della città scelta (riempito da buildCity)
+let currentCity = 'roma';
+
+function layoutGrid(){
+  const cols = 5, x0 = 110, dx = 175;
+  const rows = Math.max(1, Math.ceil(LOCATIONS.length / cols));
+  const top = 200, bottom = 470;
+  const dy = rows > 1 ? (bottom - top) / (rows - 1) : 0;
+  LOCATIONS.forEach((L,i)=>{ L.x = x0 + (i%cols)*dx; L.y = top + Math.floor(i/cols)*dy; });
+}
+function buildCity(cityId){
+  const c = CITIES.find(c=>c.id===cityId) || CITIES[1];
+  currentCity = c.id;
+  LOCATIONS = c.locs.map(id => Object.assign({ id }, LOC_INFO[id]));
+  layoutGrid();
+}
+function cityDone(){ return LOCATIONS.reduce((n,L)=> n + (visited[L.id]?1:0), 0); }
 
 /* =====================================================================
    MENU INIZIALE
@@ -470,33 +498,36 @@ const Menu = {
     ctx.fillStyle = 'rgba(0,0,0,.45)';
     rr(W/2-90, H-150, 180, 110, 30); ctx.fill();
 
-    // personaggi che salutano
-    const wv = Math.sin(this.t*0.08);
-    drawDaughter(W/2-60, 330, 2.4, 0, this.t*0.04);
-    drawDad(W/2+60, 330, 2.4, 0, this.t*0.04);
+    // i cuginetti che salutano
+    drawCharId('letizia', W/2-150, 340, 2.0, 0, this.t*0.05);
+    drawCharId('giorgia', W/2-70, 340, 2.0, 0, this.t*0.05+1);
+    drawCharId('corrado', W/2+10, 340, 2.0, 0, this.t*0.05+2);
+    drawCharId('giulio',  W/2+80, 340, 2.0, 0, this.t*0.05+3);
+    drawCharId('babbo',   W/2+160, 340, 2.0, 0, this.t*0.05);
 
     // titolo
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 46px Trebuchet MS';
-    ctx.fillText('LE AVVENTURE A ROMA', W/2, 110);
+    ctx.font = 'bold 40px Trebuchet MS';
+    ctx.fillText('LE AVVENTURE DEI CUGINI', W/2, 110);
     ctx.fillStyle = '#ffd86b';
-    ctx.font = 'bold 22px Trebuchet MS';
-    ctx.fillText('Giorgia, Babbo & amici', W/2, 145);
+    ctx.font = 'bold 20px Trebuchet MS';
+    ctx.fillText('Letizia · Giorgia · Eleonora · Corrado · Giulio · Babbo', W/2, 145);
 
     if (Math.floor(this.t/30)%2===0){
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 22px Trebuchet MS';
-      ctx.fillText('▶ premi SPAZIO / AZIONE per iniziare', W/2, 460);
+      ctx.fillText('▶ premi SPAZIO / AZIONE per iniziare', W/2, 470);
     }
     ctx.fillStyle = 'rgba(255,255,255,.7)';
     ctx.font = '15px Trebuchet MS';
-    ctx.fillText('Visita 10 luoghi e raccogli tutte le stelle ★', W/2, 498);
+    ctx.fillText('Scegli i personaggi e la città, poi raccogli le stelle ★', W/2, 505);
     // progresso salvato
-    if (stars > 0){
+    const tot = Object.keys(visited).filter(k=>visited[k]).length;
+    if (tot > 0){
       ctx.fillStyle = '#ffd86b';
       ctx.font = 'bold 16px Trebuchet MS';
-      ctx.fillText('Progresso salvato: ★ ' + stars + '/' + LOCATIONS.length + '   (premi R per azzerare)', W/2, 530);
+      ctx.fillText('Progresso salvato: ★ ' + tot + ' attività   (premi R per azzerare)', W/2, 535);
     }
   }
 };
@@ -504,48 +535,105 @@ const Menu = {
 /* =====================================================================
    SELEZIONE PERSONAGGIO
    ===================================================================== */
+function charGridNav(self, list){
+  self.t++;
+  const n = list.length, c = self.cols;
+  if (pressed('ArrowLeft')){ self.sel = (self.sel + n - 1) % n; beep(500,0.06); }
+  if (pressed('ArrowRight')){ self.sel = (self.sel + 1) % n; beep(500,0.06); }
+  if (pressed('ArrowUp')){ self.sel = (self.sel + n - c) % n; beep(500,0.06); }
+  if (pressed('ArrowDown')){ self.sel = (self.sel + c) % n; beep(500,0.06); }
+}
+function charGridDraw(self, list, title, footer){
+  sky('#2c1a4a', '#5b3f8f');
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 30px Trebuchet MS';
+  ctx.fillText(title, W/2, 58);
+  const cols = self.cols, cw = 210, ch = 190, gap = 22;
+  const totW = cols*cw + (cols-1)*gap;
+  const x0 = (W - totW)/2, y0 = 86;
+  list.forEach((c,i)=>{
+    const cx = x0 + (i%cols)*(cw+gap);
+    const cy = y0 + Math.floor(i/cols)*(ch+gap);
+    const on = self.sel === i;
+    ctx.fillStyle = on ? 'rgba(255,216,107,.22)' : 'rgba(255,255,255,.06)';
+    rr(cx, cy, cw, ch, 16); ctx.fill();
+    ctx.lineWidth = on ? 5 : 2;
+    ctx.strokeStyle = on ? '#ffd86b' : 'rgba(255,255,255,.25)';
+    rr(cx, cy, cw, ch, 16); ctx.stroke();
+    drawCharId(c.id, cx+cw/2, cy+118, 1.6, 0, on ? self.t*0.06 : 0);
+    ctx.fillStyle = on ? '#ffd86b' : '#fff';
+    ctx.font = 'bold 19px Trebuchet MS';
+    ctx.fillText(c.name, cx+cw/2, cy+30);
+  });
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '15px Trebuchet MS';
+  ctx.fillText(footer, W/2, H-22);
+}
+
 const CharSelect = {
   t:0, sel:0, cols:3,
   enter(){ this.t=0; this.sel = Math.max(0, CHARACTERS.findIndex(c=>c.id===heroChoice)); },
   update(){
-    this.t++;
-    const n = CHARACTERS.length, c = this.cols;
-    if (pressed('ArrowLeft')){ this.sel = (this.sel + n - 1) % n; beep(500,0.06); }
-    if (pressed('ArrowRight')){ this.sel = (this.sel + 1) % n; beep(500,0.06); }
-    if (pressed('ArrowUp')){ this.sel = (this.sel + n - c) % n; beep(500,0.06); }
-    if (pressed('ArrowDown')){ this.sel = (this.sel + c) % n; beep(500,0.06); }
+    charGridNav(this, CHARACTERS);
     if (pressed('Escape')){ beep(300,0.08); setScene(Menu); return; }
     if (pressed('Space') || pressed('Enter')){
-      heroChoice = CHARACTERS[this.sel].id;
-      saveGame(); beep(700,0.1); setScene(Hub);
+      heroChoice = CHARACTERS[this.sel].id; saveGame(); beep(700,0.1); setScene(CompanionSelect);
+    }
+  },
+  draw(){ charGridDraw(this, CHARACTERS, 'CHI GIOCA?',
+    '◀ ▶ ▲ ▼ scegli  ·  SPAZIO / AZIONE conferma  ·  ESC indietro'); }
+};
+
+const CompanionSelect = {
+  t:0, sel:0, cols:3, list:[],
+  enter(){ this.t=0; this.list = CHARACTERS.filter(c=>c.id!==heroChoice);
+    if (companionChoice===heroChoice) companionChoice=this.list[0].id;
+    this.sel = Math.max(0, this.list.findIndex(c=>c.id===companionChoice)); },
+  update(){
+    charGridNav(this, this.list);
+    if (pressed('Escape')){ beep(300,0.08); setScene(CharSelect); return; }
+    if (pressed('Space') || pressed('Enter')){
+      companionChoice = this.list[this.sel].id; saveGame(); beep(700,0.1); setScene(CitySelect);
+    }
+  },
+  draw(){ charGridDraw(this, this.list, "SCEGLI L'ACCOMPAGNATORE",
+    '◀ ▶ ▲ ▼ scegli  ·  SPAZIO / AZIONE conferma  ·  ESC indietro'); }
+};
+
+const CitySelect = {
+  t:0, sel:0,
+  enter(){ this.t=0; this.sel = Math.max(0, CITIES.findIndex(c=>c.id===currentCity)); },
+  update(){
+    this.t++;
+    const n = CITIES.length;
+    if (pressed('ArrowLeft')){ this.sel = (this.sel + n - 1) % n; beep(500,0.06); }
+    if (pressed('ArrowRight')){ this.sel = (this.sel + 1) % n; beep(500,0.06); }
+    if (pressed('Escape')){ beep(300,0.08); setScene(CompanionSelect); return; }
+    if (pressed('Space') || pressed('Enter')){
+      buildCity(CITIES[this.sel].id); saveGame(); beep(700,0.1); setScene(Hub);
     }
   },
   draw(){
-    sky('#2c1a4a', '#5b3f8f');
+    sky('#16223a', '#2c4a6e');
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 30px Trebuchet MS';
-    ctx.fillText('SCEGLI IL PERSONAGGIO', W/2, 58);
-
-    const cols = this.cols, cw = 210, ch = 190, gap = 22;
-    const totW = cols*cw + (cols-1)*gap;
-    const x0 = (W - totW)/2, y0 = 86;
-    CHARACTERS.forEach((c,i)=>{
-      const cx = x0 + (i%cols)*(cw+gap);
-      const cy = y0 + Math.floor(i/cols)*(ch+gap);
-      const on = this.sel === i;
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 32px Trebuchet MS';
+    ctx.fillText('SCEGLI LA CITTÀ', W/2, 64);
+    const cw = 240, ch = 310, gap = 30;
+    const totW = CITIES.length*cw + (CITIES.length-1)*gap;
+    const x0 = (W - totW)/2, y0 = 100;
+    CITIES.forEach((c,i)=>{
+      const cx = x0 + i*(cw+gap), on = this.sel===i;
       ctx.fillStyle = on ? 'rgba(255,216,107,.22)' : 'rgba(255,255,255,.06)';
-      rr(cx, cy, cw, ch, 16); ctx.fill();
-      ctx.lineWidth = on ? 5 : 2;
-      ctx.strokeStyle = on ? '#ffd86b' : 'rgba(255,255,255,.25)';
-      rr(cx, cy, cw, ch, 16); ctx.stroke();
-      drawCharId(c.id, cx+cw/2, cy+115, 1.6, 0, on ? this.t*0.06 : 0);
-      ctx.fillStyle = on ? '#ffd86b' : '#fff';
-      ctx.font = 'bold 20px Trebuchet MS';
-      ctx.fillText(c.name, cx+cw/2, cy+30);
+      rr(cx, y0, cw, ch, 18); ctx.fill();
+      ctx.lineWidth = on ? 5 : 2; ctx.strokeStyle = on ? '#ffd86b' : 'rgba(255,255,255,.25)';
+      rr(cx, y0, cw, ch, 18); ctx.stroke();
+      ctx.font = '64px Arial'; ctx.fillText(c.emoji, cx+cw/2, y0+86);
+      ctx.fillStyle = on ? '#ffd86b' : '#fff'; ctx.font = 'bold 26px Trebuchet MS';
+      ctx.fillText(c.name, cx+cw/2, y0+128);
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '12px Trebuchet MS';
+      c.locs.forEach((id,j)=>{ ctx.fillText(LOC_INFO[id].emoji+' '+LOC_INFO[id].name, cx+cw/2, y0+152+j*15); });
     });
-
     ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '15px Trebuchet MS';
-    ctx.fillText('◀ ▶ ▲ ▼ per scegliere  ·  SPAZIO / AZIONE conferma  ·  ESC indietro', W/2, H-24);
+    ctx.fillText('◀ ▶ scegli la città  ·  SPAZIO / AZIONE conferma  ·  ESC indietro', W/2, H-20);
   }
 };
 
@@ -639,7 +727,8 @@ const Hub = {
     drawCompanion(this.dad.x, this.dad.y, 1, 0, this.walk*0.8);
     drawPlayer(this.px, this.py, 1, 0, this.walk);
 
-    header('MAPPA DI ROMA');
+    const cityName = (CITIES.find(c=>c.id===currentCity)||{}).name || 'Città';
+    header('MAPPA · ' + cityName.toUpperCase());
 
     // prompt
     if (this.near){
@@ -652,12 +741,13 @@ const Hub = {
       ctx.fillText('Cammina fino a un luogo e premi SPAZIO', W/2, H-30);
     }
 
-    if (stars === LOCATIONS.length){
+    if (LOCATIONS.length && cityDone() === LOCATIONS.length){
+      const cityName = (CITIES.find(c=>c.id===currentCity)||{}).name || 'la città';
       ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H);
       ctx.fillStyle='#ffd86b'; ctx.font='bold 34px Trebuchet MS'; ctx.textAlign='center';
       ctx.fillText('🎉 AVVENTURA COMPLETATA! 🎉', W/2, H/2-20);
       ctx.fillStyle='#fff'; ctx.font='20px Trebuchet MS';
-      ctx.fillText('Avete visitato tutta Roma insieme!', W/2, H/2+20);
+      ctx.fillText('Avete visitato tutta ' + cityName + ' insieme!', W/2, H/2+20);
     }
   }
 };
@@ -1506,6 +1596,157 @@ const CasaScene = {
   }
 };
 
+/* =====================================================================
+   NUOVE SCENE legate alle città
+   ===================================================================== */
+const ParcoAvventuraScene = makeCollect({
+  id:'parcoavventura', title:'PARCO AVVENTURE', need:8, good:['🧗','🪢','🌲','🎯','🪜','🐿️'],
+  bg:['#bfe9ff','#7fbf5a'], hcolor:'#1a5a2a', hint:'Supera le prove:',
+  stage(){ ctx.fillStyle='#6aab4a'; ctx.fillRect(0,180,W,H-180);
+    ctx.strokeStyle='rgba(120,80,40,.5)'; ctx.lineWidth=6;
+    ctx.beginPath(); ctx.moveTo(0,200); ctx.lineTo(W,260); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,360); ctx.lineTo(W,320); ctx.stroke();
+    ctx.font='40px Arial'; ctx.textAlign='center'; ctx.fillText('🌲',90,210); ctx.fillText('🌲',W-90,220); }
+});
+const GiostreScene = makeCollect({
+  id:'giostre', title:'GIOSTRE', need:8, good:['🎟️','🍿','🎈','🍭','🧸'],
+  bg:['#3a1a4a','#7b2f8f'], hint:'Raccogli premi e biglietti:',
+  stage(){ ctx.font='44px Arial'; ctx.textAlign='center';
+    ctx.fillText('🎡', 110, 200); ctx.fillText('🎠', W-110, 205); ctx.fillText('🎢', W/2, 180); }
+});
+const PiazzettaScene = makeCollect({
+  id:'piazzetta', title:'PIAZZETTA', need:8, good:['🍦','⚽','🛴','🕊️','🎶','🧃'],
+  bg:['#ffe0a3','#ffc98a'], hcolor:'#7a4a10', hint:'Gioca in piazza:',
+  stage(){ ctx.fillStyle='#e8c98a'; ctx.fillRect(0,200,W,H-200);
+    ctx.font='44px Arial'; ctx.textAlign='center'; ctx.fillText('⛲', W/2, 200); }
+});
+const GavettoniScene = makeCollect({
+  id:'gavettoni', title:'GAVETTONI', need:9, good:['🎈','💦','🪣','🔫'],
+  bg:['#7ed4ff','#3aa7d8'], hint:'Prendi i palloncini d\'acqua:',
+  stage(){ ctx.fillStyle='rgba(255,255,255,.25)';
+    for(let i=0;i<6;i++) ctx.fillRect(rand(0,W),rand(140,H),3,10); }
+});
+const RistoranteScene = makeCollect({
+  id:'ristorante', title:'RISTORANTE', need:9, good:['🍝','🍕','🥗','🍷','🍰','🍤'], bad:'🪰',
+  bg:['#ffe6d6','#ffc9a8'], hcolor:'#a0401a', hint:'Servi i piatti (no mosche!):',
+  stage(){ ctx.fillStyle='#fff'; ctx.fillRect(0,120,W,12);
+    ctx.fillStyle='rgba(160,60,20,.15)'; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(180+i*270,170,30,0,7); ctx.fill(); } }
+});
+
+/* SCUOLA GUIDA — guida ed evita gli ostacoli */
+const ScuolaGuidaScene = {
+  enter(){ this.t=0; this.x=W/2; this.obs=[]; this.dist=0; this.spawn=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (keys['ArrowLeft']) this.x-=5;
+    if (keys['ArrowRight']) this.x+=5;
+    this.x=clamp(this.x,W/2-150,W/2+150);
+    this.dist+=0.3;
+    if (--this.spawn<=0){ this.spawn=Math.max(24,55-this.dist*0.2);
+      this.obs.push({x:rand(W/2-150,W/2+150), y:-40, e:Math.random()<.5?'🚧':'🔺'}); }
+    for (const o of this.obs){ o.y+=5+this.dist*0.04;
+      if (Math.abs(o.y-(H-90))<34 && Math.abs(o.x-this.x)<34){ o.hit=true; beep(180,0.15); this.dist=Math.max(0,this.dist-10); } }
+    this.obs=this.obs.filter(o=>o.y<H+40 && !o.hit);
+    if (this.dist>=100){ completeActivity('scuolaguida'); setScene(Hub); }
+  },
+  draw(){
+    sky('#8aa0b0','#b8c4cc');
+    ctx.fillStyle='#3a3a42'; ctx.fillRect(W/2-170,0,340,H);
+    ctx.strokeStyle='#ffd86b'; ctx.lineWidth=6; ctx.setLineDash([26,26]); ctx.lineDashOffset=-(this.t*8)%52;
+    ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font='30px Arial'; ctx.textAlign='center'; for (const o of this.obs) ctx.fillText(o.e,o.x,o.y);
+    ctx.fillStyle='#e74c3c'; rr(this.x-20,H-120,40,70,10); ctx.fill();
+    ctx.fillStyle='#bde'; rr(this.x-14,H-108,28,20,4); ctx.fill();
+    drawPlayer(this.x, H-150, 0.7, 0, 0);
+    header('SCUOLA GUIDA','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-120,64,240,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Guida ed evita gli ostacoli: '+Math.floor(this.dist)+'/100', W/2, 85);
+    backHint();
+  }
+};
+
+/* PESCA — muovi l'amo e pesca i pesci */
+const PescaScene = {
+  enter(){ this.t=0; this.hx=W/2; this.fish=[]; this.got=0; this.need=6; this.spawn=0; this.msg=''; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (keys['ArrowLeft']) this.hx-=4.5;
+    if (keys['ArrowRight']) this.hx+=4.5;
+    this.hx=clamp(this.hx,40,W-40);
+    if (--this.spawn<=0){ this.spawn=32; const dir=Math.random()<.5?1:-1;
+      this.fish.push({x:dir<0?W+30:-30, y:rand(250,H-60), v:dir*rand(1.5,3.2), e:pick(['🐟','🐠','🐡'])}); }
+    for (const f of this.fish) f.x+=f.v;
+    this.fish=this.fish.filter(f=>f.x>-50 && f.x<W+50);
+    if (pressed('Space')){
+      let caught=null, bd=42;
+      for (const f of this.fish){ const d=Math.hypot(f.x-this.hx, f.y-(H-60)); if (d<bd){ bd=d; caught=f; } }
+      if (caught){ this.fish=this.fish.filter(f=>f!==caught); this.got++; beep(800,0.08); this.msg='Preso! 🎣';
+        if (this.got>=this.need){ completeActivity('pesca'); setScene(Hub); } }
+      else { beep(200,0.1); this.msg='Manca...'; }
+    }
+  },
+  draw(){
+    sky('#9be7ff','#cfeffd');
+    const g=ctx.createLinearGradient(0,220,0,H); g.addColorStop(0,'#3aa7d8'); g.addColorStop(1,'#0a5a8a');
+    ctx.fillStyle=g; ctx.fillRect(0,220,W,H-220);
+    ctx.fillStyle='#8a5a30'; ctx.fillRect(this.hx-40,182,80,16);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(this.hx,198); ctx.lineTo(this.hx,H-60); ctx.stroke();
+    ctx.fillStyle='#ccc'; ctx.beginPath(); ctx.arc(this.hx,H-58,6,0,7); ctx.fill();
+    ctx.font='26px Arial'; ctx.textAlign='center'; for (const f of this.fish) ctx.fillText(f.e,f.x,f.y);
+    drawPlayer(this.hx-16,178,0.8,0,0); drawCompanion(this.hx+16,178,0.8,0,0);
+    header('PESCA','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-150,64,300,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Pesci presi: '+this.got+'/'+this.need+'   '+this.msg, W/2, 85);
+    ctx.fillStyle='#ffd86b'; ctx.font='13px Trebuchet MS';
+    ctx.fillText("◀ ▶ muovi l'amo  ·  SPAZIO per pescare", W/2, H-30);
+    backHint();
+  }
+};
+
+/* COLOR HOTEL — colora l'hotel col dito/mouse */
+const ColorHotelScene = {
+  colors:['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e67e22','#1abc9c','#ff7fd0'],
+  enter(){ this.t=0; this.ci=0; this.strokes=[]; this.cur=null; this.painted=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (pressed('ArrowLeft')) this.ci=(this.ci+this.colors.length-1)%this.colors.length;
+    if (pressed('ArrowRight')) this.ci=(this.ci+1)%this.colors.length;
+    const inB = ptr.y>120 && ptr.y<H-70 && ptr.x>40 && ptr.x<W-40;
+    if (ptr.down && inB){
+      if (!this.cur){ this.cur={c:this.colors[this.ci], pts:[]}; this.strokes.push(this.cur); }
+      this.cur.pts.push({x:ptr.x, y:ptr.y}); this.painted++;
+    } else this.cur=null;
+    if (pressed('Space')){
+      if (this.painted>20){ completeActivity('colorhotel'); setScene(Hub); }
+      else showToast("Colora l'hotel prima! 🎨");
+    }
+  },
+  draw(){
+    sky('#e8d6ff','#cdb0f0');
+    ctx.fillStyle='#fff'; rr(40,120,W-80,H-190,12); ctx.fill();
+    ctx.strokeStyle='#8e44ad'; ctx.lineWidth=4;
+    ctx.strokeRect(W/2-160,170,320,260);
+    for (let r=0;r<3;r++) for (let c=0;c<5;c++) ctx.strokeRect(W/2-140+c*60,190+r*70,40,45);
+    ctx.beginPath(); ctx.moveTo(W/2-180,170); ctx.lineTo(W/2,110); ctx.lineTo(W/2+180,170); ctx.stroke();
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for (const s of this.strokes){ ctx.strokeStyle=s.c; ctx.lineWidth=10; ctx.beginPath();
+      s.pts.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); }
+    this.colors.forEach((c,i)=>{ const x=W/2-this.colors.length*20+i*40;
+      ctx.fillStyle=c; rr(x,H-56,32,32,6); ctx.fill();
+      ctx.lineWidth=this.ci===i?4:1; ctx.strokeStyle=this.ci===i?'#000':'#999'; rr(x,H-56,32,32,6); ctx.stroke(); });
+    header('COLOR HOTEL','#5a2a8a');
+    ctx.fillStyle='rgba(0,0,0,.45)'; rr(W/2-200,64,400,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='13px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText("Colora l'hotel col dito/mouse · ◀ ▶ colore · SPAZIO = fatto", W/2, 85);
+    backHint();
+  }
+};
+
 /* mappa id -> scena */
 const SCENES = {
   roma: RomaScene, mare: MareScene, moto: MotoScene, bowling: BowlingScene,
@@ -1513,7 +1754,10 @@ const SCENES = {
   cavallo: CavalloScene, danza: DanzaScene,
   basket: BasketScene, calcio: CalcioScene, piscina: PiscinaScene, casa: CasaScene,
   disegno: DisegnoScene, parco: ParcoScene, bar: BarScene, cinese: CineseScene,
-  criceto: CricetoScene
+  criceto: CricetoScene,
+  parcoavventura: ParcoAvventuraScene, colorhotel: ColorHotelScene,
+  scuolaguida: ScuolaGuidaScene, pesca: PescaScene, giostre: GiostreScene,
+  piazzetta: PiazzettaScene, gavettoni: GavettoniScene, ristorante: RistoranteScene
 };
 
 /* =====================================================================
@@ -1559,6 +1803,7 @@ window.addEventListener('orientationchange', fit);
 fit();
 
 loadGame();      // ripristina i progressi salvati
+buildCity(currentCity);   // prepara la mappa della città salvata
 setScene(Menu);
 loop();
 </script>
