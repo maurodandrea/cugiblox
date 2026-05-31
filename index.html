@@ -411,17 +411,31 @@ function completeActivity(id){
    LE LOCATION
    ===================================================================== */
 const LOCATIONS = [
-  { id:'roma',    name:'Colosseo',    x:140, y:200, emoji:'🏛️', color:'#d9a441' },
-  { id:'mare',    name:'Al Mare',     x:300, y:140, emoji:'🏖️', color:'#37b6c9' },
-  { id:'moto',    name:'In Moto',     x:470, y:170, emoji:'🏍️', color:'#e0533d' },
-  { id:'bowling', name:'Bowling',     x:640, y:140, emoji:'🎳', color:'#9b59b6' },
-  { id:'scuola',  name:'A Scuola',    x:760, y:240, emoji:'🏫', color:'#5d8def' },
-  { id:'lavoro',  name:'Al Lavoro',   x:700, y:380, emoji:'💼', color:'#7f8c8d' },
-  { id:'acqua',   name:'Acqua Park',  x:520, y:430, emoji:'🌊', color:'#2dc3e8' },
-  { id:'bici',    name:'In Bici',     x:360, y:400, emoji:'🚲', color:'#27ae60' },
-  { id:'cavallo', name:'A Cavallo',   x:200, y:450, emoji:'🐴', color:'#b5651d' },
-  { id:'danza',   name:'A Danza',     x:130, y:340, emoji:'💃', color:'#e84393' },
+  { id:'roma',    name:'Colosseo',     emoji:'🏛️', color:'#d9a441' },
+  { id:'mare',    name:'Al Mare',      emoji:'🏖️', color:'#37b6c9' },
+  { id:'moto',    name:'In Moto',      emoji:'🏍️', color:'#e0533d' },
+  { id:'bowling', name:'Bowling',      emoji:'🎳', color:'#9b59b6' },
+  { id:'scuola',  name:'A Scuola',     emoji:'🏫', color:'#5d8def' },
+  { id:'lavoro',  name:'Al Lavoro',    emoji:'💼', color:'#7f8c8d' },
+  { id:'acqua',   name:'Acqua Park',   emoji:'🌊', color:'#2dc3e8' },
+  { id:'bici',    name:'In Bici',      emoji:'🚲', color:'#27ae60' },
+  { id:'cavallo', name:'A Cavallo',    emoji:'🐴', color:'#b5651d' },
+  { id:'danza',   name:'A Danza',      emoji:'💃', color:'#e84393' },
+  { id:'basket',  name:'Basket',       emoji:'🏀', color:'#e67e22' },
+  { id:'calcio',  name:'Calcio',       emoji:'⚽', color:'#2ecc71' },
+  { id:'piscina', name:'Piscina',      emoji:'🏊', color:'#3498db' },
+  { id:'casa',    name:'Casa',         emoji:'🏠', color:'#e74c3c' },
+  { id:'disegno', name:'Disegno',      emoji:'🎨', color:'#f1c40f' },
+  { id:'parco',   name:'Al Parco',     emoji:'🌳', color:'#16a085' },
+  { id:'bar',     name:'Al Bar',       emoji:'🍦', color:'#fd79a8' },
+  { id:'cinese',  name:'Negozio Cinese', emoji:'🏮', color:'#c0392b' },
+  { id:'criceto', name:'Il Criceto',   emoji:'🐹', color:'#d35400' },
 ];
+// Disposizione automatica a griglia (5 colonne)
+(function(){
+  const cols = 5, x0 = 110, dx = 175, y0 = 150, dy = 105;
+  LOCATIONS.forEach((L,i)=>{ L.x = x0 + (i%cols)*dx; L.y = y0 + Math.floor(i/cols)*dy; });
+})();
 
 /* =====================================================================
    MENU INIZIALE
@@ -553,10 +567,11 @@ const Hub = {
     const fd = Math.hypot(fdx,fdy);
     if (fd > 5){ this.dad.x += fdx*0.06; this.dad.y += fdy*0.06; }
 
-    // luogo più vicino
-    this.near = null;
+    // luogo più vicino (prende il più vicino in raggio)
+    this.near = null; let bestD = 40;
     for (const L of LOCATIONS){
-      if (Math.hypot(L.x-this.px, L.y-this.py) < 42){ this.near = L; break; }
+      const d = Math.hypot(L.x-this.px, L.y-this.py);
+      if (d < bestD){ bestD = d; this.near = L; }
     }
     if (this.near && pressed('Space')){
       beep(700,0.08);
@@ -585,19 +600,31 @@ const Hub = {
     // marker dei luoghi
     for (const L of LOCATIONS){
       const done = visited[L.id];
+      const hot = this.near === L;
+      const R = hot ? 38 : 34;             // icone più grandi (evidenziate se vicine)
+      // alone
+      ctx.fillStyle = 'rgba(0,0,0,.12)';
+      ctx.beginPath(); ctx.arc(L.x, L.y+3, R, 0, 7); ctx.fill();
+      // cerchio colorato
       ctx.fillStyle = L.color;
-      ctx.beginPath(); ctx.arc(L.x, L.y, 26, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,.25)';
-      ctx.beginPath(); ctx.arc(L.x, L.y, 26, 0, 7); ctx.fill();
-      ctx.font = '26px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.beginPath(); ctx.arc(L.x, L.y, R, 0, 7); ctx.fill();
+      ctx.lineWidth = hot ? 4 : 2;
+      ctx.strokeStyle = hot ? '#fff' : 'rgba(255,255,255,.6)';
+      ctx.beginPath(); ctx.arc(L.x, L.y, R, 0, 7); ctx.stroke();
+      // emoji grande
+      ctx.font = (hot?40:36)+'px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(L.emoji, L.x, L.y+1);
       ctx.textBaseline='alphabetic';
-      // nome
-      ctx.fillStyle = '#3a2a4a'; ctx.font = 'bold 12px Trebuchet MS';
-      ctx.fillText(L.name, L.x, L.y+42);
+      // nome su pillola leggibile
+      ctx.font = 'bold 15px Trebuchet MS';
+      const tw = ctx.measureText(L.name).width;
+      ctx.fillStyle = 'rgba(20,12,30,.78)';
+      rr(L.x - tw/2 - 8, L.y + R + 4, tw + 16, 22, 8); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(L.name, L.x, L.y + R + 20);
       if (done){
-        ctx.fillStyle = '#ffd000'; ctx.font='16px Arial';
-        ctx.fillText('★', L.x+20, L.y-18);
+        ctx.fillStyle = '#ffd000'; ctx.font='20px Arial';
+        ctx.fillText('★', L.x + R - 4, L.y - R + 8);
       }
     }
 
@@ -1111,11 +1138,375 @@ const DanzaScene = {
   }
 };
 
+/* =====================================================================
+   HELPER per le nuove scene
+   ===================================================================== */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+// puntatore (per il Disegno) convertito in coordinate del canvas
+const ptr = { x:0, y:0, down:false };
+(function setupPtr(){
+  const toC = (cx,cy)=>{ const r=cv.getBoundingClientRect();
+    ptr.x=(cx-r.left)/r.width*W; ptr.y=(cy-r.top)/r.height*H; };
+  cv.addEventListener('mousedown', e=>{ ptr.down=true; toC(e.clientX,e.clientY); });
+  window.addEventListener('mouseup', ()=> ptr.down=false);
+  cv.addEventListener('mousemove', e=> toC(e.clientX,e.clientY));
+  cv.addEventListener('touchstart', e=>{ ptr.down=true; const t=e.touches[0]; toC(t.clientX,t.clientY); }, {passive:true});
+  cv.addEventListener('touchmove', e=>{ const t=e.touches[0]; toC(t.clientX,t.clientY); }, {passive:true});
+  window.addEventListener('touchend', ()=> ptr.down=false);
+})();
+
+// Factory per i giochi "muoviti e raccogli"
+function makeCollect(opts){
+  return {
+    enter(){ this.t=0; this.x=W/2; this.y=H-110; this.items=[]; this.got=0; this.spawn=0; },
+    update(){
+      this.t++;
+      if (escToHub()) return;
+      const sp=4.2;
+      if (keys['ArrowLeft']) this.x-=sp;
+      if (keys['ArrowRight']) this.x+=sp;
+      if (keys['ArrowUp']) this.y-=sp;
+      if (keys['ArrowDown']) this.y+=sp;
+      this.x=clamp(this.x,24,W-24); this.y=clamp(this.y,130,H-30);
+      if (--this.spawn<=0){ this.spawn=38;
+        const bad = opts.bad && Math.random()<0.25;
+        this.items.push({x:rand(40,W-40), y:rand(140,H-50), bad, e: bad?opts.bad:pick(opts.good)}); }
+      this.items=this.items.filter(it=>{
+        if (Math.hypot(it.x-this.x,it.y-this.y)<28){
+          if (it.bad){ beep(180,0.12); } else { beep(800,0.07); this.got++; }
+          return false; }
+        return true; });
+      if (this.got>=opts.need){ completeActivity(opts.id); setScene(Hub); }
+    },
+    draw(){
+      sky(opts.bg[0], opts.bg[1]);
+      if (opts.stage) opts.stage.call(this, this.t);
+      ctx.font='26px Arial'; ctx.textAlign='center';
+      for (const it of this.items) ctx.fillText(it.e, it.x, it.y);
+      drawPlayer(this.x-15, this.y, 1, 0, this.t*0.2);
+      drawCompanion(this.x+17, this.y, 1, 0, this.t*0.2);
+      header(opts.title, opts.hcolor||'#fff');
+      ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-150,64,300,30,8); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 15px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText(opts.hint+' '+this.got+'/'+opts.need, W/2, 85);
+      backHint();
+    }
+  };
+}
+
+/* =====================================================================
+   SCENA: PISCINA (nuota e raccogli)
+   ===================================================================== */
+const PiscinaScene = makeCollect({
+  id:'piscina', title:'PISCINA', need:7, good:['🐠','🟡','🩴','🥽'],
+  bg:['#7ed4ff','#2aa7d8'], hint:'Raccogli in acqua:',
+  stage(){ ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=3;
+    for(let i=1;i<6;i++){ ctx.beginPath(); ctx.moveTo(0,120+i*80); ctx.lineTo(W,120+i*80); ctx.stroke(); }
+    ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fillRect(0,118,W,8); }
+});
+
+/* =====================================================================
+   SCENA: PARCO (raccogli foglie e fiori)
+   ===================================================================== */
+const ParcoScene = makeCollect({
+  id:'parco', title:'AL PARCO', need:7, good:['🍃','🌷','🦋','🐦','🌰','🛝'],
+  bg:['#bfe9ff','#a9d49a'], hcolor:'#2a3a4a', hint:'Raccogli nel parco:',
+  stage(){ ctx.fillStyle='#7fbf5a'; ctx.fillRect(0,180,W,H-180);
+    ctx.font='40px Arial'; ctx.textAlign='center';
+    ctx.fillText('🌳',120,200); ctx.fillText('🌳',W-120,210); ctx.fillText('🛝',W/2,200); }
+});
+
+/* =====================================================================
+   SCENA: BAR (prendi gelati e dolci, evita il peperoncino)
+   ===================================================================== */
+const BarScene = makeCollect({
+  id:'bar', title:'AL BAR', need:9, good:['🍦','🥤','🍩','🍪','🍫','🧁'], bad:'🌶️',
+  bg:['#ffe6f0','#ffc2dd'], hcolor:'#a02060', hint:'Prendi i dolci:',
+  stage(){ ctx.fillStyle='#fff'; ctx.fillRect(0,120,W,16); }
+});
+
+/* =====================================================================
+   SCENA: NEGOZIO CINESE (raccogli i prodotti)
+   ===================================================================== */
+const CineseScene = makeCollect({
+  id:'cinese', title:'NEGOZIO CINESE', need:9, good:['🥡','🥠','🧧','🍜','🐉','🏮'],
+  bg:['#e74c3c','#c0392b'], hint:'Raccogli i prodotti:',
+  stage(){ ctx.fillStyle='rgba(0,0,0,.18)'; for(let i=0;i<4;i++) ctx.fillRect(60,150+i*90,W-120,10);
+    ctx.fillStyle='#ffd700'; ctx.font='30px Arial'; ctx.textAlign='center'; ctx.fillText('🏮',70,150); ctx.fillText('🏮',W-70,150); }
+});
+
+/* =====================================================================
+   SCENA: BASKET (tira al momento giusto)
+   ===================================================================== */
+const BasketScene = {
+  enter(){ this.t=0; this.score=0; this.need=5; this.power=0; this.dir=1; this.ball=null; this.msg=''; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (!this.ball){
+      this.power += this.dir*2.3;
+      if (this.power>100||this.power<0) this.dir*=-1;
+      if (pressed('Space')){ const good=Math.abs(this.power-70)<14; this.ball={t:0, good}; }
+    } else {
+      this.ball.t += 0.05;
+      if (this.ball.t>=1){
+        if (this.ball.good){ this.score++; beep(900,0.1); this.msg='CANESTRO! 🏀'; }
+        else { beep(200,0.12); this.msg='Mancato!'; }
+        this.ball=null; this.power=0;
+        if (this.score>=this.need){ completeActivity('basket'); setScene(Hub); }
+      }
+    }
+  },
+  draw(){
+    sky('#ffd9a0','#ff9e6d');
+    const hx=W/2, hy=170;
+    ctx.fillStyle='#fff'; ctx.fillRect(hx-45,hy-55,90,60);
+    ctx.strokeStyle='#e0533d'; ctx.lineWidth=5; ctx.strokeRect(hx-45,hy-55,90,60);
+    ctx.strokeStyle='#e67e22'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.arc(hx,hy+22,24,0,Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(hx,hy+14,24,7,0,0,7); ctx.stroke();
+    if (this.ball){ const tt=this.ball.t, sx=W/2, sy=H-130, ex=hx, ey=hy+14;
+      const x=sx+(ex-sx)*tt, y=sy+(ey-sy)*tt - Math.sin(tt*Math.PI)*200;
+      ctx.fillStyle='#e67e22'; ctx.beginPath(); ctx.arc(x,y,15,0,7); ctx.fill();
+      ctx.strokeStyle='#7a3a10'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x-15,y); ctx.lineTo(x+15,y); ctx.stroke(); }
+    drawPlayer(W/2-28,H-60,1.1,0,0); drawCompanion(W/2+28,H-60,1.1,0,0);
+    header('BASKET','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-150,64,300,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Canestri: '+this.score+'/'+this.need+'   '+this.msg, W/2, 85);
+    if (!this.ball){
+      const bx=W/2-110, bw=220;
+      ctx.fillStyle='rgba(0,0,0,.4)'; rr(bx,H-48,bw,18,6); ctx.fill();
+      ctx.fillStyle='rgba(46,204,113,.7)'; ctx.fillRect(bx+0.56*bw, H-48, 0.28*bw, 18);  // zona ideale
+      ctx.fillStyle='#fff'; ctx.fillRect(bx + this.power/100*bw - 2, H-51, 4, 24);
+      ctx.fillStyle='#ffd86b'; ctx.font='13px Trebuchet MS';
+      ctx.fillText('SPAZIO quando il cursore è nella zona verde', W/2, H-58);
+    }
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: CALCIO (mira e tira il rigore)
+   ===================================================================== */
+const CalcioScene = {
+  enter(){ this.t=0; this.score=0; this.need=4; this.dir=1; this.gk=1; this.state='aim'; this.anim=0; this.msg=''; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (this.state==='aim'){
+      if (pressed('ArrowLeft')) this.dir=0;
+      if (pressed('ArrowUp')) this.dir=1;
+      if (pressed('ArrowRight')) this.dir=2;
+      if (pressed('Space')){ this.gk=Math.floor(rand(0,3)); this.state='shoot'; this.anim=0; }
+    } else if (this.state==='shoot'){
+      this.anim += 0.045;
+      if (this.anim>=1){
+        const goal = this.dir!==this.gk;
+        if (goal){ this.score++; beep(900,0.12); this.msg='GOOOL! ⚽'; }
+        else { beep(200,0.12); this.msg='Parato! 🧤'; }
+        this.state='aim';
+        if (this.score>=this.need){ completeActivity('calcio'); setScene(Hub); }
+      }
+    }
+  },
+  draw(){
+    sky('#9be7ff','#7ec850');
+    const gx=W/2, gw=320, gy=150;
+    ctx.strokeStyle='#fff'; ctx.lineWidth=8; ctx.strokeRect(gx-gw/2, gy, gw, 120);
+    const slots=[gx-gw/2+55, gx, gx+gw/2-55];
+    let gkx = this.state==='aim' ? gx+Math.sin(this.t*0.05)*110 : slots[this.gk];
+    drawCompanion(gkx, gy+118, 1.2, 0, this.t*0.12);
+    let bx=W/2, by=H-130;
+    if (this.state==='shoot'){ bx=W/2+(slots[this.dir]-W/2)*this.anim; by=(H-130)+(gy+60-(H-130))*this.anim; }
+    ctx.font='28px Arial'; ctx.textAlign='center'; ctx.fillText('⚽', bx, by+6);
+    drawPlayer(W/2, H-66, 1.2, 0, 0);
+    header('CALCIO','#fff');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-150,64,300,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Gol: '+this.score+'/'+this.need+'   '+this.msg, W/2, 85);
+    if (this.state==='aim'){
+      ctx.fillStyle='#ffd86b'; ctx.font='14px Trebuchet MS';
+      ctx.fillText('Mira: '+['◀ sinistra','▲ centro','▶ destra'][this.dir]+'  ·  SPAZIO per tirare', W/2, H-30);
+    }
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: DISEGNO (lavagna libera col dito/mouse)
+   ===================================================================== */
+const DisegnoScene = {
+  colors:['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e67e22','#222','#ff7fd0'],
+  enter(){ this.t=0; this.ci=0; this.strokes=[]; this.cur=null; this.painted=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (pressed('ArrowLeft')) this.ci=(this.ci+this.colors.length-1)%this.colors.length;
+    if (pressed('ArrowRight')) this.ci=(this.ci+1)%this.colors.length;
+    const inBoard = ptr.y>120 && ptr.y<H-70 && ptr.x>40 && ptr.x<W-40;
+    if (ptr.down && inBoard){
+      if (!this.cur){ this.cur={c:this.colors[this.ci], pts:[]}; this.strokes.push(this.cur); }
+      this.cur.pts.push({x:ptr.x, y:ptr.y}); this.painted++;
+    } else { this.cur=null; }
+    if (pressed('Space')){
+      if (this.painted>20){ completeActivity('disegno'); setScene(Hub); }
+      else showToast('Disegna qualcosa prima! ✏️');
+    }
+  },
+  draw(){
+    sky('#fff7e6','#ffe9c2');
+    ctx.fillStyle='#fff'; rr(40,120,W-80,H-190,12); ctx.fill();
+    ctx.strokeStyle='#caa472'; ctx.lineWidth=8; rr(40,120,W-80,H-190,12); ctx.stroke();
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for (const s of this.strokes){ ctx.strokeStyle=s.c; ctx.lineWidth=6; ctx.beginPath();
+      s.pts.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); }
+    // palette
+    this.colors.forEach((c,i)=>{ const x=W/2-this.colors.length*20+i*40;
+      ctx.fillStyle=c; rr(x,H-56,32,32,6); ctx.fill();
+      ctx.lineWidth=this.ci===i?4:1; ctx.strokeStyle=this.ci===i?'#000':'#999'; rr(x,H-56,32,32,6); ctx.stroke(); });
+    header('DISEGNO','#a06a10');
+    ctx.fillStyle='rgba(0,0,0,.45)'; rr(W/2-200,64,400,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='13px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Disegna col dito/mouse · ◀ ▶ colore · SPAZIO/AZIONE = fatto', W/2, 85);
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: CRICETO (premi veloce per far girare la ruota)
+   ===================================================================== */
+const CricetoScene = {
+  enter(){ this.t=0; this.spin=0; this.prog=0; this.angle=0; },
+  update(){
+    this.t++;
+    if (escToHub()) return;
+    if (pressed('Space')){ this.spin=Math.min(this.spin+16,60); this.prog+=2.5; beep(500+this.prog*3,0.04); }
+    this.spin=Math.max(0,this.spin-1.1); this.angle+=this.spin*0.04;
+    this.prog=Math.max(0,this.prog-0.18);
+    if (this.prog>=100){ completeActivity('criceto'); setScene(Hub); }
+  },
+  draw(){
+    sky('#ffe9c2','#ffd9a0');
+    ctx.strokeStyle='rgba(120,90,60,.45)'; ctx.lineWidth=3;
+    for (let i=0;i<16;i++){ ctx.beginPath(); ctx.moveTo(120+i*42,120); ctx.lineTo(120+i*42,470); ctx.stroke(); }
+    const wx=W/2, wy=310, R=110;
+    ctx.strokeStyle='#c0392b'; ctx.lineWidth=9; ctx.beginPath(); ctx.arc(wx,wy,R,0,7); ctx.stroke();
+    ctx.save(); ctx.translate(wx,wy); ctx.rotate(this.angle);
+    ctx.strokeStyle='rgba(192,57,43,.5)'; ctx.lineWidth=4;
+    for (let i=0;i<8;i++){ const a=i*Math.PI/4; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R); ctx.stroke(); }
+    ctx.restore();
+    const run=Math.sin(this.t*0.4)*4*(this.spin>2?1:0);
+    ctx.font='54px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🐹', wx, wy+R-34+run); ctx.textBaseline='alphabetic';
+    drawPlayer(wx-150,440,1,0,0); drawCompanion(wx+150,440,1,0,0);
+    header('IL CRICETO','#a04010');
+    ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-170,64,340,30,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 14px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Premi SPAZIO veloce per far correre il criceto!', W/2, 85);
+    ctx.fillStyle='rgba(0,0,0,.3)'; rr(W/2-100,H-48,200,16,6); ctx.fill();
+    ctx.fillStyle='#e67e22'; rr(W/2-100,H-48,this.prog*2,16,6); ctx.fill();
+    backHint();
+  }
+};
+
+/* =====================================================================
+   SCENA: CASA (sotto-menu: dormire, bagno, compiti, TV, giocare)
+   ===================================================================== */
+const CasaScene = {
+  items:[
+    {id:'dormi',   name:'Dormire',  emoji:'🛏️'},
+    {id:'bagno',   name:'Bagno',    emoji:'🚽'},
+    {id:'compiti', name:'Compiti',  emoji:'📓'},
+    {id:'tv',      name:'Guarda TV',emoji:'📺'},
+    {id:'gioca',   name:'Giocare',  emoji:'🧸'},
+  ],
+  enter(){ this.t=0; this.sel=0; this.sub=null; this.subT=0; this.tvCh=0; this.compiti=null; },
+  update(){
+    this.t++;
+    if (this.sub){ this.updateSub(); return; }
+    if (escToHub()) return;
+    const n=this.items.length;
+    if (pressed('ArrowLeft')) this.sel=(this.sel+n-1)%n;
+    if (pressed('ArrowRight')) this.sel=(this.sel+1)%n;
+    if (pressed('Space')||pressed('Enter')){ this.sub=this.items[this.sel].id; this.subT=0; beep(600,0.08);
+      if (this.sub==='compiti'){ const a=Math.floor(rand(1,10)), b=Math.floor(rand(1,10));
+        const s=new Set([a+b]); while(s.size<3) s.add(a+b+Math.floor(rand(-4,5)));
+        this.compiti={a,b,ans:a+b,opts:[...s].sort(()=>Math.random()-0.5)}; } }
+  },
+  finish(){ completeActivity('casa'); this.sub=null; },
+  updateSub(){
+    this.subT++;
+    if (pressed('Escape')){ this.sub=null; return; }
+    if (this.sub==='tv'){ if(pressed('ArrowLeft')) this.tvCh=(this.tvCh+3)%4; if(pressed('ArrowRight')) this.tvCh=(this.tvCh+1)%4; }
+    if (this.sub==='compiti'){
+      const p=i=>{ if(this.compiti.opts[i]===this.compiti.ans){ beep(900,0.1); this.finish(); } else beep(200,0.12); };
+      if (pressed('ArrowLeft')) p(0); if (pressed('ArrowUp')) p(1); if (pressed('ArrowRight')) p(2);
+      return;
+    }
+    if (this.subT>30 && pressed('Space')) this.finish();
+  },
+  draw(){
+    if (this.sub){ this.drawSub(); return; }
+    sky('#ffe0d0','#ffc2a8');
+    ctx.fillStyle='#e74c3c'; ctx.beginPath(); ctx.moveTo(W/2-190,210); ctx.lineTo(W/2,120); ctx.lineTo(W/2+190,210); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#f3d9b0'; ctx.fillRect(W/2-160,210,320,170);
+    ctx.fillStyle='#8a5a30'; ctx.fillRect(W/2-30,300,60,80);
+    header('A CASA','#a03020');
+    ctx.fillStyle='#7a3020'; ctx.font='bold 18px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('Cosa vuoi fare in casa?', W/2, 175);
+    this.items.forEach((it,i)=>{ const x=120+i*132, on=this.sel===i;
+      ctx.fillStyle=on?'rgba(231,76,60,.28)':'rgba(255,255,255,.65)'; rr(x,415,120,125,14); ctx.fill();
+      ctx.lineWidth=on?5:2; ctx.strokeStyle=on?'#e74c3c':'#bbb'; rr(x,415,120,125,14); ctx.stroke();
+      ctx.font='46px Arial'; ctx.textAlign='center'; ctx.fillText(it.emoji, x+60, 485);
+      ctx.fillStyle='#5a2a1a'; ctx.font='bold 14px Trebuchet MS'; ctx.fillText(it.name, x+60, 522); });
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.font='13px Trebuchet MS';
+    ctx.fillText('◀ ▶ scegli  ·  SPAZIO entra  ·  ESC esci da casa', W/2, H-12);
+  },
+  drawSub(){
+    const s=this.sub;
+    if (s==='dormi'){ sky('#0a0a2a','#1a1a44');
+      ctx.fillStyle='#ffd86b'; ctx.font='28px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText('z'.repeat(1+Math.floor(this.subT/15)%4)+'Zzz', W/2, H/2-70);
+      ctx.font='70px Arial'; ctx.fillText('🛏️😴', W/2, H/2);
+      ctx.fillStyle='#fff'; ctx.font='15px Trebuchet MS'; ctx.fillText('SPAZIO per svegliarsi riposati ☀️', W/2, H/2+70);
+    } else if (s==='bagno'){ sky('#d6f0ff','#bfe4f5');
+      ctx.font='80px Arial'; ctx.textAlign='center'; ctx.fillText('🚽🧼', W/2, H/2);
+      ctx.fillStyle='#246'; ctx.font='16px Trebuchet MS'; ctx.fillText('Lavati le mani! SPAZIO per finire', W/2, H/2+80);
+    } else if (s==='tv'){ sky('#222','#111');
+      const shows=['📺 Cartoni','⚽ Sport','🎬 Film','🎵 Musica'];
+      ctx.fillStyle='#333'; rr(W/2-210,150,420,250,14); ctx.fill();
+      ctx.fillStyle=['#5d8def','#2ecc71','#e74c3c','#e84393'][this.tvCh]; rr(W/2-188,170,376,210,8); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 32px Trebuchet MS'; ctx.textAlign='center'; ctx.fillText(shows[this.tvCh], W/2, 285);
+      ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.fillText('◀ ▶ cambia canale  ·  SPAZIO per finire', W/2, 440);
+    } else if (s==='gioca'){ sky('#fff0d0','#ffe0a0');
+      ctx.font='70px Arial'; ctx.textAlign='center'; ctx.fillText('🧸🪀🎲', W/2, H/2);
+      ctx.fillStyle='#7a4a10'; ctx.font='16px Trebuchet MS'; ctx.fillText('Che bel gioco! SPAZIO per finire', W/2, H/2+80);
+    } else if (s==='compiti'){ sky('#eef5ff','#cfe0ff');
+      ctx.fillStyle='#2e5d3e'; rr(W/2-200,130,400,150,10); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 40px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText(this.compiti.a+' + '+this.compiti.b+' = ?', W/2, 220);
+      const lab=['◀','▲','▶'];
+      this.compiti.opts.forEach((v,i)=>{ const x=W/2-180+i*120;
+        ctx.fillStyle='#ffd86b'; rr(x,310,100,50,10); ctx.fill();
+        ctx.fillStyle='#3a2a1a'; ctx.font='bold 22px Trebuchet MS'; ctx.fillText(v,x+50,342);
+        ctx.font='14px Trebuchet MS'; ctx.fillText(lab[i],x+50,378); });
+    }
+    drawPlayer(W/2-30,H-26,0.9,0,0); drawCompanion(W/2+30,H-26,0.9,0,0);
+    ctx.fillStyle='rgba(255,255,255,.7)'; ctx.font='12px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText('ESC per tornare alle stanze', W/2, 22);
+  }
+};
+
 /* mappa id -> scena */
 const SCENES = {
   roma: RomaScene, mare: MareScene, moto: MotoScene, bowling: BowlingScene,
   scuola: ScuolaScene, lavoro: LavoroScene, acqua: AcquaScene, bici: BiciScene,
-  cavallo: CavalloScene, danza: DanzaScene
+  cavallo: CavalloScene, danza: DanzaScene,
+  basket: BasketScene, calcio: CalcioScene, piscina: PiscinaScene, casa: CasaScene,
+  disegno: DisegnoScene, parco: ParcoScene, bar: BarScene, cinese: CineseScene,
+  criceto: CricetoScene
 };
 
 /* =====================================================================
