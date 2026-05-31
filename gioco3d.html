@@ -67,10 +67,11 @@
   <div class="sub">Tocca una città sulla cartina</div>
   <div id="mapWrap">
     <svg id="italy" viewBox="0 0 300 400">
-      <path class="land" d="M60,70 C82,54 122,50 152,63 C168,70 172,92 159,112 C177,123 197,142 189,167 C183,187 166,196 169,216 C173,241 200,251 206,276 C209,293 199,306 211,319 C221,331 216,349 205,351 C195,353 189,342 187,330 C168,326 159,306 157,289 C150,266 139,251 137,231 C135,213 144,201 139,186 C119,181 99,166 91,146 C81,121 70,100 60,70 Z"/>
-      <g class="mk" data-city="roma"><circle cx="146" cy="198" r="9"/><text x="120" y="192" text-anchor="end">Roma</text></g>
-      <g class="mk" data-city="matera"><circle cx="182" cy="252" r="9"/><text x="200" y="248" text-anchor="start">Matera</text></g>
-      <g class="mk" data-city="rossano"><circle cx="196" cy="306" r="9"/><text x="214" y="312" text-anchor="start">Rossano</text></g>
+      <path class="land" d="M65,97 L91,70 L154,76 L150,142 L185,193 L194,217 L213,250 L195,244 L190,262 L177,313 L174,274 L159,232 L134,196 L113,163 L90,124 Z"/>
+      <path class="land" d="M143,330 L177,326 L160,350 Z"/>
+      <g class="mk" data-city="roma"><circle cx="140" cy="193" r="9"/><text x="124" y="189" text-anchor="end">Roma</text></g>
+      <g class="mk" data-city="matera"><circle cx="184" cy="232" r="9"/><text x="200" y="228" text-anchor="start">Matera</text></g>
+      <g class="mk" data-city="rossano"><circle cx="187" cy="262" r="9"/><text x="203" y="272" text-anchor="start">Rossano</text></g>
     </svg>
   </div>
   <button class="go" id="mapBack" style="background:rgba(255,255,255,.15);color:#fff">◀ Cambia personaggio</button>
@@ -104,7 +105,7 @@ const CHARS = {
   giorgia:{name:'Giorgia',age:10,skin:0xf3cda9,hair:0x7a4a28,style:'long',  shirt:0xf7f7f7,pants:0x4a6fa5},
   babbo:  {name:'Babbo',  age:30,skin:0xe8b894,hair:0x52443a,style:'adult', shirt:0x5a6b85,pants:0x6a8fc0,beard:true},
   letizia:{name:'Letizia',age:12,skin:0xf6d6b8,hair:0xb8895a,style:'long',  shirt:0xff9ec4,pants:0xd56fa0},
-  eleonora:{name:'Eleonora',age:10,skin:0xf3cda9,hair:0xc79a5b,style:'medium',shirt:0xb07cd6,pants:0x5b4a8a},
+  eleonora:{name:'Eleonora',age:10,skin:0xf3cda9,hair:0xc79a5b,style:'long',shirt:0xb07cd6,pants:0x5b4a8a},
   corrado:{name:'Corrado',age:8, skin:0xf0c9a8,hair:0x8a5a30,style:'curly', shirt:0x4cae58,pants:0x3a6fa0},
   giulio: {name:'Giulio', age:6, skin:0xf0c9a8,hair:0x2a2018,style:'buzz',  shirt:0xffce3a,pants:0x444444},
 };
@@ -784,7 +785,7 @@ function avatarThumb(id){ if(thumbCache[id])return thumbCache[id]; if(!thumbR)th
   thumbScene.remove(g); g.traverse(o=>{ if(o.geometry)o.geometry.dispose(); if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());} }); thumbCache[id]=url; return url; }
 function buildCharGrid(){ const el=document.getElementById('charGrid'); el.innerHTML='';
   CHAR_IDS.forEach(id=>{ const cfg=CHARS[id]; const d=document.createElement('div'); d.className='card'+(id===hero?' sel':'');
-    d.innerHTML='<img class="avt" src="'+avatarThumb(id)+'" alt="'+cfg.name+'"><div class="nm">'+cfg.name+'</div><div class="ag">'+(cfg.age>=18?'adulto':cfg.age+' anni')+'</div>';
+    d.innerHTML='<img class="avt" src="'+avatarThumb(id)+'" alt="'+cfg.name+'"><div class="nm">'+cfg.name+'</div>';
     d.onclick=()=>{ hero=id; [...el.children].forEach(c=>c.classList.remove('sel')); d.classList.add('sel'); }; el.appendChild(d); }); }
 
 /* wiring */
