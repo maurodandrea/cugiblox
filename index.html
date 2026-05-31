@@ -248,6 +248,13 @@ function drawHair(style, color){
     rr(-11, -12, 4, 16, 2); ctx.fill();
     rr(7, -12, 4, 16, 2); ctx.fill();
     ctx.fillRect(-10, -15, 20, 5);          // frangia
+  } else if (style === 'buzz'){             // capelli a spazzola
+    ctx.beginPath(); ctx.arc(0, -12, 9.5, Math.PI, 0); ctx.fill();
+    for (let i=-3;i<=3;i++) ctx.fillRect(i*2.6-0.8, -22, 1.6, 4);
+  } else if (style === 'curlyShort'){       // ricci corti
+    ctx.beginPath(); ctx.arc(0, -13, 9.5, Math.PI, 0); ctx.fill();
+    for (let i=0;i<6;i++){ const a = Math.PI + i*(Math.PI/5);
+      ctx.beginPath(); ctx.arc(Math.cos(a)*9, -13+Math.sin(a)*4, 3.5, 0, 7); ctx.fill(); }
   }
 }
 
@@ -257,8 +264,8 @@ function drawChar(x, y, s=1, face=0, walk=0, o={}){
   ctx.scale(s, s);
   const bob = Math.sin(walk)*1.5;
   ctx.translate(0, bob);
-  // i bambini sono più piccoli, mantenendo i piedi sulla stessa linea
-  const k = o.child ? 0.78 : 1;
+  // i bambini sono più piccoli (in base all'età), coi piedi sulla stessa linea
+  const k = o.child ? clamp(0.6 + (o.age-6)*0.03, 0.55, 0.85) : 1;
   ctx.translate(0, 45*(1-k));
   ctx.scale(k, k);
 
@@ -306,17 +313,17 @@ function drawChar(x, y, s=1, face=0, walk=0, o={}){
 
 /* Registro dei personaggi giocabili */
 const CHARACTERS = [
-  { id:'giorgia', name:'Giorgia', o:{ hair:'#7a4a28', hairStyle:'longStraight', skin:'#f3cda9',
-      shirt:'#f7f7f7', number:'95', accent:'#5a6470', pants:'#4a6fa5', shorts:true, shoes:'#fff' } },
+  { id:'giorgia', name:'Giorgia (10)', o:{ child:true, age:10, hair:'#7a4a28', hairStyle:'longStraight',
+      skin:'#f3cda9', shirt:'#f7f7f7', number:'95', accent:'#5a6470', pants:'#4a6fa5', shorts:true, shoes:'#fff' } },
   { id:'babbo', name:'Babbo', o:{ hair:'#52443a', hairStyle:'short', beard:true, broad:true,
       skin:'#e8b894', shirt:'#5a6b85', pants:'#6a8fc0', shoes:'#dadada' } },
-  { id:'letizia', name:'Letizia', o:{ child:true, hair:'#b8895a', hairStyle:'longStraight',
+  { id:'letizia', name:'Letizia (12)', o:{ child:true, age:12, hair:'#b8895a', hairStyle:'longStraight',
       skin:'#f6d6b8', shirt:'#ff9ec4', pants:'#d56fa0', shorts:true, shoes:'#fff' } },
-  { id:'eleonora', name:'Eleonora', o:{ hair:'#c79a5b', hairStyle:'medium', skin:'#f3cda9',
-      shirt:'#b07cd6', pants:'#5b4a8a', shoes:'#eee' } },
-  { id:'corrado', name:'Corrado', o:{ child:true, hair:'#8a5a30', hairStyle:'curly',
+  { id:'eleonora', name:'Eleonora (10)', o:{ child:true, age:10, hair:'#c79a5b', hairStyle:'medium',
+      skin:'#f3cda9', shirt:'#b07cd6', pants:'#5b4a8a', shoes:'#eee' } },
+  { id:'corrado', name:'Corrado (8)', o:{ child:true, age:8, hair:'#8a5a30', hairStyle:'curlyShort',
       skin:'#f0c9a8', shirt:'#4cae58', pants:'#3a6fa0', shoes:'#e74c3c' } },
-  { id:'giulio', name:'Giulio', o:{ child:true, hair:'#2a2018', hairStyle:'bob',
+  { id:'giulio', name:'Giulio (6)', o:{ child:true, age:6, hair:'#2a2018', hairStyle:'buzz',
       skin:'#f0c9a8', shirt:'#ffce3a', pants:'#444', shoes:'#222' } },
 ];
 function charById(id){ return CHARACTERS.find(c=>c.id===id) || CHARACTERS[0]; }
