@@ -390,7 +390,7 @@ function DriveGame(opts){
   if(slide){ for(let i=0;i<4;i++){ const flume=new THREE.Mesh(new THREE.TorusGeometry(4,.6,8,16,Math.PI),M([0x6bd0ff,0xff6b6b,0xffd24a,0x9bff5b][i],.4)); flume.position.set((i%2?1:-1)*13,3.2,-15-i*16); flume.rotation.set(Math.PI/2,0,.35); world.add(flume); const sup=cyl(.2,.2,3.4,0xcfd6da); sup.position.set((i%2?1:-1)*13,1.6,-15-i*16); world.add(sup); } }
   const haz=[], money=[]; const COL=[0x2980b9,0x27ae60,0xf1c40f,0x8e44ad,0xe67e22,0xecf0f1];
   let dist=0, speed=slide?20:16, spawn=0, cspawn=0, crashT=0, passed=0, won=false, tt=0, kamNext=130, kamT=0;
-  const race=!!opts.race; const opps=race?makeOpponents(3,(rid)=>makeVehicle(opts.veh,rid),MAXS*0.6,8):[]; opps.forEach(o=>o.lane=[-LANEX,LANEX,0][o.idx%3]);
+  const race=!!opts.race; const opps=race?makeOpponents(3,(rid)=>makeVehicle(opts.veh,rid),MAXS*0.72,8):[]; opps.forEach(o=>o.lane=[-LANEX,LANEX,0][o.idx%3]);
   setInstr(bike?'◀ ▶ pedala ed evita alberi, sassi e ostacoli! 🚲':slide?'◀ ▶ guida sullo scivolo, prendi le ciambelle 🛟':race?'◀▶ sterza · ▲ accelera · ▼ frena · batti gli avversari! 🏍️':'◀ ▶ sterza · supera/schiva · 🪙 = punti');
   camera.position.set(0,4.2,12); camera.lookAt(0,1,0);
   function coin(){ const m=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.08,18),M(0xffd700,.3)); m.rotation.x=Math.PI/2; m.castShadow=true; return m; }
