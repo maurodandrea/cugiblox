@@ -781,6 +781,7 @@ const THEMES = {
 };
 
 /* ===================== ABILITÀ ===================== */
+function netTexture(rx,ry){ const c=document.createElement('canvas'); c.width=64;c.height=64; const x=c.getContext('2d'); x.clearRect(0,0,64,64); x.strokeStyle='rgba(255,255,255,.9)'; x.lineWidth=3; for(let i=0;i<=64;i+=9){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,64); x.moveTo(0,i); x.lineTo(64,i); x.stroke(); } const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx||4,ry||3); return t; }
 function ballTexture(kind){ const c=document.createElement('canvas'); c.width=128;c.height=128; const x=c.getContext('2d');
   if(kind==='basket'){ x.fillStyle='#e07b1a'; x.fillRect(0,0,128,128); x.strokeStyle='#241208'; x.lineWidth=4; x.beginPath(); x.moveTo(64,0); x.lineTo(64,128); x.moveTo(0,64); x.lineTo(128,64); x.stroke(); x.beginPath(); x.arc(64,-26,92,0,Math.PI*2); x.stroke(); x.beginPath(); x.arc(64,154,92,0,Math.PI*2); x.stroke(); }
   else if(kind==='soccer'){ x.fillStyle='#f5f5f5'; x.fillRect(0,0,128,128); x.fillStyle='#1a1a1a'; for(let i=0;i<6;i++){ const px=22+(i%3)*44, py=26+Math.floor(i/3)*64; x.beginPath(); for(let k=0;k<5;k++){ const a=k/5*Math.PI*2-Math.PI/2, xx=px+Math.cos(a)*13, yy=py+Math.sin(a)*13; k?x.lineTo(xx,yy):x.moveTo(xx,yy); } x.closePath(); x.fill(); } }
