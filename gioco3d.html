@@ -159,6 +159,18 @@ const isTouch=('ontouchstart'in window)||navigator.maxTouchPoints>0;
 let AC=null;
 function beep(f=440,d=.08,t='square',v=.05){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
   const o=AC.createOscillator(),g=AC.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v; o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d);}catch(e){} }
+let musicTimer=null;
+function startMusic(){ stopMusic(); if(!AC)return; const mel=[262,330,392,330,294,247,294,392,262,392,440,392]; let i=0;
+  musicTimer=setInterval(()=>{ try{ if(!AC)return; const f=mel[i%mel.length]; i++; const o=AC.createOscillator(),g=AC.createGain(); o.type='triangle'; o.frequency.value=f; g.gain.value=0.0001; o.connect(g); g.connect(AC.destination); const tn=AC.currentTime; g.gain.exponentialRampToValueAtTime(0.05,tn+0.02); g.gain.exponentialRampToValueAtTime(0.0001,tn+0.3); o.start(tn); o.stop(tn+0.32); }catch(e){} },320); }
+function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } }
+function makeTreat(kind){ const g=new THREE.Group();
+  if(kind==='gelato'){ const cone=new THREE.Mesh(new THREE.ConeGeometry(.07,.18,8),M(0xd9a05a)); cone.rotation.x=Math.PI; const s1=new THREE.Mesh(new THREE.SphereGeometry(.07,8,8),M(0xff9ec4)); s1.position.y=.12; g.add(cone,s1); }
+  else if(kind==='patatine'){ const box=new THREE.Mesh(new THREE.BoxGeometry(.12,.16,.08),M(0xe04030)); for(let i=0;i<4;i++){ const fr=new THREE.Mesh(new THREE.BoxGeometry(.02,.14,.02),M(0xffd24a)); fr.position.set(-.04+i*.025,.12,0); g.add(fr);} g.add(box); }
+  else if(kind==='caffe'){ g.add(new THREE.Mesh(new THREE.CylinderGeometry(.06,.05,.09,10),M(0xffffff))); }
+  else if(kind==='yogurt'){ g.add(new THREE.Mesh(new THREE.CylinderGeometry(.06,.05,.12,10),M(0xf2e9d0))); }
+  else if(kind==='cornetto'){ g.add(new THREE.Mesh(new THREE.TorusGeometry(.07,.03,8,12,Math.PI*1.2),M(0xd9a05a))); }
+  else { const gl=new THREE.Mesh(new THREE.CylinderGeometry(.07,.03,.14,10),M(0xff6b6b,.4)); const um=new THREE.Mesh(new THREE.ConeGeometry(.06,.03,8),M(0x6bd0ff)); um.position.y=.1; g.add(gl,um); }
+  return g; }
 
 /* ===================== THREE ===================== */
 const canvas=document.getElementById('scene');
@@ -175,7 +187,7 @@ function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=inner
 addEventListener('resize',resize); resize();
 const M=(c,r=0.85)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:0.04});
 function applyTheme(){ const c=CITIES[city]; scene.background=new THREE.Color(c.sky); scene.fog=new THREE.Fog(c.sky,55,180); }
-function clearWorld(){ for(let i=world.children.length-1;i>=0;i--){ const o=world.children[i];
+function clearWorld(){ stopMusic(); for(let i=world.children.length-1;i>=0;i--){ const o=world.children[i];
   o.traverse(n=>{ if(n.geometry)n.geometry.dispose(); if(n.material){(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>m.dispose());} }); world.remove(o); } }
 function addGround2(col){ const g=new THREE.Mesh(new THREE.PlaneGeometry(500,500),M(col,.95)); g.rotation.x=-Math.PI/2; g.receiveShadow=true; world.add(g); return g; }
 function B(w,h,d,c,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; world.add(m); return m; }
@@ -395,7 +407,8 @@ function DriveGame(opts){
     if(slide){ if(dist>=kamNext){ kamNext+=rand(120,180); kamT=2.3; beep(1000,.18); showMsg('🌀 KAMIKAZE!'); } if(kamT>0){ kamT-=dt; cruise*=1.7; if(kamT<=0)showMsg(''); } }
     const cap=MAXS*((slide&&kamT>0)?1.6:1);
     speed += (Math.min(cap,cruise)-speed)*Math.min(1,dt*1.6); dist+=speed*dt;
-    const tx=veh.position.x+(keys['ArrowLeft']?-1:0)*speed*dt*0.9+(keys['ArrowRight']?1:0)*speed*dt*0.9;
+    const lv=race?7:slide?12:speed*0.9;   // moto: sterzata piu dolce
+    const tx=veh.position.x+((keys['ArrowLeft']?-1:0)+(keys['ArrowRight']?1:0))*lv*dt;
     veh.position.x=THREE.MathUtils.clamp(tx,-LANEX,LANEX);
     veh.rotation.z=THREE.MathUtils.lerp(veh.rotation.z,(keys['ArrowLeft']?0.12:0)+(keys['ArrowRight']?-0.12:0),0.2);
     wheels.forEach(w=>w.rotation.x-=speed*dt);
@@ -436,7 +449,14 @@ function GameBiciMontagna(){
   for(let i=0;i<N;i++){ const s=new THREE.Mesh(new THREE.BoxGeometry(HALF*2,.3,SEG+0.4),M(TCOL[0],.92)); s.receiveShadow=true; world.add(s); slices.push(s);
     const mkTree=()=>{ const g=new THREE.Group(); const tr=new THREE.Mesh(new THREE.CylinderGeometry(.2,.28,2.2,7),M(0x6b4423)); tr.position.y=1.1; const lv=new THREE.Mesh(new THREE.ConeGeometry(1,2.4,8),M(0x2f7a3a)); lv.position.y=2.8; g.add(tr,lv); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); return g; };
     const tl=mkTree(), tr2=mkTree(); world.add(tl,tr2); trees.push([tl,tr2]); }
-  const obPool=[]; for(let i=0;i<8;i++){ const g=new THREE.Group(); const r=new THREE.Mesh(new THREE.DodecahedronGeometry(.55),M(0x8a8f99,.9)); r.position.y=.35; g.add(r); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); g.visible=false; world.add(g); obPool.push(g); }
+  // ostacoli radi e vari: sasso (raro), tronco, pozzanghera
+  const obPool=[]; for(let i=0;i<4;i++){ const g=new THREE.Group();
+    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.5),M(0x8a8f99,.9)); rock.position.y=.32;
+    const log=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,2.2,10),M(0x6b4423)); log.rotation.z=Math.PI/2; log.position.y=.32;
+    const pud=new THREE.Mesh(new THREE.CircleGeometry(.85,18),new THREE.MeshStandardMaterial({color:0x2f6f9a,transparent:true,opacity:.7,roughness:.2})); pud.rotation.x=-Math.PI/2; pud.position.y=.06;
+    g.add(rock,log,pud); g.userData.parts={rock,log,pud}; g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); g.visible=false; world.add(g); obPool.push(g); }
+  // schizzo pozzanghera
+  const splash=new THREE.Mesh(new THREE.RingGeometry(.1,.5,16),new THREE.MeshStandardMaterial({color:0x9fd8ff,transparent:true,opacity:.8,side:THREE.DoubleSide})); splash.rotation.x=-Math.PI/2; splash.visible=false; world.add(splash); let splashT=0;
   const bike=makeVehicle('bici'); bike.position.set(0,.15,6); world.add(bike);
   const opps=makeOpponents(3,(rid)=>{ const v=makeVehicle('bici',rid); v.rotation.y=Math.PI; return v; },12,7); opps.forEach(o=>o.lane=(o.idx-1)*1.7);
   let dist=0, bikeX=cx(0), speed=10, won=false, t=0, slip=0;
@@ -462,9 +482,13 @@ function GameBiciMontagna(){
       const pr=trees[i], snowy=tt===2;
       pr[0].position.set(cx(ti)-bikeX-(HALF+1.4), hy(ti)-by, 6-i*SEG); pr[1].position.set(cx(ti)-bikeX+(HALF+1.4), hy(ti)-by, 6-i*SEG);
       pr[0].children[1].material.color.setHex(snowy?0xdfeaf0:0x2f7a3a); pr[1].children[1].material.color.setHex(snowy?0xdfeaf0:0x2f7a3a); }
-    obPool.forEach(o=>{ if(o.userData.od===undefined || o.userData.od<dist-3){ o.userData.od=dist+rand(16,42); o.userData.ox=rand(-(HALF-0.8),HALF-0.8); o.userData.hit=false; }
-      const rel=o.userData.od-dist; if(rel<(N-2)*SEG){ o.visible=true; const wx=cx(o.userData.od)+o.userData.ox-bikeX; o.position.set(wx,(hy(o.userData.od)-by)+.4,6-rel);
-        if(rel<1.3 && rel>-0.6 && Math.abs(wx)<0.95 && !o.userData.hit){ o.userData.hit=true; speed=Math.max(3,speed*0.4); beep(120,.25,'sawtooth',.08); shake(); } } else o.visible=false; });
+    obPool.forEach(o=>{ if(o.userData.od===undefined || o.userData.od<dist-3){ o.userData.od=dist+rand(28,62); o.userData.ox=rand(-(HALF-0.8),HALF-0.8); o.userData.hit=false;
+        const r=Math.random(); o.userData.kind=r<.2?'rock':r<.55?'log':'pud'; const P=o.userData.parts; P.rock.visible=o.userData.kind==='rock'; P.log.visible=o.userData.kind==='log'; P.pud.visible=o.userData.kind==='pud'; }
+      const rel=o.userData.od-dist; if(rel<(N-2)*SEG){ o.visible=true; const wx=cx(o.userData.od)+o.userData.ox-bikeX; o.position.set(wx,(hy(o.userData.od)-by)+(o.userData.kind==='pud'?.02:.0),6-rel);
+        if(rel<1.3 && rel>-0.6 && Math.abs(wx)<0.95 && !o.userData.hit){ o.userData.hit=true;
+          if(o.userData.kind==='pud'){ speed*=0.8; beep(300,.12,'sine',.05); splash.position.set(0,.1,6); splash.visible=true; splashT=0.4; }
+          else { speed=Math.max(3,speed*0.4); beep(120,.25,'sawtooth',.08); shake(); } } } else o.visible=false; });
+    if(splashT>0){ splashT-=dt; const s=1+(0.4-splashT)*6; splash.scale.set(s,s,s); splash.material.opacity=Math.max(0,splashT*2); if(splashT<=0)splash.visible=false; }
     stepOpponents(opps,dt,t);
     opps.forEach(o=>{ const rel=o.od-dist, vis=rel>-9 && rel<(N-3)*SEG; o.m.visible=vis; if(vis){ const wx=cx(o.od)+o.lane-bikeX; o.m.position.set(wx,(hy(o.od)-by)+.15,6-rel); o.m.userData.wheels.forEach(w=>w.rotation.x-=o.sp*dt); } });
     const pos=rankAhead(opps,dist);
@@ -613,6 +637,7 @@ function walkCollect(th){
   const player=buildCousin(hero); player.position.set(0,0,Math.min(half-1,4)); world.add(player);
   const acts = th.activities ? th.activities() : null;
   const crowd = acts ? null : addCrowd(half-0.5, 5);   // attività o folla che passeggia
+  if(th.music) startMusic();
   camera.position.set(0,8,10);
   let collected=0, time=th.time||45, t=0, done=false, carried=null;
   setInstr(th.instr);
@@ -670,9 +695,13 @@ const THEMES = {
       const sl=buildCousin(oc[1]); sl.position.set(px,2,pz); world.add(sl); A.push({m:sl,type:'slide',phase:0,x0:px,z0:pz});
       A.push(aNPC(oc[2],-2,6,0,'talk')); A.push(aNPC(oc[3],-1.1,6.2,Math.PI,'talk'));
       return A; }},
-  bar:{emoji:'🍹',ground:0xb0a8c8,size:16,goal:7,time:50,deliver:true,drop:[0,-6],dropLabel:'🍹 Bancone',instr:'Raccogli un bicchiere e portalo al bancone!',win:'Servizio perfetto! 🍹',
-    decor(){ B(8,1.1,1.4,0x5a3a2a,0,.55,-6); for(let i=0;i<4;i++){ const st=cyl(.3,.3,.9,0x333333); st.position.set(-3+i*2,.45,-4.4); st.castShadow=true; world.add(st); } },
-    item(){ const c=cyl(.22,.16,.5,TC[Math.floor(Math.random()*TC.length)]); c.position.y=.3; return c; }},
+  bar:{emoji:'🍹',ground:0xb0a8c8,size:16,goal:7,time:50,deliver:true,drop:[0,-6],dropLabel:'🍹 Bancone',instr:'Raccogli un bicchiere e portalo al bancone! 🎵',win:'Servizio perfetto! 🍹',music:true,
+    decor(){ B(8,1.1,1.4,0x5a3a2a,0,.55,-6); for(let i=0;i<4;i++){ const st=cyl(.3,.3,.9,0x333333); st.position.set(-3+i*2,.45,-4.4); st.castShadow=true; world.add(st); }
+      B(.9,1.5,.6,0xb0306a,7,.75,-5); B(.7,.4,.5,0x222,7,1.65,-4.7); for(let i=0;i<3;i++){ const note=labelSprite('🎵',.7); note.position.set(7,2.4+i*.1,-4.6); world.add(note); } },  // jukebox
+    item(){ const c=cyl(.22,.16,.5,TC[Math.floor(Math.random()*TC.length)]); c.position.y=.3; return c; },
+    activities(){ const oc=otherCousins(); const A=[]; const treats=['gelato','patatine','caffe','yogurt','cornetto','cocktail']; const pos=[[-4,-3.4],[-2,-2.6],[0,-3.4],[2,-2.6],[4,-3.4],[-3,3]];
+      treats.forEach((k,i)=>{ const n=aNPC(oc[i%oc.length],pos[i][0],pos[i][1],Math.PI,'drink'); const tr=makeTreat(k); n.m.userData.arms[0].add(tr); tr.position.set(0,-.32,.06); A.push(n); });
+      return A; }},
   ristorante:{emoji:'🍝',ground:0xcaa68a,size:18,goal:8,time:55,deliver:true,drop:[0,-7],dropLabel:'🍝 Cucina',instr:'Prendi un piatto e portalo in cucina!',win:'Buon appetito! 🍝',
     decor(){ B(5,1.3,1.6,0x6a4a3a,0,.65,-7); for(let i=0;i<5;i++){ const x=rand(-6,6),z=rand(-3,5); const t=cyl(1,1,.2,0xffffff); t.position.set(x,1,z); t.castShadow=true; world.add(t); const leg=cyl(.12,.12,1,0x8a5a2b); leg.position.set(x,.5,z); world.add(leg); } },
     item(){ const p=new THREE.Mesh(new THREE.CylinderGeometry(.34,.3,.1,16),M(0xffffff,.4)); p.position.y=.3; const food=new THREE.Mesh(new THREE.SphereGeometry(.18,10,10),M(TC[Math.floor(Math.random()*TC.length)],.5)); food.position.y=.12; p.add(food); return p; },
