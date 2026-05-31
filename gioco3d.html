@@ -75,9 +75,9 @@
   <div class="sub">Tocca una città sulla cartina</div>
   <div id="mapWrap">
     <img id="italyImg" src="italia.jpg" alt="Italia">
-    <button class="mkb" data-city="roma"   style="left:48%;top:51%">Roma</button>
-    <button class="mkb" data-city="matera" style="left:65%;top:64%">Matera</button>
-    <button class="mkb" data-city="rossano" style="left:70%;top:76%">Rossano</button>
+    <button class="mkb" data-city="roma"   style="left:57%;top:51%">Roma</button>
+    <button class="mkb" data-city="matera" style="left:72%;top:63%">Matera</button>
+    <button class="mkb" data-city="rossano" style="left:76%;top:74%">Rossano</button>
   </div>
   <button class="go" id="mapBack" style="background:rgba(255,255,255,.15);color:#fff">◀ Cambia personaggio</button>
 </div>
@@ -510,7 +510,7 @@ function GameBiciMontagna(){
 
 /* ===================== SCUOLA GUIDA (pista con curve) ===================== */
 function DrivingSchool(){
-  applyTheme(); addGround2(0x5fa048);
+  applyTheme(); const gr=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); gr.rotation.x=-Math.PI/2; gr.receiveShadow=true; world.add(gr); const clouds=addSky();
   const wp=[[0,20],[16,15],[20,2],[13,-14],[0,-20],[-15,-13],[-21,2],[-13,15]].map(p=>new THREE.Vector3(p[0],0,p[1]));
   const curve=new THREE.CatmullRomCurve3(wp,true,'catmullrom',0.5);
   const N=170, samples=curve.getPoints(N), W=6;
@@ -518,6 +518,18 @@ function DrivingSchool(){
     const seg=new THREE.Mesh(new THREE.BoxGeometry(W,0.06,len),M(0x3a3d44,.9)); seg.position.set(mid.x,0.04,mid.z); seg.rotation.y=Math.atan2(b.x-a.x,b.z-a.z); seg.receiveShadow=true; world.add(seg); }
   for(let i=0;i<N;i+=7){ const u=i/N; const p=curve.getPointAt(u), t=curve.getTangentAt(u); const nx=t.z,nz=-t.x;
     [-1,1].forEach(s=>{ const c=new THREE.Mesh(new THREE.ConeGeometry(.25,.7,8),M(0xff7733,.5)); c.position.set(p.x+nx*W/2*s,.35,p.z+nz*W/2*s); c.castShadow=true; world.add(c); }); }
+  // strisce: linea centrale tratteggiata + bordi bianchi
+  for(let i=0;i<N;i++){ const u=i/N; const p=curve.getPointAt(u), tg=curve.getTangentAt(u), ry=Math.atan2(tg.x,tg.z), nx=tg.z,nz=-tg.x;
+    if(i%4===0){ const d=new THREE.Mesh(new THREE.BoxGeometry(.16,.02,1.0),M(0xf5d020,.5)); d.position.set(p.x,.08,p.z); d.rotation.y=ry; world.add(d); }
+    if(i%2===0)[-1,1].forEach(sg=>{ const e=new THREE.Mesh(new THREE.BoxGeometry(.1,.02,.6),M(0xffffff,.5)); e.position.set(p.x+nx*(W/2-.25)*sg,.08,p.z+nz*(W/2-.25)*sg); e.rotation.y=ry; world.add(e); }); }
+  // linea di partenza a scacchi
+  { const p=curve.getPointAt(0), tg=curve.getTangentAt(0), ry=Math.atan2(tg.x,tg.z), nx=tg.z,nz=-tg.x; for(let k=-3;k<=3;k++){ const sq=new THREE.Mesh(new THREE.BoxGeometry(.75,.03,.75),M((k+3)%2?0x111111:0xffffff)); sq.position.set(p.x+nx*k*0.8,.09,p.z+nz*k*0.8); sq.rotation.y=ry; world.add(sq); } }
+  // semafori, tribuna con tifosi, alberi
+  function semaforo(x,z){ const g=new THREE.Group(); const pole=cyl(.1,.12,3,0x333333); pole.position.y=1.5; g.add(pole); const bx2=new THREE.Mesh(new THREE.BoxGeometry(.42,1.1,.3),M(0x222222)); bx2.position.y=3; g.add(bx2); ['#e74c3c','#f1c40f','#2ecc71'].forEach((col,k)=>{ const l=new THREE.Mesh(new THREE.SphereGeometry(.12,10,10),new THREE.MeshStandardMaterial({color:col,emissive:new THREE.Color(col),emissiveIntensity:.6})); l.position.set(0,3.35-k*.33,.2); g.add(l); }); g.position.set(x,0,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(g); }
+  [0,0.33].forEach(u=>{ const p=curve.getPointAt(u), tg=curve.getTangentAt(u), nx=tg.z,nz=-tg.x; semaforo(p.x+nx*(W/2+1.1),p.z+nz*(W/2+1.1)); });
+  { const p=curve.getPointAt(0), tg=curve.getTangentAt(0), nx=tg.z,nz=-tg.x; const stand=buildStand(); stand.position.set(p.x+nx*(W/2+3),0,p.z+nz*(W/2+3)); stand.rotation.y=Math.atan2(nx,nz)+Math.PI; world.add(stand);
+    const ocf=otherCousins(); for(let i=0;i<4;i++){ const f=buildCousin(ocf[i%ocf.length]); f.position.set(p.x+nx*(W/2+2)+(i-1.5)*1.1, 0, p.z+nz*(W/2+2)); world.add(f); } }
+  for(let i=0;i<12;i++){ const a=Math.random()*Math.PI*2, R=27+Math.random()*9; const tr=new THREE.Mesh(new THREE.CylinderGeometry(.2,.26,1.4,7),M(0x6b4423)); tr.position.set(Math.sin(a)*R,.7,Math.cos(a)*R); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.2,2.4,8),M(0x2f7a3a)); lv.position.set(tr.position.x,2.2,tr.position.z); tr.castShadow=true; lv.castShadow=true; world.add(tr,lv); }
   const NCP=8, cps=[]; for(let i=0;i<NCP;i++){ const u=i/NCP, p=curve.getPointAt(u), t=curve.getTangentAt(u); const nx=t.z,nz=-t.x;
     cps.push(p); const pm=M(i===0?0x2ecc71:0xffd24a,.4); [-1,1].forEach(s=>{ const po=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,2.2,8),pm); po.position.set(p.x+nx*W/2*s,1.1,p.z+nz*W/2*s); po.castShadow=true; world.add(po); }); }
   const car=makeCar(0xe74c3c); car.scale.setScalar(0.8); world.add(car);
@@ -528,6 +540,7 @@ function DrivingSchool(){
   let s=0, nextCp=1, laps=0, won=false, t=0; const LAPS=3;
   setInstr('▲ accelera · ▼ frena · ◀▶ sterza · batti gli avversari, passa i cancelli!');
   return { update(dt){ if(won)return; t+=dt;
+    clouds.forEach(c=>{ c.position.x+=dt*0.6; if(c.position.x>95)c.position.x-=190; });
     if(keys['ArrowUp']||keys['Space']) s=Math.min(15,s+12*dt); else if(keys['ArrowDown']) s=Math.max(-4,s-16*dt); else s*=Math.pow(.45,dt);
     const turn=(keys['ArrowLeft']?1:0)-(keys['ArrowRight']?1:0);
     if(Math.abs(s)>0.3) h+=turn*dt*1.7*Math.sign(s)*Math.min(1,Math.abs(s)/3);
@@ -1164,34 +1177,38 @@ function tennisTexture(){ const c=document.createElement('canvas'); c.width=256;
   x.beginPath(); x.moveTo(128,16); x.lineTo(128,24); x.moveTo(128,488); x.lineTo(128,496); x.stroke();
   return new THREE.CanvasTexture(c); }
 function GameTennis(){
-  applyTheme();
-  const court=new THREE.Mesh(new THREE.PlaneGeometry(11,24),new THREE.MeshStandardMaterial({map:tennisTexture(),roughness:.95})); court.rotation.x=-Math.PI/2; court.position.set(0,.01,-4); court.receiveShadow=true; world.add(court);
-  addGround2(0x7a3a28);
-  const net=new THREE.Mesh(new THREE.PlaneGeometry(11,.9),new THREE.MeshStandardMaterial({map:netTexture(16,2),transparent:true,side:THREE.DoubleSide,depthWrite:false})); net.position.set(0,.45,-4); world.add(net); B(11.2,.08,.1,0xffffff,0,.92,-4);
+  applyTheme(); addSky(); addGround2(0x335a35);
+  const court=new THREE.Mesh(new THREE.PlaneGeometry(11,24),new THREE.MeshStandardMaterial({map:tennisTexture(),roughness:.95})); court.rotation.x=-Math.PI/2; court.position.set(0,.02,-4); court.receiveShadow=true; world.add(court);
+  const net=new THREE.Mesh(new THREE.PlaneGeometry(11,.9),new THREE.MeshStandardMaterial({map:netTexture(16,2),transparent:true,side:THREE.DoubleSide,depthWrite:false})); net.position.set(0,.5,-4); world.add(net); B(11.2,.1,.12,0xffffff,0,.96,-4);
+  [-5.6,5.6].forEach(x=>{ const p=cyl(.07,.07,1.1,0x444444); p.position.set(x,.55,-4); world.add(p); });
   const stL=buildStand(); stL.position.set(-8.5,0,-4); stL.rotation.y=Math.PI/2; world.add(stL); const stR=buildStand(); stR.position.set(8.5,0,-4); stR.rotation.y=-Math.PI/2; world.add(stR);
-  const oc=otherCousins(); const fans=[]; for(let i=0;i<4;i++){ const f=buildCousin(oc[i%oc.length]); f.position.set(i<2?-7.5:7.5,0,-8+(i%2)*7); f.rotation.y=i<2?Math.PI/2:-Math.PI/2; world.add(f); fans.push(f); }
-  const player=buildCousin(hero); player.position.set(0,0,6.5); world.add(player);
-  const opp=buildCousin(otherChar()); opp.position.set(0,0,-14); opp.rotation.y=Math.PI; world.add(opp);
-  const ball=new THREE.Mesh(new THREE.SphereGeometry(.16,16,16),M(0xd6e84a,.5)); world.add(ball);
-  camera.position.set(0,4.2,11); camera.lookAt(0,1,-4);
-  const PZ=6.5, OZ=-14; let bx=0, bz=0, vz=-7, tx=0, myPts=0, opPts=0, t=0, done=false, served=0, rallyLock=false;
-  function serve(toPlayer){ bx=rand(-3,3); bz=-4; tx=rand(-3,3); vz=toPlayer?7:-7; ball.position.set(bx,.5,bz); rallyLock=false; }
-  serve(true); setInstr('◀ ▶ muoviti per ribattere la palla! 🎾'); setScore('Tu 0 - 0 Avversario');
+  B(.8,2.4,.8,0xcfd6da,7.6,1.2,-4);   // seggiolone arbitro
+  const oc=otherCousins(); const fans=[]; for(let i=0;i<4;i++){ const f=buildCousin(oc[i%oc.length]); f.position.set(i<2?-7.4:7.4,0,-8+(i%2)*7); f.rotation.y=i<2?Math.PI/2:-Math.PI/2; world.add(f); fans.push(f); }
+  const player=buildCousin(hero); player.position.set(0,0,7); player.rotation.y=Math.PI; world.add(player);
+  const opp=buildCousin(otherChar()); opp.position.set(0,0,-13); world.add(opp);
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.24,16,16),new THREE.MeshStandardMaterial({color:0xd6e84a,emissive:0x556b00,emissiveIntensity:.3})); world.add(ball);
+  camera.position.set(0,5,12.5); camera.lookAt(0,1,-3);
+  const PZ=7, OZ=-13; let bx=0, bz=-4, tx=0, vz=8, myPts=0, opPts=0, t=0, done=false, lock=false, restT=0;
+  function serve(toPlayer){ bx=0; bz=-4; tx=rand(-3.5,3.5); vz=toPlayer?8:-8; lock=false; restT=0; ball.position.set(bx,.5,bz); }
+  function swing(c){ c.userData.arms[0].rotation.x=-1.4; setTimeout(()=>{ if(c.userData)c.userData.arms[0].rotation.x=0; },160); }
+  function flash(m){ showMsg(m); setTimeout(()=>{ if(!done)showMsg(''); },900); }
+  serve(true); setInstr('◀ ▶ muoviti sotto la palla: ribatti in automatico! 🎾'); setScore('🎾 Tu 0 - 0 Avversario');
   return { update(dt){ if(done)return; t+=dt;
-    fans.forEach((f,i)=>f.position.y=Math.abs(Math.sin(t*3+i))*0.12);
-    if(keys['ArrowLeft'])player.position.x=Math.max(-5,player.position.x-7*dt);
-    if(keys['ArrowRight'])player.position.x=Math.min(5,player.position.x+7*dt);
-    // avversario insegue la palla quando arriva dalla sua parte
-    if(vz<0) opp.position.x=THREE.MathUtils.lerp(opp.position.x, Math.max(-5,Math.min(5,tx)), 0.04);
-    bz+=vz*dt; bx=THREE.MathUtils.lerp(bx,tx,Math.min(1,dt*1.2)); ball.position.set(bx,.5+Math.sin((bz%4)*0.4)*0.25+0.2,bz);
-    if(!rallyLock && vz>0 && bz>=PZ-0.4){ rallyLock=true;
-      if(Math.abs(bx-player.position.x)<1.7){ vz=-7; tx=rand(-4,4); beep(520,.06); player.userData.arms[0].rotation.x=-1.2; setTimeout(()=>{if(player.userData)player.userData.arms[0].rotation.x=0;},150); rallyLock=false; }
-      else { opPts++; beep(180,.2); if(opPts>=5){ done=true; finishGame(8,'Hai perso '+myPts+'-'+opPts+' 🎾'); return; } serve(true); } }
-    if(!rallyLock && vz<0 && bz<=OZ+0.4){ rallyLock=true;
-      const miss=Math.random()<0.28 || Math.abs(bx-opp.position.x)>1.8;   // l'avversario sbaglia ogni tanto
-      if(miss){ myPts++; beep(900,.1); setTimeout(()=>beep(1200,.1),90); if(myPts>=5){ done=true; finishGame(20,'Hai vinto '+myPts+'-'+opPts+'! 🎾🏆'); return; } serve(true); }
-      else { vz=7; tx=rand(-4,4); beep(440,.06); opp.userData.arms[0].rotation.x=-1.2; setTimeout(()=>{if(opp.userData)opp.userData.arms[0].rotation.x=0;},150); rallyLock=false; } }
-    camera.position.set(THREE.MathUtils.lerp(camera.position.x,player.position.x*0.4,0.1),4.2,11); camera.lookAt(0,1,-4);
+    fans.forEach((f,i)=>f.position.y=Math.abs(Math.sin(t*3+i))*0.13);
+    if(restT>0){ restT-=dt; if(restT<=0)serve(Math.random()<0.5); return; }
+    if(keys['ArrowLeft'])player.position.x=Math.max(-5,player.position.x-8*dt);
+    if(keys['ArrowRight'])player.position.x=Math.min(5,player.position.x+8*dt);
+    if(vz<0) opp.position.x=THREE.MathUtils.lerp(opp.position.x,THREE.MathUtils.clamp(tx,-5,5),0.05);
+    bz+=vz*dt; bx+=(tx-bx)*Math.min(1,dt*0.9);
+    const arc=Math.max(0,Math.sin(((bz-OZ)/(PZ-OZ))*Math.PI)); ball.position.set(bx,.4+arc*1.4,bz); ball.rotation.x+=dt*6;
+    if(!lock && vz>0 && bz>=PZ-0.5){ lock=true;
+      if(Math.abs(bx-player.position.x)<1.8){ vz=-8; tx=rand(-4,4); beep(540,.06); swing(player); lock=false; }
+      else { opPts++; beep(180,.2); flash('Punto avversario'); if(opPts>=5){ done=true; finishGame(8,'Hai perso '+myPts+'-'+opPts+' 🎾'); return; } restT=1.0; } }
+    if(!lock && vz<0 && bz<=OZ+0.5){ lock=true;
+      const miss=Math.random()<0.3 || Math.abs(bx-opp.position.x)>1.9;
+      if(miss){ myPts++; beep(900,.1); setTimeout(()=>beep(1200,.1),90); flash('Punto tuo! 🎉'); if(myPts>=5){ done=true; finishGame(20,'Hai vinto '+myPts+'-'+opPts+'! 🏆'); return; } restT=1.0; }
+      else { vz=8; tx=rand(-4,4); beep(440,.06); swing(opp); lock=false; } }
+    camera.position.x=THREE.MathUtils.lerp(camera.position.x,player.position.x*0.4,0.1); camera.lookAt(0,1,-3);
     setScore('🎾 Tu '+myPts+' - '+opPts+' Avversario');
   }};
 }
@@ -1254,6 +1271,8 @@ document.getElementById('startBtn').onclick=()=>{ if(!AC){try{AC=new(window.Audi
 document.getElementById('charNext').onclick=()=>{ document.querySelectorAll('.mkb').forEach(m=>m.classList.toggle('sel',m.dataset.city===city)); show('s_map'); };
 document.getElementById('mapBack').onclick=()=>{ show('s_char'); };
 document.querySelectorAll('.mkb').forEach(m=>{ m.addEventListener('click',()=>{ city=m.dataset.city; enterHub(); }); });
+// rendi trasparente lo sfondo bianco della mappa
+(function(){ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.width; c.height=im.height; const x=c.getContext('2d'); x.drawImage(im,0,0); const d=x.getImageData(0,0,c.width,c.height), a=d.data; for(let i=0;i<a.length;i+=4){ if(a[i]>234&&a[i+1]>234&&a[i+2]>234) a[i+3]=0; } x.putImageData(d,0,0); document.getElementById('italyImg').src=c.toDataURL(); }catch(e){} }; im.src='italia.jpg'; })();
 
 /* loop */
 function loop(){ const dt=Math.min(0.05,clock.getDelta());
