@@ -193,13 +193,17 @@ function buildCousin(id){
   const k=cfg.style==='adult'?1.0:(0.62+(cfg.age-6)*0.03); g.scale.setScalar(k);
   g.userData.legs=[l1,l2]; g.userData.arms=[a1,a2]; return g;
 }
-function addHair(g,cfg,ha){ const hy=1.28;
-  const cap=(r,f)=>{ const c=new THREE.Mesh(new THREE.SphereGeometry(r,16,16,0,Math.PI*2,0,Math.PI*f),ha); c.position.y=hy+0.02; g.add(c); return c; };
-  if(cfg.style==='buzz'){ cap(.225,.55); } else if(cfg.style==='short'){ cap(.24,.6); }
-  else if(cfg.style==='adult'){ cap(.24,.58); if(cfg.beard){ const b=new THREE.Mesh(new THREE.BoxGeometry(.34,.16,.26),new THREE.MeshStandardMaterial({color:cfg.hair,transparent:true,opacity:.55,roughness:1})); b.position.set(0,hy-.16,.04); g.add(b);} }
-  else if(cfg.style==='medium'){ cap(.25,.72); const bk=new THREE.Mesh(new THREE.BoxGeometry(.42,.32,.18),ha); bk.position.set(0,hy-.14,-.12); g.add(bk); }
-  else if(cfg.style==='long'){ cap(.25,.78); const bk=new THREE.Mesh(new THREE.BoxGeometry(.44,.56,.2),ha); bk.position.set(0,hy-.26,-.12); g.add(bk); }
-  else if(cfg.style==='curly'){ cap(.22,.55); for(let i=0;i<9;i++){ const b=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),ha); const a=i/9*Math.PI*2; b.position.set(Math.cos(a)*.2,hy+.1,Math.sin(a)*.16); g.add(b); } }
+function addHair(g,cfg,ha){ const cy=1.28;
+  // calotta: copre solo la sommità sopra la fronte, il VISO resta scoperto (color pelle)
+  const crown=new THREE.Mesh(new THREE.SphereGeometry(.245,18,16,0,Math.PI*2,0,Math.PI*0.34),ha); crown.position.set(0,cy,0); g.add(crown);
+  // capelli dietro/ai lati, spostati indietro: non coprono mai la faccia
+  if(cfg.style!=='buzz'){ const back=new THREE.Mesh(new THREE.SphereGeometry(.235,16,16),ha); back.scale.set(1.02,1.02,.72); back.position.set(0,cy,-0.07); g.add(back); }
+  if(cfg.style==='buzz'){ crown.scale.set(1,.82,1); const b2=new THREE.Mesh(new THREE.SphereGeometry(.232,14,14),ha); b2.scale.set(1,.66,.7); b2.position.set(0,cy+.02,-.05); g.add(b2); }
+  else if(cfg.style==='adult'){ if(cfg.beard){ const beard=new THREE.Mesh(new THREE.SphereGeometry(.205,14,14),new THREE.MeshStandardMaterial({color:cfg.hair,roughness:1})); beard.scale.set(1.05,.85,.7); beard.position.set(0,1.15,.085); g.add(beard); const cut=new THREE.Mesh(new THREE.BoxGeometry(.34,.2,.2),M(cfg.skin,.6)); cut.position.set(0,1.30,.2); g.add(cut); } }
+  else if(cfg.style==='curly'){ for(let i=0;i<12;i++){ const b=new THREE.Mesh(new THREE.SphereGeometry(.085,8,8),ha); const a=i/12*Math.PI*2; b.position.set(Math.cos(a)*.215, cy+.07+(i%2?.05:-.03), Math.sin(a)*.15-.05); g.add(b); } }
+  else if(cfg.style==='medium'){ const bk=new THREE.Mesh(new THREE.BoxGeometry(.44,.42,.22),ha); bk.position.set(0,cy-.13,-.13); g.add(bk); }
+  else if(cfg.style==='long'){ const bk=new THREE.Mesh(new THREE.BoxGeometry(.46,.74,.24),ha); bk.position.set(0,cy-.30,-.12); g.add(bk);
+    [-1,1].forEach(s=>{ const str=new THREE.Mesh(new THREE.BoxGeometry(.11,.62,.16),ha); str.position.set(.235*s,cy-.20,.02); g.add(str); }); }
 }
 function walkAnim(g,phase){ if(!g.userData.legs)return; const s=Math.sin(phase)*0.5;
   g.userData.legs[0].rotation.x=s; g.userData.legs[1].rotation.x=-s; g.userData.arms[0].rotation.x=-s; g.userData.arms[1].rotation.x=s; }
