@@ -471,6 +471,7 @@ function buildCity(cityId){
   layoutGrid();
 }
 function cityDone(){ return LOCATIONS.reduce((n,L)=> n + (visited[L.id]?1:0), 0); }
+function totalDone(){ return Object.keys(visited).filter(k=>visited[k]).length; }
 
 /* =====================================================================
    MENU INIZIALE
@@ -499,11 +500,11 @@ const Menu = {
     rr(W/2-90, H-150, 180, 110, 30); ctx.fill();
 
     // i cuginetti che salutano
-    drawCharId('letizia', W/2-150, 340, 2.0, 0, this.t*0.05);
-    drawCharId('giorgia', W/2-70, 340, 2.0, 0, this.t*0.05+1);
-    drawCharId('corrado', W/2+10, 340, 2.0, 0, this.t*0.05+2);
-    drawCharId('giulio',  W/2+80, 340, 2.0, 0, this.t*0.05+3);
-    drawCharId('babbo',   W/2+160, 340, 2.0, 0, this.t*0.05);
+    drawCharId('letizia',  W/2-160, 340, 2.0, 0, this.t*0.05);
+    drawCharId('giorgia',  W/2-85,  340, 2.0, 0, this.t*0.05+1);
+    drawCharId('eleonora', W/2-10,  340, 2.0, 0, this.t*0.05+2);
+    drawCharId('corrado',  W/2+70,  340, 2.0, 0, this.t*0.05+3);
+    drawCharId('giulio',   W/2+150, 340, 2.0, 0, this.t*0.05+4);
 
     // titolo
     ctx.textAlign = 'center';
@@ -637,13 +638,56 @@ const CitySelect = {
   }
 };
 
+/* Sfondo della mappa, diverso per ogni città */
+function drawHubBackground(t){
+  if (currentCity === 'rossano'){
+    // MARE
+    sky('#8fd8ff','#bfe9ff');
+    ctx.fillStyle='#f3dca0'; ctx.fillRect(0,90,W,70);          // spiaggia in alto
+    const g=ctx.createLinearGradient(0,150,0,H); g.addColorStop(0,'#2aa7d8'); g.addColorStop(1,'#0a6ba0');
+    ctx.fillStyle=g; ctx.fillRect(0,150,W,H-150);
+    ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=2;
+    for (let i=0;i<6;i++){ ctx.beginPath();
+      for (let x=0;x<=W;x+=20) ctx.lineTo(x, 200+i*70+Math.sin(t*0.04+i+x*0.02)*5); ctx.stroke(); }
+    ctx.font='34px Arial'; ctx.textAlign='center'; ctx.fillText('⛵', 120, 140); ctx.fillText('🏖️', W-110, 150);
+  } else if (currentCity === 'matera'){
+    // SASSI di Matera
+    sky('#f0dcc0','#d8c0a0');
+    ctx.fillStyle='#c9ad86'; ctx.fillRect(0,H-160,W,160);
+    // case di pietra ammassate
+    const blocks=[[60,300,90],[150,260,80],[230,330,90],[320,280,70],[400,340,90],
+                  [500,300,80],[590,260,90],[690,330,80],[770,290,90],[840,340,70]];
+    for (const [bx,by,bw] of blocks){
+      ctx.fillStyle='#bfa078'; rr(bx,by,bw,H-by,6); ctx.fill();
+      ctx.fillStyle='rgba(90,70,50,.5)'; rr(bx+bw*0.3,by+18,bw*0.4,26,4); ctx.fill(); // finestra
+      ctx.strokeStyle='rgba(120,95,65,.6)'; ctx.lineWidth=2; rr(bx,by,bw,H-by,6); ctx.stroke();
+    }
+    ctx.fillStyle='rgba(150,120,80,.25)';
+    for (let i=0;i<30;i++) ctx.fillRect((i*137%W),(i*89%H),3,3);
+  } else {
+    // ROMA — terreno verde col fiume Tevere
+    sky('#cfe8c0', '#a9d49a');
+    ctx.strokeStyle = '#6fb7d8'; ctx.lineWidth = 28; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(0, 320); ctx.bezierCurveTo(250, 260, 400, 520, 650, 470);
+    ctx.bezierCurveTo(780, 440, 850, 520, 900, 500);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 320); ctx.bezierCurveTo(250, 260, 400, 520, 650, 470);
+    ctx.bezierCurveTo(780, 440, 850, 520, 900, 500);
+    ctx.stroke();
+  }
+}
+
 /* =====================================================================
-   HUB — mappa di Roma esplorabile dall'alto
+   HUB — mappa della città, esplorabile dall'alto
    ===================================================================== */
 const Hub = {
-  px: 140, py: 280, dad: {x:120, y:300}, walk:0, near:null,
-  enter(){ this.near = null; },
+  px: 140, py: 280, dad: {x:120, y:300}, walk:0, near:null, t:0,
+  enter(){ this.near = null; this.t = 0; },
   update(){
+    this.t++;
     let dx=0, dy=0;
     if (keys['ArrowLeft']) dx=-1;
     if (keys['ArrowRight']) dx=1;
@@ -672,16 +716,11 @@ const Hub = {
       beep(700,0.08);
       setScene(SCENES[this.near.id]);
     }
+    // ESC / ✕ per cambiare città
+    if (pressed('Escape')){ beep(300,0.08); setScene(CitySelect); return; }
   },
   draw(){
-    // terreno
-    sky('#cfe8c0', '#a9d49a');
-    // fiume Tevere
-    ctx.strokeStyle = '#6fb7d8'; ctx.lineWidth = 26; ctx.lineCap='round';
-    ctx.beginPath();
-    ctx.moveTo(0, 320); ctx.bezierCurveTo(250, 260, 400, 520, 650, 470);
-    ctx.bezierCurveTo(780, 440, 850, 520, 900, 500);
-    ctx.stroke();
+    drawHubBackground(this.t || 0);
     // strade che collegano i luoghi
     ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 6;
     ctx.setLineDash([10,8]);
@@ -730,6 +769,12 @@ const Hub = {
     const cityName = (CITIES.find(c=>c.id===currentCity)||{}).name || 'Città';
     header('MAPPA · ' + cityName.toUpperCase());
 
+    // punteggio totale tra tutte le città
+    ctx.fillStyle = 'rgba(0,0,0,.4)';
+    rr(14, 60, 168, 28, 8); ctx.fill();
+    ctx.fillStyle = '#ffd86b'; ctx.font = 'bold 15px Trebuchet MS'; ctx.textAlign = 'left';
+    ctx.fillText('Totale ★ ' + totalDone(), 26, 79);
+
     // prompt
     if (this.near){
       ctx.fillStyle = 'rgba(0,0,0,.6)';
@@ -737,8 +782,8 @@ const Hub = {
       ctx.fillStyle = '#ffd86b'; ctx.font='bold 16px Trebuchet MS'; ctx.textAlign='center';
       ctx.fillText('SPAZIO ▶ ' + this.near.name, W/2, H-34);
     } else {
-      ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='13px Trebuchet MS'; ctx.textAlign='center';
-      ctx.fillText('Cammina fino a un luogo e premi SPAZIO', W/2, H-30);
+      ctx.fillStyle='rgba(255,255,255,.7)'; ctx.font='13px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText('Cammina su un luogo e premi SPAZIO  ·  ESC / ✕ per cambiare città', W/2, H-30);
     }
 
     if (LOCATIONS.length && cityDone() === LOCATIONS.length){
