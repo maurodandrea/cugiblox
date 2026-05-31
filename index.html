@@ -220,105 +220,111 @@ function rr(x,y,w,h,r){
 }
 
 /* =====================================================================
-   PERSONAGGI — disegnati a mano (cartoon) ispirati alla foto.
-   Figlia: capelli castani lunghi, maglia bianca "95", shorts jeans.
-   Papà: capelli corti, barba leggera, maglia blu, jeans.
+   PERSONAGGI — disegnati a mano (cartoon), sistema parametrico.
+   Ogni personaggio è definito da: colore/stile capelli, pelle, vestiti,
+   barba, bambino/adulto. Vedi la lista CHARACTERS più sotto.
    ===================================================================== */
-function drawDaughter(x, y, s=1, face=0, walk=0){
+function drawHair(style, color){
+  ctx.fillStyle = color;
+  if (style === 'longStraight'){           // capelli lunghi e lisci
+    ctx.beginPath(); ctx.arc(0, -12, 10, Math.PI, 0); ctx.fill();
+    rr(-10, -13, 5, 22, 3); ctx.fill();
+    rr(5, -13, 5, 22, 3); ctx.fill();
+  } else if (style === 'medium'){           // lunghezza media (alle spalle)
+    ctx.beginPath(); ctx.arc(0, -12, 10, Math.PI, 0); ctx.fill();
+    rr(-10, -13, 5, 14, 3); ctx.fill();
+    rr(5, -13, 5, 14, 3); ctx.fill();
+  } else if (style === 'short'){            // corti
+    ctx.beginPath(); ctx.arc(0, -16, 10, Math.PI, 0); ctx.fill();
+    ctx.fillRect(-10, -16, 20, 3);
+  } else if (style === 'curly'){            // ricci
+    ctx.beginPath(); ctx.arc(0, -13, 10, Math.PI, 0); ctx.fill();
+    for (let i=0;i<7;i++){ const a = Math.PI + i*(Math.PI/6);
+      ctx.beginPath(); ctx.arc(Math.cos(a)*10, -13+Math.sin(a)*6, 4.5, 0, 7); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(-9,-11,4,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(9,-11,4,0,7); ctx.fill();
+  } else if (style === 'bob'){              // caschetto
+    ctx.beginPath(); ctx.arc(0, -12, 11, Math.PI, 0); ctx.fill();
+    rr(-11, -12, 4, 16, 2); ctx.fill();
+    rr(7, -12, 4, 16, 2); ctx.fill();
+    ctx.fillRect(-10, -15, 20, 5);          // frangia
+  }
+}
+
+function drawChar(x, y, s=1, face=0, walk=0, o={}){
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(s, s);
   const bob = Math.sin(walk)*1.5;
   ctx.translate(0, bob);
-  // gambe
-  const legSw = Math.sin(walk)*4;
-  ctx.fillStyle = '#f0c9a8';
+  // i bambini sono più piccoli, mantenendo i piedi sulla stessa linea
+  const k = o.child ? 0.78 : 1;
+  ctx.translate(0, 45*(1-k));
+  ctx.scale(k, k);
+
+  const skin = o.skin || '#f0c9a8';
+  const legSw = Math.sin(walk)*4, armSw = Math.sin(walk)*3;
+  const tw = o.broad ? 12 : 10;             // mezza larghezza torso
+
+  // gambe (pelle se shorts, altrimenti colore pantaloni)
+  ctx.fillStyle = o.shorts ? skin : (o.pants || '#4a6fa5');
   rr(-7, 26, 6, 16+legSw, 3); ctx.fill();
   rr(1, 26, 6, 16-legSw, 3); ctx.fill();
   // scarpe
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = o.shoes || '#fff';
   rr(-9, 40+legSw, 9, 5, 2); ctx.fill();
   rr(0, 40-legSw, 9, 5, 2); ctx.fill();
-  // shorts jeans
-  ctx.fillStyle = '#4a6fa5';
+  // shorts / fianchi
+  ctx.fillStyle = o.pants || '#4a6fa5';
   rr(-9, 18, 18, 12, 3); ctx.fill();
-  ctx.fillStyle = '#3a5a8a';
-  ctx.fillRect(-1, 19, 2, 10);
-  // maglia bianca
-  ctx.fillStyle = '#f7f7f7';
-  rr(-10, 0, 20, 20, 5); ctx.fill();
-  // numero 95
-  ctx.fillStyle = '#5a6470';
-  ctx.font = 'bold 7px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('95', 0, 13);
+  // maglia
+  ctx.fillStyle = o.shirt || '#f7f7f7';
+  rr(-tw, 0, tw*2, 22, 5); ctx.fill();
+  // numero / decoro
+  if (o.number){ ctx.fillStyle = o.accent || '#5a6470';
+    ctx.font = 'bold 7px Arial'; ctx.textAlign = 'center'; ctx.fillText(o.number, 0, 13); }
   // braccia
-  const armSw = Math.sin(walk)*3;
-  ctx.strokeStyle = '#f0c9a8';
-  ctx.lineWidth = 4; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(-9,3); ctx.lineTo(-12, 14+armSw); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(9,3); ctx.lineTo(12, 14-armSw); ctx.stroke();
+  ctx.strokeStyle = skin; ctx.lineWidth = o.broad ? 5 : 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-tw+1, 3); ctx.lineTo(-tw-2, 14+armSw); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(tw-1, 3); ctx.lineTo(tw+2, 14-armSw); ctx.stroke();
   // testa
-  ctx.fillStyle = '#f3cda9';
+  ctx.fillStyle = skin;
   ctx.beginPath(); ctx.arc(0, -10, 9, 0, Math.PI*2); ctx.fill();
-  // capelli castani lunghi
-  ctx.fillStyle = '#7a4a28';
-  ctx.beginPath(); ctx.arc(0, -12, 10, Math.PI, 0); ctx.fill();
-  rr(-10, -13, 5, 22, 3); ctx.fill();   // ciocca sx lunga
-  rr(5, -13, 5, 22, 3); ctx.fill();     // ciocca dx lunga
+  // barba
+  if (o.beard){ ctx.fillStyle = 'rgba(80,60,45,.45)';
+    ctx.beginPath(); ctx.arc(0, -6, 9, 0.1*Math.PI, 0.9*Math.PI); ctx.fill(); }
+  // capelli
+  drawHair(o.hairStyle || 'short', o.hair || '#52443a');
   // viso
-  if (face >= 0){ // fronte
-    ctx.fillStyle = '#3a2a1a';
-    ctx.beginPath(); ctx.arc(-3.2, -10, 1.3, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.arc(3.2, -10, 1.3, 0, 7); ctx.fill();
-    ctx.strokeStyle = '#c47a6a'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.arc(0, -6, 3, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke();
-  }
+  ctx.fillStyle = '#2a2018';
+  ctx.beginPath(); ctx.arc(-3.2, -10, 1.3, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(3.2, -10, 1.3, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#c47a6a'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(0, -6, 3, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke();
   ctx.restore();
 }
 
-function drawDad(x, y, s=1, face=0, walk=0){
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(s, s);
-  const bob = Math.sin(walk)*1.5;
-  ctx.translate(0, bob);
-  // gambe (jeans)
-  const legSw = Math.sin(walk)*4;
-  ctx.fillStyle = '#6a8fc0';
-  rr(-8, 26, 7, 18+legSw, 3); ctx.fill();
-  rr(1, 26, 7, 18-legSw, 3); ctx.fill();
-  // scarpe
-  ctx.fillStyle = '#dadada';
-  rr(-10, 42+legSw, 10, 5, 2); ctx.fill();
-  rr(0, 42-legSw, 10, 5, 2); ctx.fill();
-  // maglia blu/grigia
-  ctx.fillStyle = '#5a6b85';
-  rr(-12, -2, 24, 30, 5); ctx.fill();
-  // braccia
-  const armSw = Math.sin(walk)*3;
-  ctx.strokeStyle = '#e8b894';
-  ctx.lineWidth = 5; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(-11,2); ctx.lineTo(-15, 16+armSw); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(11,2); ctx.lineTo(15, 16-armSw); ctx.stroke();
-  // testa
-  ctx.fillStyle = '#e8b894';
-  ctx.beginPath(); ctx.arc(0, -13, 10, 0, Math.PI*2); ctx.fill();
-  // barba leggera
-  ctx.fillStyle = 'rgba(80,60,45,.45)';
-  ctx.beginPath(); ctx.arc(0, -9, 9, 0.1*Math.PI, 0.9*Math.PI); ctx.fill();
-  // capelli corti brizzolati
-  ctx.fillStyle = '#52443a';
-  ctx.beginPath(); ctx.arc(0, -16, 10, Math.PI, 0); ctx.fill();
-  ctx.fillRect(-10, -16, 20, 3);
-  // viso
-  ctx.fillStyle = '#2a2018';
-  ctx.beginPath(); ctx.arc(-3.5, -13, 1.4, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.arc(3.5, -13, 1.4, 0, 7); ctx.fill();
-  ctx.strokeStyle = '#a86a5a'; ctx.lineWidth = 1.3;
-  ctx.beginPath(); ctx.arc(0, -9, 3.5, 0.1*Math.PI, 0.9*Math.PI); ctx.stroke();
-  ctx.restore();
-}
+/* Registro dei personaggi giocabili */
+const CHARACTERS = [
+  { id:'giorgia', name:'Giorgia', o:{ hair:'#7a4a28', hairStyle:'longStraight', skin:'#f3cda9',
+      shirt:'#f7f7f7', number:'95', accent:'#5a6470', pants:'#4a6fa5', shorts:true, shoes:'#fff' } },
+  { id:'babbo', name:'Babbo', o:{ hair:'#52443a', hairStyle:'short', beard:true, broad:true,
+      skin:'#e8b894', shirt:'#5a6b85', pants:'#6a8fc0', shoes:'#dadada' } },
+  { id:'letizia', name:'Letizia', o:{ child:true, hair:'#b8895a', hairStyle:'longStraight',
+      skin:'#f6d6b8', shirt:'#ff9ec4', pants:'#d56fa0', shorts:true, shoes:'#fff' } },
+  { id:'eleonora', name:'Eleonora', o:{ hair:'#c79a5b', hairStyle:'medium', skin:'#f3cda9',
+      shirt:'#b07cd6', pants:'#5b4a8a', shoes:'#eee' } },
+  { id:'corrado', name:'Corrado', o:{ child:true, hair:'#8a5a30', hairStyle:'curly',
+      skin:'#f0c9a8', shirt:'#4cae58', pants:'#3a6fa0', shoes:'#e74c3c' } },
+  { id:'giulio', name:'Giulio', o:{ child:true, hair:'#2a2018', hairStyle:'bob',
+      skin:'#f0c9a8', shirt:'#ffce3a', pants:'#444', shoes:'#222' } },
+];
+function charById(id){ return CHARACTERS.find(c=>c.id===id) || CHARACTERS[0]; }
+function drawCharId(id, x, y, s, face, walk){ drawChar(x, y, s, face, walk, charById(id).o); }
+
+/* compatibilità con il resto del codice */
+function drawDaughter(x, y, s=1, face=0, walk=0){ drawCharId('giorgia', x, y, s, face, walk); }
+function drawDad(x, y, s=1, face=0, walk=0){ drawCharId('babbo', x, y, s, face, walk); }
 
 /* =====================================================================
    STATO GLOBALE
@@ -326,7 +332,7 @@ function drawDad(x, y, s=1, face=0, walk=0){
 let scene = null;          // scena corrente
 let stars = 0;             // stelle raccolte (progresso)
 const visited = {};        // attività completate
-let heroChoice = 'daughter'; // personaggio scelto: 'daughter' | 'dad'
+let heroChoice = 'giorgia';  // id del personaggio scelto (vedi CHARACTERS)
 let toast = null, toastT = 0;
 function showToast(msg){ toast = msg; toastT = 150; }
 
@@ -341,7 +347,7 @@ function loadGame(){
     if (d){
       Object.assign(visited, d.visited||{});
       stars = Object.keys(visited).filter(k=>visited[k]).length;
-      if (d.hero === 'dad' || d.hero === 'daughter') heroChoice = d.hero;
+      if (d.hero && CHARACTERS.some(c=>c.id===d.hero)) heroChoice = d.hero;
     }
   } catch(e){}
 }
@@ -353,12 +359,10 @@ function resetGame(){
 }
 
 /* ---------- Disegna il personaggio scelto / il compagno ---------- */
-function drawPlayer(x,y,s,face,walk){
-  if (heroChoice === 'dad') drawDad(x,y,s,face,walk); else drawDaughter(x,y,s,face,walk);
-}
-function drawCompanion(x,y,s,face,walk){
-  if (heroChoice === 'dad') drawDaughter(x,y,s,face,walk); else drawDad(x,y,s,face,walk);
-}
+// Il Babbo accompagna sempre; se giochi col Babbo ti accompagna Giorgia.
+function companionId(){ return heroChoice === 'babbo' ? 'giorgia' : 'babbo'; }
+function drawPlayer(x,y,s,face,walk){ drawCharId(heroChoice, x,y,s,face,walk); }
+function drawCompanion(x,y,s,face,walk){ drawCharId(companionId(), x,y,s,face,walk); }
 
 function setScene(s){
   scene = s;
@@ -457,7 +461,7 @@ const Menu = {
     ctx.fillText('LE AVVENTURE A ROMA', W/2, 110);
     ctx.fillStyle = '#ffd86b';
     ctx.font = 'bold 22px Trebuchet MS';
-    ctx.fillText('Papà & Figlia', W/2, 145);
+    ctx.fillText('Giorgia, Babbo & amici', W/2, 145);
 
     if (Math.floor(this.t/30)%2===0){
       ctx.fillStyle = '#fff';
@@ -480,46 +484,47 @@ const Menu = {
    SELEZIONE PERSONAGGIO
    ===================================================================== */
 const CharSelect = {
-  t:0, sel:0, // 0 = figlia, 1 = babbo
-  enter(){ this.t=0; this.sel = heroChoice === 'dad' ? 1 : 0; },
+  t:0, sel:0, cols:3,
+  enter(){ this.t=0; this.sel = Math.max(0, CHARACTERS.findIndex(c=>c.id===heroChoice)); },
   update(){
     this.t++;
-    if (pressed('ArrowLeft')){ this.sel = 0; beep(500,0.06); }
-    if (pressed('ArrowRight')){ this.sel = 1; beep(500,0.06); }
+    const n = CHARACTERS.length, c = this.cols;
+    if (pressed('ArrowLeft')){ this.sel = (this.sel + n - 1) % n; beep(500,0.06); }
+    if (pressed('ArrowRight')){ this.sel = (this.sel + 1) % n; beep(500,0.06); }
+    if (pressed('ArrowUp')){ this.sel = (this.sel + n - c) % n; beep(500,0.06); }
+    if (pressed('ArrowDown')){ this.sel = (this.sel + c) % n; beep(500,0.06); }
     if (pressed('Escape')){ beep(300,0.08); setScene(Menu); return; }
     if (pressed('Space') || pressed('Enter')){
-      heroChoice = this.sel === 1 ? 'dad' : 'daughter';
+      heroChoice = CHARACTERS[this.sel].id;
       saveGame(); beep(700,0.1); setScene(Hub);
     }
   },
   draw(){
     sky('#2c1a4a', '#5b3f8f');
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 32px Trebuchet MS';
-    ctx.fillText('SCEGLI IL PERSONAGGIO', W/2, 80);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 30px Trebuchet MS';
+    ctx.fillText('SCEGLI IL PERSONAGGIO', W/2, 58);
 
-    // due riquadri
-    const opts = [
-      { x: W*0.32, label:'LA FIGLIA', draw: drawDaughter },
-      { x: W*0.68, label:'IL BABBO',  draw: drawDad }
-    ];
-    opts.forEach((o,i)=>{
+    const cols = this.cols, cw = 210, ch = 190, gap = 22;
+    const totW = cols*cw + (cols-1)*gap;
+    const x0 = (W - totW)/2, y0 = 86;
+    CHARACTERS.forEach((c,i)=>{
+      const cx = x0 + (i%cols)*(cw+gap);
+      const cy = y0 + Math.floor(i/cols)*(ch+gap);
       const on = this.sel === i;
       ctx.fillStyle = on ? 'rgba(255,216,107,.22)' : 'rgba(255,255,255,.06)';
-      rr(o.x-130, 130, 260, 320, 18); ctx.fill();
+      rr(cx, cy, cw, ch, 16); ctx.fill();
       ctx.lineWidth = on ? 5 : 2;
       ctx.strokeStyle = on ? '#ffd86b' : 'rgba(255,255,255,.25)';
-      rr(o.x-130, 130, 260, 320, 18); ctx.stroke();
-      o.draw(o.x, 360, 3.2, 0, on ? this.t*0.06 : 0);
+      rr(cx, cy, cw, ch, 16); ctx.stroke();
+      drawCharId(c.id, cx+cw/2, cy+115, 1.6, 0, on ? this.t*0.06 : 0);
       ctx.fillStyle = on ? '#ffd86b' : '#fff';
-      ctx.font = 'bold 24px Trebuchet MS';
-      ctx.fillText(o.label, o.x, 175);
+      ctx.font = 'bold 20px Trebuchet MS';
+      ctx.fillText(c.name, cx+cw/2, cy+30);
     });
 
-    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '16px Trebuchet MS';
-    ctx.fillText('◀ ▶ per scegliere   ·   SPAZIO / AZIONE per confermare', W/2, 500);
-    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '13px Trebuchet MS';
-    ctx.fillText("L'altro personaggio vi accompagnerà nell'avventura", W/2, 528);
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '15px Trebuchet MS';
+    ctx.fillText('◀ ▶ ▲ ▼ per scegliere  ·  SPAZIO / AZIONE conferma  ·  ESC indietro', W/2, H-24);
   }
 };
 
@@ -663,8 +668,8 @@ const RomaScene = {
     for (let r=0;r<3;r++) for(let a=0;a<9;a++){
       rr(W/2-150+a*34, 200+r*55, 24, 38, 8); ctx.fill();
     }
-    drawDad(W/2-50, 470, 1.6, 0, this.t*0.03);
-    drawDaughter(W/2+50, 470, 1.6, 0, this.t*0.03);
+    drawCompanion(W/2-50, 470, 1.6, 0, this.t*0.03);
+    drawPlayer(W/2+50, 470, 1.6, 0, this.t*0.03);
 
     header('IL COLOSSEO', '#fff');
     // pannello quiz
@@ -726,8 +731,8 @@ const MareScene = {
     ctx.font='24px Arial'; ctx.textAlign='center';
     for(const s of this.shells) ctx.fillText(s.e,s.x,s.y);
     // nuotatori (solo teste che spuntano)
-    drawDaughter(this.dx, this.dy, 1.1, 0, this.t*0.2);
-    drawDad(this.dx-40, this.dy+10, 1.1, 0, this.t*0.2);
+    drawPlayer(this.dx, this.dy, 1.1, 0, this.t*0.2);
+    drawCompanion(this.dx-40, this.dy+10, 1.1, 0, this.t*0.2);
 
     header('AL MARE','#fff');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-130,64,260,30,8); ctx.fill();
@@ -775,8 +780,8 @@ const MotoScene = {
     ctx.fillStyle='#222'; rr(-18,10,36,40,10); ctx.fill();
     ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(0,52,12,0,7); ctx.fill();
     ctx.restore();
-    drawDad(px, py-6, 0.85, 0, 0);
-    drawDaughter(px, py-26, 0.7, 0, 0);
+    drawPlayer(px, py-6, 0.85, 0, 0);
+    drawCompanion(px, py-26, 0.7, 0, 0);
 
     header('IN MOTO','#fff');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-110,64,220,30,8); ctx.fill();
@@ -839,8 +844,8 @@ const BowlingScene = {
       ctx.setLineDash([]);
     }
     // giocatori
-    drawDaughter(W/2-30,H-50,1,0,0);
-    drawDad(W/2+30,H-50,1,0,0);
+    drawPlayer(W/2-30,H-50,1,0,0);
+    drawCompanion(W/2+30,H-50,1,0,0);
 
     header('BOWLING','#fff');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W-200,64,180,54,8); ctx.fill();
@@ -889,7 +894,7 @@ const ScuolaScene = {
       ctx.font='14px Trebuchet MS'; ctx.fillText(labels[i], bx+50, 388);
     }
     ctx.fillStyle='#1a4a2a'; ctx.font='bold 18px Trebuchet MS'; ctx.fillText(this.msg, W/2, 280);
-    drawDaughter(W/2-40,520,1.4,0,0); drawDad(W/2+40,520,1.4,0,0);
+    drawPlayer(W/2-40,520,1.4,0,0); drawCompanion(W/2+40,520,1.4,0,0);
     header('A SCUOLA');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-90,420,180,28,8); ctx.fill();
     ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.fillText('Risposte giuste: '+this.score+'/'+this.need, W/2, 439);
@@ -922,7 +927,7 @@ const LavoroScene = {
     ctx.font='28px Arial'; ctx.textAlign='center';
     for(const it of this.items){ ctx.fillText(it.bad?'☕':'📄', it.x, it.y); }
     // cestino/giocatori
-    drawDaughter(this.x-18,H-50,1,0,0); drawDad(this.x+18,H-50,1,0,0);
+    drawPlayer(this.x-18,H-50,1,0,0); drawCompanion(this.x+18,H-50,1,0,0);
     ctx.fillStyle='rgba(0,0,0,.2)'; rr(this.x-40,H-44,80,10,4); ctx.fill();
     header('AL LAVORO','#2a3a4a');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-150,64,300,30,8); ctx.fill();
@@ -966,7 +971,7 @@ const AcquaScene = {
     // ciambella coi due
     ctx.fillStyle='#ffce3a'; ctx.beginPath(); ctx.arc(this.x,H-110,30,0,7); ctx.fill();
     ctx.fillStyle='#3aa7d8'; ctx.beginPath(); ctx.arc(this.x,H-110,12,0,7); ctx.fill();
-    drawDaughter(this.x-10,H-118,0.8,0,0); drawDad(this.x+12,H-114,0.8,0,0);
+    drawPlayer(this.x-10,H-118,0.8,0,0); drawCompanion(this.x+12,H-114,0.8,0,0);
 
     header('ACQUA PARK','#fff');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-130,64,260,30,8); ctx.fill();
@@ -1096,8 +1101,8 @@ const DanzaScene = {
       ctx.beginPath(); ctx.arc(colX[n.c],n.y,16,0,7); ctx.fill();
       ctx.fillStyle='#fff'; ctx.font='16px Arial'; ctx.fillText(this.colsym[n.c],colX[n.c],n.y+5); }
     // ballerini
-    drawDaughter(W/2-90,H-30,1.3,0,this.t*0.5);
-    drawDad(W/2+90,H-30,1.3,0,this.t*0.5+1);
+    drawPlayer(W/2-90,H-30,1.3,0,this.t*0.5);
+    drawCompanion(W/2+90,H-30,1.3,0,this.t*0.5+1);
     header('A DANZA','#fff');
     ctx.fillStyle='rgba(0,0,0,.4)'; rr(W/2-120,64,240,30,8); ctx.fill();
     ctx.fillStyle='#fff'; ctx.font='14px Trebuchet MS'; ctx.textAlign='center';
