@@ -173,6 +173,10 @@ function rand(a,b){ return a+Math.random()*(b-a); }
 let shakeT=0; function shake(){ shakeT=0.3; }
 
 /* ===================== PERSONAGGIO (con viso) ===================== */
+let suppressName=false;
+function nameSprite(text){ const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d');
+  x.fillStyle='rgba(0,0,0,.5)'; x.fillRect(6,12,244,40); x.fillStyle='#ffffff'; x.font='bold 30px Trebuchet MS, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(text,128,33);
+  const t=new THREE.CanvasTexture(c); const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false})); s.renderOrder=10; return s; }
 function buildCousin(id){
   const cfg=CHARS[id]; const g=new THREE.Group();
   const sk=M(cfg.skin), sh=M(cfg.shirt,.7), pa=M(cfg.pants), ha=M(cfg.hair,.95);
@@ -192,7 +196,9 @@ function buildCousin(id){
   [-1,1].forEach(s=>{ const ch=new THREE.Mesh(new THREE.SphereGeometry(.034,8,8),new THREE.MeshStandardMaterial({color:0xffb0b0,transparent:true,opacity:.4,roughness:1})); ch.position.set(.118*s,1.24,.18); g.add(ch); });
   addHair(g,cfg,ha); g.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
   const k=cfg.style==='adult'?1.0:(0.62+(cfg.age-6)*0.03); g.scale.setScalar(k);
-  g.userData.legs=[l1,l2]; g.userData.arms=[a1,a2]; return g;
+  g.userData.legs=[l1,l2]; g.userData.arms=[a1,a2];
+  if(!suppressName){ const tag=nameSprite(cfg.name); const worldY=1.5*k+0.36; tag.position.set(0, worldY/k, 0); tag.scale.set(1.5/k, 0.4/k, 1); g.add(tag); g.userData.nameTag=tag; }
+  return g;
 }
 function addHair(g,cfg,ha){ const cy=1.28;
   // calotta: copre solo la sommità sopra la fronte, il VISO resta scoperto (color pelle)
@@ -959,7 +965,7 @@ function thumbInit(){ const c=document.createElement('canvas'); c.width=170;c.he
   thumbScene=new THREE.Scene(); thumbScene.add(new THREE.AmbientLight(0xffffff,.85)); const d=new THREE.DirectionalLight(0xffffff,.7); d.position.set(2,4,3); thumbScene.add(d);
   thumbCam=new THREE.PerspectiveCamera(34,170/220,.1,50); thumbCam.position.set(0,1.05,3.4); thumbCam.lookAt(0,.95,0); }
 function avatarThumb(id){ if(thumbCache[id])return thumbCache[id]; if(!thumbR)thumbInit();
-  const g=buildCousin(id); thumbScene.add(g); thumbR.render(thumbScene,thumbCam); const url=thumbR.domElement.toDataURL();
+  suppressName=true; const g=buildCousin(id); suppressName=false; thumbScene.add(g); thumbR.render(thumbScene,thumbCam); const url=thumbR.domElement.toDataURL();
   thumbScene.remove(g); g.traverse(o=>{ if(o.geometry)o.geometry.dispose(); if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());} }); thumbCache[id]=url; return url; }
 function buildCharGrid(){ const el=document.getElementById('charGrid'); el.innerHTML='';
   CHAR_IDS.forEach(id=>{ const cfg=CHARS[id]; const d=document.createElement('div'); d.className='card'+(id===hero?' sel':'');
