@@ -661,18 +661,47 @@ const THEMES = {
 };
 
 /* ===================== ABILITÀ ===================== */
+function netTexture(rx,ry){ const c=document.createElement('canvas'); c.width=64;c.height=64; const x=c.getContext('2d'); x.clearRect(0,0,64,64); x.strokeStyle='rgba(255,255,255,.9)'; x.lineWidth=3; for(let i=0;i<=64;i+=9){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,64); x.moveTo(0,i); x.lineTo(64,i); x.stroke(); } const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx||4,ry||3); return t; }
+function courtTexture(){ const c=document.createElement('canvas'); c.width=512;c.height=512; const x=c.getContext('2d');
+  x.fillStyle='#d9a866'; x.fillRect(0,0,512,512);
+  x.strokeStyle='rgba(120,80,30,.3)'; x.lineWidth=2; for(let i=0;i<512;i+=20){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,512); x.stroke(); }
+  x.strokeStyle='#f5f5f5'; x.lineWidth=5;
+  x.strokeRect(24,24,464,464); x.strokeRect(256-72,24,144,168);
+  x.beginPath(); x.arc(256,192,62,0,Math.PI*2); x.stroke();
+  x.beginPath(); x.arc(256,70,212,0.16*Math.PI,0.84*Math.PI,false); x.stroke();
+  x.beginPath(); x.moveTo(48,24); x.lineTo(48,86); x.moveTo(464,24); x.lineTo(464,86); x.stroke();
+  return new THREE.CanvasTexture(c); }
+function pitchTexture(){ const c=document.createElement('canvas'); c.width=512;c.height=512; const x=c.getContext('2d');
+  for(let i=0;i<512;i+=42){ x.fillStyle=(((i/42)|0)%2)? '#3aa63f':'#33993a'; x.fillRect(0,i,512,42); }
+  x.strokeStyle='rgba(255,255,255,.92)'; x.lineWidth=4; x.fillStyle='rgba(255,255,255,.92)';
+  x.strokeRect(18,18,476,476); x.strokeRect(256-150,18,300,150); x.strokeRect(256-70,18,140,60);
+  x.beginPath(); x.arc(256,150,6,0,Math.PI*2); x.fill();
+  x.beginPath(); x.arc(256,150,58,0.16*Math.PI,0.84*Math.PI,false); x.stroke();
+  return new THREE.CanvasTexture(c); }
+function buildStand(){ const g=new THREE.Group(); const cols=[0xe74c3c,0x2980b9,0xf1c40f,0x27ae60];
+  for(let r=0;r<3;r++){ const h=0.5+r*0.55; const step=new THREE.Mesh(new THREE.BoxGeometry(12,h,1.4),M(0x70788a)); step.position.set(0,h/2,-r*1.4); step.receiveShadow=true; g.add(step);
+    for(let s=0;s<8;s++){ const seat=new THREE.Mesh(new THREE.BoxGeometry(1.1,.3,.6),M(cols[(r+s)%4])); seat.position.set(-5.5+s*1.4,h+.15,-r*1.4); g.add(seat); } }
+  g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); return g; }
 function GameBasket(){
-  applyTheme(); addGround2(CITIES[city].ground);
-  const pole=cyl(.12,.12,3.2,0x555555); pole.position.set(0,1.6,-7); world.add(pole); B(2.4,1.5,.1,0xffffff,0,3.4,-7.05);
-  const hoopY=3.05, hoopZ=-6.6, hoopR=.45;
-  const hoop=new THREE.Mesh(new THREE.TorusGeometry(hoopR,.05,12,28),M(0xff6600,.4)); hoop.rotation.x=Math.PI/2; hoop.position.set(0,hoopY,hoopZ); world.add(hoop);
-  const ball=new THREE.Mesh(new THREE.SphereGeometry(.28,24,24),M(0xe8732a,.5)); world.add(ball);
+  applyTheme(); addGround2(0x1d2230);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(18,17),new THREE.MeshStandardMaterial({map:courtTexture(),roughness:.5})); floor.rotation.x=-Math.PI/2; floor.position.set(0,.01,-2.5); floor.receiveShadow=true; world.add(floor);
+  const pole=cyl(.16,.16,3.5,0x3a3f48); pole.position.set(0,1.75,-8.3); world.add(pole);
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.16,.16,1.4),M(0x3a3f48)); arm.position.set(0,3.45,-7.7); world.add(arm);
+  const board=new THREE.Mesh(new THREE.BoxGeometry(2.6,1.6,.08),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.25})); board.position.set(0,3.55,-7.0); board.castShadow=true; world.add(board);
+  const sq=new THREE.Mesh(new THREE.BoxGeometry(.95,.72,.04),M(0xe0533a)); sq.position.set(0,3.25,-6.94); world.add(sq);
+  const hoopY=3.05, hoopZ=-6.55, hoopR=.45;
+  const hoop=new THREE.Mesh(new THREE.TorusGeometry(hoopR,.05,12,28),new THREE.MeshStandardMaterial({color:0xff7a1a,emissive:0x803000,emissiveIntensity:.3})); hoop.rotation.x=Math.PI/2; hoop.position.set(0,hoopY,hoopZ); world.add(hoop);
+  const net=new THREE.Mesh(new THREE.CylinderGeometry(hoopR*.92,hoopR*.5,.55,16,1,true),new THREE.MeshStandardMaterial({map:netTexture(7,2),transparent:true,side:THREE.DoubleSide,depthWrite:false})); net.position.set(0,hoopY-.3,hoopZ); world.add(net);
+  const standL=buildStand(); standL.position.set(-10.5,0,-2.5); standL.rotation.y=Math.PI/2; world.add(standL);
+  const standR=buildStand(); standR.position.set(10.5,0,-2.5); standR.rotation.y=-Math.PI/2; world.add(standR);
+  const oc=otherCousins(); const fans=[]; for(let i=0;i<4;i++){ const f=buildCousin(oc[i%oc.length]); f.position.set(i<2?-8.4:8.4,0,-5+(i%2)*4); f.rotation.y=i<2?Math.PI/2:-Math.PI/2; world.add(f); fans.push(f); }
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.28,20,20),M(0xe8732a,.55)); world.add(ball);
   const player=buildCousin(hero); player.position.set(0,0,1); player.rotation.y=Math.PI; world.add(player);
-  camera.position.set(0,2.6,5.5); camera.lookAt(0,2.4,-6);
-  let phase='aim', aimX=0, pw=0, pdir=1, vel=new THREE.Vector3(), made=0, shots=0, flyT=0, scored=false; const GOAL=5;
+  camera.position.set(0,2.7,5.8); camera.lookAt(0,2.4,-6);
+  let phase='aim', aimX=0, pw=0, pdir=1, vel=new THREE.Vector3(), made=0, shots=0, flyT=0, scored=false, t=0; const GOAL=5;
   function reset(){ ball.position.set(aimX*1.2,1.3,.2); phase='aim'; pw=0; scored=false; showPower(false); }
   reset(); setInstr('◀ ▶ mira · SPAZIO potenza, poi tira'); setScore('Canestri: 0/'+GOAL);
-  return { update(dt){
+  return { update(dt){ t+=dt; fans.forEach((f,i)=>f.position.y=Math.abs(Math.sin(t*3+i))*0.14);
     if(phase==='aim'){ if(keys['ArrowLeft'])aimX=Math.max(-1,aimX-dt*1.2); if(keys['ArrowRight'])aimX=Math.min(1,aimX+dt*1.2); ball.position.x=aimX*1.2; if(hit('Space')){ phase='power'; showPower(true); } }
     else if(phase==='power'){ pw+=pdir*dt*80; if(pw>100){pw=100;pdir=-1;} if(pw<0){pw=0;pdir=1;} setPower(pw);
       if(hit('Space')){ phase='fly'; showPower(false); shots++; const sp=7.5+pw*.06, ang=THREE.MathUtils.degToRad(56); const d=new THREE.Vector3(-ball.position.x,0,hoopZ-ball.position.z).normalize(); vel.set(d.x*sp*Math.cos(ang),sp*Math.sin(ang),d.z*sp*Math.cos(ang)); beep(440,.1); } }
@@ -680,7 +709,6 @@ function GameBasket(){
       if(!scored && py>hoopY && ball.position.y<=hoopY){ if(Math.hypot(ball.position.x,ball.position.z-hoopZ)<hoopR*.9){ scored=true; made++; beep(900,.12); setTimeout(()=>beep(1200,.12),90); if(made>=GOAL){ finishGame(15+made,'Cestista! 🏀 '+made+' canestri'); phase='done'; return; } } }
       if(ball.position.y<.28){ ball.position.y=.28; phase='rest'; flyT=.5; } setScore('Canestri: '+made+'/'+GOAL+'   (tiri: '+shots+')'); }
     else if(phase==='rest'){ flyT-=dt; if(flyT<=0)reset(); }
-    hoop.rotation.z+=dt*.3;
   }};
 }
 function GameBowling(){
@@ -719,19 +747,27 @@ function GameBowling(){
   }};
 }
 function GameCalcio(){
-  applyTheme(); addGround2(0x4caf50); const goalZ=-9, gw=7, gh=2.6; const bar=M(0xffffff,.3);
+  applyTheme(); addGround2(0x2f6b34);
+  const pitch=new THREE.Mesh(new THREE.PlaneGeometry(26,28),new THREE.MeshStandardMaterial({map:pitchTexture(),roughness:.85})); pitch.rotation.x=-Math.PI/2; pitch.position.set(0,.01,-3); pitch.receiveShadow=true; world.add(pitch);
+  const goalZ=-9, gw=7, gh=2.6; const bar=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.4});
   const post=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,gh,10),bar);
   const pL=post.clone(); pL.position.set(-gw/2,gh/2,goalZ); const pR=post.clone(); pR.position.set(gw/2,gh/2,goalZ);
-  const cross=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,gw,10),bar); cross.rotation.z=Math.PI/2; cross.position.set(0,gh,goalZ); world.add(pL,pR,cross);
-  const net=new THREE.Mesh(new THREE.PlaneGeometry(gw,gh),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.12,side:THREE.DoubleSide})); net.position.set(0,gh/2,goalZ-.4); world.add(net);
+  const cross=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,gw+.2,10),bar); cross.rotation.z=Math.PI/2; cross.position.set(0,gh,goalZ); world.add(pL,pR,cross);
+  const nm=new THREE.MeshStandardMaterial({map:netTexture(10,5),transparent:true,side:THREE.DoubleSide,depthWrite:false});
+  const back=new THREE.Mesh(new THREE.PlaneGeometry(gw,gh),nm); back.position.set(0,gh/2,goalZ-1.3); world.add(back);
+  const top=new THREE.Mesh(new THREE.PlaneGeometry(gw,1.45),nm); top.rotation.x=Math.PI/2; top.position.set(0,gh,goalZ-0.65); world.add(top);
+  [-1,1].forEach(s=>{ const sd=new THREE.Mesh(new THREE.PlaneGeometry(1.45,gh),nm); sd.rotation.y=Math.PI/2; sd.position.set(s*gw/2,gh/2,goalZ-0.65); world.add(sd); });
+  [-1,1].forEach(s=>{ const fp=cyl(.03,.03,1.2,0xffffff); fp.position.set(s*11,.6,2.5); world.add(fp); const fl=new THREE.Mesh(new THREE.PlaneGeometry(.5,.34),M(0xff4444,.5)); fl.position.set(s*11+.25*s,1.0,2.5); world.add(fl); });
+  const stand=buildStand(); stand.position.set(0,0,goalZ-3.4); world.add(stand);
+  const oc=otherCousins(); const fans=[]; for(let i=0;i<4;i++){ const f=buildCousin(oc[i%oc.length]); f.position.set(-4.5+i*3,0,goalZ-2.5); world.add(f); fans.push(f); }
   const gk=buildCousin(otherChar()); gk.position.set(0,0,goalZ+.5); world.add(gk);
-  const ball=new THREE.Mesh(new THREE.SphereGeometry(.25,24,24),M(0xffffff,.4)); ball.position.set(0,.25,0); world.add(ball);
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.25,20,20),M(0xffffff,.4)); ball.position.set(0,.25,0); world.add(ball);
   const shooter=buildCousin(hero); shooter.position.set(-.9,0,2.2); shooter.rotation.y=Math.PI; world.add(shooter);
   camera.position.set(0,2.4,5.5); camera.lookAt(0,1.2,goalZ);
   let phase='aim', zone=1, pw=0, pdir=1, t=0, gkZone=1, goals=0, shots=0, restT=0, scored=false; const zx=[-2.3,0,2.3], GOAL=3; let st=null,en=null,spd=1;
   setInstr('◀ ▶ scegli angolo · SPAZIO potenza, poi tira'); setScore('Gol: 0/'+GOAL);
   function reset(){ ball.position.set(0,.25,0); phase='aim'; pw=0; t=0; scored=false; gk.position.x=0; gk.rotation.z=0; showPower(false); }
-  return { update(dt){
+  return { update(dt){ fans.forEach((f,i)=>f.position.y=Math.abs(Math.sin(performance.now()*0.003+i))*0.14);
     if(phase==='aim'){ if(hit('ArrowLeft'))zone=Math.max(0,zone-1); if(hit('ArrowRight'))zone=Math.min(2,zone+1); shooter.position.x=-.9+zone*.1; if(hit('Space')){ phase='power'; showPower(true); } }
     else if(phase==='power'){ pw+=pdir*dt*80; if(pw>100){pw=100;pdir=-1;} if(pw<0){pw=0;pdir=1;} setPower(pw); if(hit('Space')){ phase='kick'; showPower(false); shots++; t=0; gkZone=Math.floor(Math.random()*3); beep(300,.1); st=ball.position.clone(); en=new THREE.Vector3(zx[zone],1.2,goalZ+.2); spd=.6+pw*.004; } }
     else if(phase==='kick'){ t=Math.min(1,t+dt*spd*2.2); ball.position.lerpVectors(st,en,t); ball.position.y+=Math.sin(t*Math.PI)*.8; ball.rotation.x+=dt*8;
