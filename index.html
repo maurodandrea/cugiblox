@@ -767,18 +767,24 @@ function walkCollect(th){
     }
     haz.forEach(h=>{ h.position.addScaledVector(h.userData.v,dt); if(Math.abs(h.position.x)>half)h.userData.v.x*=-1; if(Math.abs(h.position.z)>half)h.userData.v.z*=-1; h.lookAt(player.position.x,h.position.y,player.position.z);
       if(Math.hypot(player.position.x-h.position.x,player.position.z-h.position.z)<1.1){ time-=3*dt; beep(140,.06,'sawtooth',.06); const dx=player.position.x-h.position.x,dz=player.position.z-h.position.z,d=Math.hypot(dx,dz)||1; player.position.x+=dx/d*0.12; player.position.z+=dz/d*0.12; } });
+    if(th._tvMat && Math.hypot(player.position.x-3.5,player.position.z+7.5)<2.2 && hit('Space')){ th._tvOn=!th._tvOn; const g2=th._tvC.getContext('2d'); if(th._tvOn){ g2.fillStyle='#05111f'; g2.fillRect(0,0,256,160); g2.fillStyle='#1a3a6a'; g2.fillRect(0,30,256,90); g2.fillStyle='#3a1a05'; g2.fillRect(0,120,256,40); g2.fillStyle='rgba(255,235,100,.9)'; g2.beginPath(); g2.arc(128,75,18,0,Math.PI*2); g2.fill(); g2.fillStyle='rgba(255,255,255,.85)'; g2.font='bold 14px sans-serif'; g2.textAlign='center'; g2.fillText('★ LE AVVENTURE ★',128,16); g2.font='11px sans-serif'; g2.fillText('🎬 Film in corso',128,150); th._tvMat.emissive.set(0x223366); th._tvMat.emissiveIntensity=0.7; } else { g2.fillStyle='#000'; g2.fillRect(0,0,256,160); th._tvMat.emissive.set(0); th._tvMat.emissiveIntensity=0; } th._tvTex.needsUpdate=true; beep(th._tvOn?440:220,.1); }
     setScore(th.emoji+' '+collected+'/'+th.goal+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s');
     if(th.goal>0 && collected>=th.goal){ done=true; finishGame(15+Math.ceil(Math.max(0,time)),th.win); }
     else if(time<=0){ done=true; finishGame(5+collected,'Tempo scaduto — '+collected+' fatti'); }
   }};
 }
 const THEMES = {
-  casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[6,5.5],dropLabel:'🧺 Scatolone',exitDoor:[0,8],furniture:[{type:'bed',x:-5.5,z:-5},{type:'sofa',x:-3,z:6.4}],instr:'Riordina · avvicinati al letto per sdraiarti, al divano per sederti · 🚪 esci',win:'Cameretta in ordine! 🏠',
+  casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[6,5.5],dropLabel:'🧺 Scatolone',exitDoor:[0,8],furniture:[{type:'bed',x:-5.5,z:-5},{type:'sofa',x:3.5,z:-5.5}],instr:'Riordina · avvicinati al letto per sdraiarti, al divano per sederti · 🚪 esci',win:'Cameretta in ordine! 🏠',
     decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5);
       B(2,1.4,.12,0x9fd6ee,-3,2.2,-7.84); B(2,1.4,.12,0x9fd6ee,3,2.2,-7.84); B(.12,1.4,2,0x9fd6ee,-7.84,2.2,-2); B(.12,1.4,2,0x9fd6ee,7.84,2.2,2);   // finestre
-      B(2.8,.5,1.1,0x4a6fa5,-3,.4,6.6); B(2.8,.7,.25,0x4a6fa5,-3,.85,7.1);                  // divano
-      B(3.4,.06,2.2,0x9c3a3a,-3,.04,5.2);                                                    // tappeto
-      B(1.7,1.05,.2,0x111111,3.5,1.35,-7.75); B(1.5,.85,.16,0x2a6fb0,3.5,1.35,-7.62);        // TV a muro
+      B(2.8,.5,1.1,0x4a6fa5,3.5,.4,-5.5); B(2.8,.7,.25,0x4a6fa5,3.5,.85,-5.1);  // divano vicino TV
+      B(3.4,.06,2.2,0x9c3a3a,3.5,.04,-6.5);                                       // tappeto davanti TV
+      B(2.2,.8,1.1,0x8a5a2b,-3,.4,6); B(2.2,.06,1.1,0xd4a45a,-3,.84,6);          // scrivania
+      B(.8,.04,.3,0x333333,-3,.84,5.55);                                            // tastiera
+      B(.75,.55,.1,0x111111,-3,1.12,5.45); B(.6,.42,.06,0x1a2a8a,-3,1.12,5.39);   // monitor + schermo
+      B(.7,.4,.6,0xc8a45a,-3,.2,7); B(.7,.7,.1,0xb89048,-3,.7,7.35);              // sedia
+      B(1.7,1.05,.2,0x111111,3.5,1.35,-7.75);                                       // TV scocca
+      { const tvC=document.createElement('canvas'); tvC.width=256; tvC.height=160; const tvg=tvC.getContext('2d'); tvg.fillStyle='#000'; tvg.fillRect(0,0,256,160); const tvTex=new THREE.CanvasTexture(tvC); const tvMat=new THREE.MeshStandardMaterial({map:tvTex,emissive:new THREE.Color(0),emissiveIntensity:0}); const tvScr=new THREE.Mesh(new THREE.PlaneGeometry(1.42,.88),tvMat); tvScr.position.set(3.5,1.35,-7.69); world.add(tvScr); this._tvTex=tvTex; this._tvMat=tvMat; this._tvC=tvC; }
       B(.4,2,1.4,0x7a4a28,7.4,1,2); for(let i=0;i<3;i++)B(.5,.1,1.3,0xffd24a,7.4,.6+i*.6,2);  // libreria
       const lamp=cyl(.05,.05,1.8,0xcccccc); lamp.position.set(6.8,.9,-6); world.add(lamp); B(.6,.4,.6,0xffe9a0,6.8,1.9,-6);
       const pot=cyl(.3,.25,.5,0xb5651d); pot.position.set(-7,.25,6.5); world.add(pot); const pl=new THREE.Mesh(new THREE.ConeGeometry(.6,1.1,8),M(0x2f8f4a)); pl.position.set(-7,1.1,6.5); world.add(pl);
@@ -1033,7 +1039,9 @@ function GameBasket(){
   const net=new THREE.Mesh(new THREE.CylinderGeometry(hoopR*.92,hoopR*.5,.55,16,1,true),new THREE.MeshStandardMaterial({map:netTexture(7,2),transparent:true,side:THREE.DoubleSide,depthWrite:false})); net.position.set(0,hoopY-.3,hoopZ); world.add(net);
   const standL=buildStand(); standL.position.set(-10.5,0,-2.5); standL.rotation.y=Math.PI/2; world.add(standL);
   const standR=buildStand(); standR.position.set(10.5,0,-2.5); standR.rotation.y=-Math.PI/2; world.add(standR);
+  const standBack=buildStand(); standBack.position.set(0,0,-13.5); standBack.rotation.y=Math.PI; world.add(standBack);
   const oc=otherCousins(); const fans=[]; for(let i=0;i<4;i++){ const f=buildCousin(oc[i%oc.length]); f.position.set(i<2?-8.4:8.4,0,-5+(i%2)*4); f.rotation.y=i<2?Math.PI/2:-Math.PI/2; world.add(f); fans.push(f); }
+  for(let i=0;i<5;i++){ const f=buildCousin(oc[(i+1)%oc.length]); f.position.set(-4+i*2,0,-11.5); f.rotation.y=0; world.add(f); fans.push(f); }
   const ball=makeBall(.28,'basket'); world.add(ball);
   const player=buildCousin(hero); player.position.set(0,0,1); player.rotation.y=Math.PI; world.add(player);
   camera.position.set(0,2.7,5.8); camera.lookAt(0,2.4,-6);
@@ -1695,13 +1703,13 @@ function GameTennis(){
   const oc=otherCousins(); const fans=[]; for(let i=0;i<4;i++){ const f=buildCousin(oc[i%oc.length]); f.position.set(i<2?-7.4:7.4,0,-8+(i%2)*7); f.rotation.y=i<2?Math.PI/2:-Math.PI/2; world.add(f); fans.push(f); }
   const player=buildCousin(hero); player.position.set(0,0,7); player.rotation.y=Math.PI; world.add(player);
   const opp=buildCousin(otherChar()); opp.position.set(0,0,-13); world.add(opp);
-  const ball=new THREE.Mesh(new THREE.SphereGeometry(.24,16,16),new THREE.MeshStandardMaterial({color:0xd6e84a,emissive:0x556b00,emissiveIntensity:.3})); world.add(ball);
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.17,16,16),new THREE.MeshStandardMaterial({color:0xd6e84a,emissive:0x556b00,emissiveIntensity:.3})); world.add(ball);
   camera.position.set(0,5,12.5); camera.lookAt(0,1,-3);
   const PZ=7, OZ=-13; let bx=0, bz=-4, tx=0, vz=8, myPts=0, opPts=0, t=0, done=false, lock=false, restT=0;
-  function serve(toPlayer){ bx=0; bz=-4; tx=rand(-3.5,3.5); vz=toPlayer?8:-8; lock=false; restT=0; ball.position.set(bx,.5,bz); }
+  function serve(toPlayer){ bx=0; bz=-4; tx=rand(-3.5,3.5); vz=toPlayer?11:-11; lock=false; restT=0; ball.position.set(bx,.5,bz); }
   function swing(c){ c.userData.arms[0].rotation.x=-1.4; setTimeout(()=>{ if(c.userData)c.userData.arms[0].rotation.x=0; },160); }
   function flash(m){ showMsg(m); setTimeout(()=>{ if(!done)showMsg(''); },900); }
-  serve(true); setInstr('◀ ▶ muoviti sotto la palla: ribatti in automatico! 🎾'); setScore('🎾 Tu 0 - 0 Avversario');
+  serve(true); setInstr('◀ ▶ muoviti sotto la palla · ribatti automatico · AZIONE vicino = 💥 SCHIACCIATA! 🎾'); setScore('🎾 Tu 0 - 0 Avversario');
   return { update(dt){ if(done)return; t+=dt;
     fans.forEach((f,i)=>f.position.y=Math.abs(Math.sin(t*3+i))*0.13);
     if(restT>0){ restT-=dt; if(restT<=0)serve(Math.random()<0.5); return; }
@@ -1710,13 +1718,14 @@ function GameTennis(){
     if(vz<0) opp.position.x=THREE.MathUtils.lerp(opp.position.x,THREE.MathUtils.clamp(tx,-5,5),0.05);
     bz+=vz*dt; bx+=(tx-bx)*Math.min(1,dt*0.9);
     const arc=Math.max(0,Math.sin(((bz-OZ)/(PZ-OZ))*Math.PI)); ball.position.set(bx,.4+arc*1.4,bz); ball.rotation.x+=dt*6;
+    if(!lock && vz>0 && bz>=PZ-3 && hit('Space') && Math.abs(bx-player.position.x)<2.4){ lock=true; vz=-24; tx=rand(-4,4); beep(900,.14); swing(player); lock=false; showMsg('💥 SCHIACCIATA!'); setTimeout(()=>{if(!done)showMsg('');},700); }
     if(!lock && vz>0 && bz>=PZ-0.5){ lock=true;
-      if(Math.abs(bx-player.position.x)<1.8){ vz=-8; tx=rand(-4,4); beep(540,.06); swing(player); lock=false; }
+      if(Math.abs(bx-player.position.x)<1.8){ vz=-11; tx=rand(-4,4); beep(540,.06); swing(player); lock=false; }
       else { opPts++; beep(180,.2); flash('Punto avversario'); if(opPts>=5){ done=true; finishGame(8,'Hai perso '+myPts+'-'+opPts+' 🎾'); return; } restT=1.0; } }
     if(!lock && vz<0 && bz<=OZ+0.5){ lock=true;
       const miss=Math.random()<0.3 || Math.abs(bx-opp.position.x)>1.9;
       if(miss){ myPts++; beep(900,.1); setTimeout(()=>beep(1200,.1),90); flash('Punto tuo! 🎉'); if(myPts>=5){ done=true; finishGame(20,'Hai vinto '+myPts+'-'+opPts+'! 🏆'); return; } restT=1.0; }
-      else { vz=8; tx=rand(-4,4); beep(440,.06); swing(opp); lock=false; } }
+      else { vz=11; tx=rand(-4,4); beep(440,.06); swing(opp); lock=false; } }
     camera.position.x=THREE.MathUtils.lerp(camera.position.x,player.position.x*0.4,0.1); camera.lookAt(0,1,-3);
     setScore('🎾 Tu '+myPts+' - '+opPts+' Avversario');
   }};
