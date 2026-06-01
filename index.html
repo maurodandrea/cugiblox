@@ -693,8 +693,9 @@ function walkCollect(th){
     if(rides){
       if(riding){ rideT-=dt;
         if(riding.type==='swing'){ const ang=Math.sin((riding.dur-rideT)*2.3)*0.85; riding.pivot.rotation.x=ang; player.position.set(riding.x,2.4-1.6*Math.cos(ang),riding.z-1.6*Math.sin(ang)); player.rotation.set(ang*0.5,Math.PI,0); }
+        else if(riding.type==='ferris'){ riding.wheelAngle=(riding.wheelAngle||0)+0.45*dt; riding.wheel.rotation.z=riding.wheelAngle; const fa=Math.PI+riding.wheelAngle; player.position.set(riding.x+Math.sin(fa)*riding.FR,riding.FH+riding.FR+Math.cos(fa)*riding.FR,riding.z-.2); player.rotation.set(0,Math.PI,0); }
         else { const p=Math.min(1,(riding.dur-rideT)/riding.dur); player.position.set(riding.x,THREE.MathUtils.lerp(2.0,0.2,p),THREE.MathUtils.lerp(riding.z,riding.z+2.6,p)); player.rotation.set(-0.4,Math.PI,0); }
-        if(hit('Space')||rideT<=0){ if(riding.type==='swing')riding.pivot.rotation.x=0; player.rotation.set(0,player.rotation.y,0); player.position.set(riding.x,0,riding.z+(riding.type==='slide'?2.9:2.2)); riding=null; setInstr(th.instr); }
+        if(hit('Space')||rideT<=0){ if(riding.type==='swing')riding.pivot.rotation.x=0; player.rotation.set(0,player.rotation.y,0); player.position.set(riding.x,0,riding.z+(riding.type==='slide'?2.9:riding.type==='ferris'?2.0:2.2)); riding=null; setInstr(th.instr); }
         followCam(player,7,5.6,1); setScore(th.emoji+' '+collected+'/'+th.goal+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s'); return;
       } else for(const r of rides){ if(Math.hypot(player.position.x-r.x,player.position.z-r.z)<1.3){ riding=r; rideT=r.dur; beep(700,.1); setInstr('🛝 AZIONE per scendere'); break; } }
     }
@@ -739,7 +740,7 @@ function walkCollect(th){
     haz.forEach(h=>{ h.position.addScaledVector(h.userData.v,dt); if(Math.abs(h.position.x)>half)h.userData.v.x*=-1; if(Math.abs(h.position.z)>half)h.userData.v.z*=-1; h.lookAt(player.position.x,h.position.y,player.position.z);
       if(Math.hypot(player.position.x-h.position.x,player.position.z-h.position.z)<1.1){ time-=3*dt; beep(140,.06,'sawtooth',.06); const dx=player.position.x-h.position.x,dz=player.position.z-h.position.z,d=Math.hypot(dx,dz)||1; player.position.x+=dx/d*0.12; player.position.z+=dz/d*0.12; } });
     setScore(th.emoji+' '+collected+'/'+th.goal+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s');
-    if(collected>=th.goal){ done=true; finishGame(15+Math.ceil(Math.max(0,time)),th.win); }
+    if(th.goal>0 && collected>=th.goal){ done=true; finishGame(15+Math.ceil(Math.max(0,time)),th.win); }
     else if(time<=0){ done=true; finishGame(5+collected,'Tempo scaduto — '+collected+' fatti'); }
   }};
 }
@@ -787,6 +788,16 @@ const THEMES = {
       const px=6,pz=-2; B(2,.3,1,0x6fc0e0,px,1.4,pz); B(.12,2.6,.12,0x6a4a2a,px-.8,1.3,pz-.5); B(.12,2.6,.12,0x6a4a2a,px+.8,1.3,pz-.5);
       const ramp=B(1,.12,3.4,0x8fd0e6,px,.9,pz+2); ramp.rotation.x=.5;
       R.push({type:'slide',x:px,z:pz,dur:2.2});
+      const fx=2,fz=-7,FR=2.0,FH=2.4;
+      B(.18,(FH+FR*2),.18,0x666688,fx-2.2,(FH+FR*2)/2,fz); B(.18,(FH+FR*2),.18,0x666688,fx+2.2,(FH+FR*2)/2,fz);
+      B(4.6,.15,.15,0x666688,fx,FH+FR*2,fz);
+      const fax=cyl(.18,.18,.5,0x999999); fax.rotation.x=Math.PI/2; fax.position.set(fx,FH+FR,fz); world.add(fax);
+      const fWheel=new THREE.Group(); fWheel.position.set(fx,FH+FR,fz); world.add(fWheel);
+      const fCols=[0xff6b6b,0x6bd0ff,0xffe14a,0x2f8f4a,0x8e44ad,0xe04030];
+      for(let fi=0;fi<6;fi++){ const fa2=fi/6*Math.PI*2; const sp=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,FR,6),M(0x555588)); sp.position.set(Math.sin(fa2)*FR/2,Math.cos(fa2)*FR/2,0); sp.rotation.z=-fa2; fWheel.add(sp); const gon=new THREE.Mesh(new THREE.BoxGeometry(.55,.45,.38),M(fCols[fi],.8)); gon.position.set(Math.sin(fa2)*FR,Math.cos(fa2)*FR,0); fWheel.add(gon); }
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(FR,.07,8,24),M(0x666688,.8)); fWheel.add(rim);
+      const flab=labelSprite('🎡 Ruota'); flab.position.set(fx,FH+FR*2+.9,fz); world.add(flab);
+      R.push({type:'ferris',x:fx,z:fz,wheel:fWheel,FR,FH,dur:14});
       return R; }},
   bar:{emoji:'🍹',ground:0xb0a8c8,size:16,goal:7,time:50,deliver:true,drop:[0,-6],dropLabel:'🍹 Bancone',instr:'Raccogli un bicchiere e portalo al bancone! 🎵',win:'Servizio perfetto! 🍹',music:true,
     decor(){ B(8,1.1,1.4,0x5a3a2a,0,.55,-6); for(let i=0;i<4;i++){ const st=cyl(.3,.3,.9,0x333333); st.position.set(-3+i*2,.45,-4.4); st.castShadow=true; world.add(st); }
@@ -848,6 +859,17 @@ const THEMES = {
   colosseo:{emoji:'🏆',ground:0xd9c39a,size:20,goal:8,time:55,hazards:3,instr:'Prendi i tesori e schiva i leoni! 🦁',win:'Campione dell\'arena! 🏆',
     decor(){ const N=16; for(let i=0;i<N;i++){ const a=i/N*Math.PI*2,R=9.5; const col=cyl(.5,.55,4,0xe8dcc0); col.position.set(Math.sin(a)*R,2,Math.cos(a)*R); col.castShadow=true; world.add(col); B(1.2,.4,1.2,0xe8dcc0,Math.sin(a)*R,4.1,Math.cos(a)*R); } },
     item(){ const o=new THREE.Mesh(new THREE.OctahedronGeometry(.34),new THREE.MeshStandardMaterial({color:0xffe14a,emissive:0xffd000,emissiveIntensity:.5})); o.position.y=.5; return o; }},
+  giostre_hub:{emoji:'🎡',ground:0xd0a870,size:16,goal:0,time:999,exitDoor:[0,-8],
+    gameDoors:[{gid:'giostre_car',x:-5,z:2,label:'🎠 Giostra',col:0xffcc33},{gid:'giostre_salt',x:0,z:5,label:'🦘 Salta-Salta',col:0xff6b6b},{gid:'giostre_ruota',x:5,z:2,label:'🎡 Ruota Pano.',col:0x6bd0ff}],
+    instr:'Scegli una giostra! 🎠🦘🎡 · 🚪 esci',win:'',
+    decor(){ for(let i=0;i<8;i++){ const fc=[0xff5b5b,0x5bd0ff,0xffe14a,0x6bff8a][i%4]; B(.12,2.8,.12,fc,-7+i*2,1.4,-7); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),M(fc)); fl.position.set(-7+i*2,2.8,-7); world.add(fl); }
+      for(let i=0;i<4;i++){ const cc=new THREE.Mesh(new THREE.CircleGeometry(.8,12),M([0xffcc33,0xff6b6b,0x6bd0ff,0x6bff8a][i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set([-5,0,5,0][i],.01,[2,5,2,-3][i]); world.add(cc); } }},
+  acquapark_hub:{emoji:'💦',ground:0x5ab8d0,size:18,goal:0,time:999,exitDoor:[0,-9],
+    gameDoors:[{gid:'acquapark_slide',x:-6,z:2,label:'🌊 Scivolo',col:0x5bd0ff},{gid:'acquapark_onde',x:0,z:5,label:'🌊 Onde',col:0x2080ff},{gid:'acquapark_fiume',x:6,z:2,label:'🛟 Fiume',col:0x2fa8e0}],
+    instr:'Scegli un\'attrazione! 🌊🛟 · 🚪 esci',win:'',
+    decor(){ const pool=new THREE.Mesh(new THREE.PlaneGeometry(16,8),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.75,roughness:.15})); pool.rotation.x=-Math.PI/2; pool.position.set(0,.05,-2); world.add(pool);
+      for(let i=0;i<6;i++){ const u=cyl(.15,.18,.38,0xff8c1a); u.position.set(-5+i*2,0,-6); world.add(u); const top=new THREE.Mesh(new THREE.SphereGeometry(.48,8,8),M([0xff5b5b,0xffe14a,0x6bd0ff][i%3])); top.position.set(-5+i*2,.58,-6); world.add(top); }
+      for(let i=0;i<8;i++){ const fl=new THREE.Mesh(new THREE.SphereGeometry(.28,8,8),M(TC[i%TC.length],.5)); fl.position.set(-7+i*2,2.2,-8.5); world.add(fl); } }},
 };
 
 /* ===================== ABILITÀ ===================== */
