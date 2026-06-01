@@ -33,7 +33,7 @@
   #hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:8;} #hud.on{display:block;}
   #score{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.45);padding:8px 18px;border-radius:20px;font-weight:bold;font-size:17px;text-align:center;}
   #instr{position:absolute;top:58px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.35);padding:6px 14px;border-radius:14px;font-size:14px;color:#ffe;text-align:center;max-width:90vw;}
-  #powerwrap{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);width:240px;height:18px;background:rgba(0,0,0,.5);border-radius:10px;overflow:hidden;display:none;}
+  #powerwrap{position:absolute;bottom:170px;left:50%;transform:translateX(-50%);width:240px;height:18px;background:rgba(0,0,0,.5);border-radius:10px;overflow:hidden;display:none;}
   #powerwrap.on{display:block;} #power{height:100%;width:0%;background:linear-gradient(90deg,#2ecc71,#f1c40f,#e74c3c);}
   #msg{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);font-size:min(7vw,34px);font-weight:bold;color:#ffd86b;text-shadow:0 4px 14px #000;text-align:center;display:none;}
   #back{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:20px;pointer-events:auto;}
@@ -689,7 +689,7 @@ function walkCollect(th){
   const exitDoor=th.exitDoor||null;
   if(exitDoor){ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(exitDoor[0],0,exitDoor[1]); world.add(dg); const elab=labelSprite('🚪 Esci'); elab.position.set(exitDoor[0],2.9,exitDoor[1]); world.add(elab); }
   const gameDoors=th.gameDoors||null;
-  if(gameDoors) gameDoors.forEach(gd=>{ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),M(0x8a5a2b)); j1.position.set(-.95,1.3,0); const j2=j1.clone(); j2.position.x=.95; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2.1,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.6,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.5),new THREE.MeshStandardMaterial({color:gd.col||0xffcf6b,emissive:gd.col||0xffcf6b,emissiveIntensity:.35,transparent:true,opacity:.6,side:THREE.DoubleSide})); pan.position.set(0,1.3,0); dg.add(j1,j2,dtop,pan); dg.position.set(gd.x,0,gd.z); world.add(dg); const gl=labelSprite(gd.label,3); gl.position.set(gd.x,3.2,gd.z); world.add(gl); });
+  if(gameDoors) gameDoors.forEach(gd=>{ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),M(0x8a5a2b)); j1.position.set(-.95,1.3,0); const j2=j1.clone(); j2.position.x=.95; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2.1,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.6,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.5),new THREE.MeshStandardMaterial({color:gd.col||0xffcf6b,emissive:gd.col||0xffcf6b,emissiveIntensity:.35,transparent:true,opacity:.6,side:THREE.DoubleSide})); pan.position.set(0,1.3,0); dg.add(j1,j2,dtop,pan); dg.position.set(gd.x,0,gd.z); if(gd.rot) dg.rotation.y=gd.rot; world.add(dg); const gl=labelSprite(gd.label,3); gl.position.set(gd.x,3.2,gd.z); world.add(gl); });
   if(th.music) startMusic();
   camera.position.set(0,8,10);
   let collected=0, time=th.time||45, t=0, done=false, carried=null;
@@ -843,7 +843,7 @@ const THEMES = {
     decor(){ B(18,3.2,.3,0xeae2d0,0,1.6,-8); B(.3,3.2,18,0xeae2d0,-8.6,1.6,0); B(.3,3.2,18,0xeae2d0,8.6,1.6,0); B(6,1.2,1.6,0x33aaaa,-3,.6,-7); for(let i=0;i<6;i++){ const col=cyl(.3,.3,2.6,TC[i]); col.position.set(-7+i*2.8,1.3,-7.5); col.castShadow=true; world.add(col); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.7,.35),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.35; const hd=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,12),M(0x333333)); hd.position.y=.45; b.add(hd); return b; }},
   piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:60,instr:'Raccogli le monete · entra nelle 🚪 o usa altalena/scivoli! ⛲',win:'Piazzetta scintillante! ⛲',
-    gameDoors:[{gid:'bar',x:-4,z:-7.5,label:'🍹 Bar',col:0xff9ec4},{gid:'ristorante',x:4,z:-7.5,label:'🍝 Ristorante',col:0x6bd0ff},{gid:'casa',x:7,z:0,label:'🏠 Casa',col:0xffd24a}],
+    gameDoors:[{gid:'bar',x:-4,z:-7.5,label:'🍹 Bar',col:0xff9ec4},{gid:'ristorante',x:4,z:-7.5,label:'🍝 Ristorante',col:0x6bd0ff},{gid:'casa',x:7.8,z:0,rot:Math.PI/2,label:'🏠 Casa',col:0xffd24a}],
     rides(){ const R=[];
       const sx=-4,sz=-1.5; B(.15,2.4,.15,0x6a4a2a,sx-1,1.2,sz); B(.15,2.4,.15,0x6a4a2a,sx+1,1.2,sz); B(2.2,.15,.15,0x6a4a2a,sx,2.4,sz);
       const pivot=new THREE.Group(); pivot.position.set(sx,2.4,sz); world.add(pivot);
