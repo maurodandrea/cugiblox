@@ -1423,7 +1423,6 @@ function GamePiscinaOnde(){
   const pool=new THREE.Mesh(poolGeo,new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.88,roughness:.05,metalness:.25,side:THREE.DoubleSide})); pool.position.set(0,.12,0); world.add(pool);
   B(18,.8,.3,0x88c8e0,0,.4,6.3); B(18,.8,.3,0x88c8e0,0,.4,-6.3); B(.3,.8,12,0x88c8e0,-9.3,.4,0); B(.3,.8,12,0x88c8e0,9.3,.4,0);
   B(18,.8,.8,0x778899,0,.4,-6.8); const wlab=labelSprite('🌊 Macchina Onde',2.4); wlab.position.set(0,1.6,-7); world.add(wlab);
-  const foams=[]; for(let i=0;i<5;i++){ const f=new THREE.Mesh(new THREE.BoxGeometry(16,.18,.5),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.7,roughness:.1})); f.position.set(0,.22,-4+i*2); world.add(f); foams.push({m:f,bz:-4+i*2,ph:i*1.26}); }
   const items=[]; for(let i=0;i<10;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(.4,.13,8,16),M(TC[i%TC.length],.6)); r.rotation.x=Math.PI/2; r.position.set(rand(-7,7),.4,rand(-5,5)); r.userData.ph=rand(0,6.28); world.add(r); items.push(r); }
   const player=buildCousin(hero); player.position.set(0,.2,4); world.add(player);
   camera.position.set(0,8,10); camera.lookAt(0,1,0);
@@ -1433,7 +1432,6 @@ function GamePiscinaOnde(){
     const pos=poolGeo.attributes.position;
     for(let vi=0;vi<pos.count;vi++){ const x=pos.getX(vi),z=pos.getZ(vi); pos.setY(vi,Math.sin(x*.45+t*3)*Math.cos(z*.4+t*2.2)*1.8); }
     pos.needsUpdate=true; poolGeo.computeVertexNormals();
-    foams.forEach(f=>{ f.m.position.y=.3+Math.sin(t*3+f.ph)*1.5; f.m.position.z=f.bz+Math.sin(t*2.2+f.ph)*.8; });
     const waveY=Math.sin(t*2.5+player.position.z*.3)*1.2;
     player.position.y=Math.max(.1,waveY)+.2;
     const moved=thirdPersonWalk(player,dt,4);
@@ -1466,29 +1464,72 @@ function GameFiumeLento(){
 }
 function GameScivoloStretto(){
   applyTheme(); addGround2(0x5ab8d0); startAcquaparkMusic();
-  const SL=72, SW=2.0;
-  const slide=new THREE.Mesh(new THREE.PlaneGeometry(SW,SL),new THREE.MeshStandardMaterial({color:0x55aadd,roughness:.15,metalness:.1})); slide.rotation.x=-Math.PI/2; slide.position.set(0,.08,-SL/2+2); world.add(slide);
-  B(.15,.6,SL,0x2288bb,-(SW/2+.12),.3,-SL/2+2); B(.15,.6,SL,0x2288bb,SW/2+.12,.3,-SL/2+2);
-  B(4,8,.4,0x88bbdd,0,4,-SL+2); B(4,.3,1.5,0x77aacc,0,8.15,-SL+2.6);
-  const topLabel=labelSprite('🏄 Partenza!',2); topLabel.position.set(0,9.3,-SL+2); world.add(topLabel);
-  const pool=new THREE.Mesh(new THREE.CylinderGeometry(4,4,.25,20),new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.8})); pool.position.set(0,.14,6); world.add(pool);
-  const plab=labelSprite('💦 Splash!',2.2); plab.position.set(0,1.4,6); world.add(plab);
-  const items=[]; for(let i=0;i<8;i++){ const s=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),M(0xffd700,.3)); s.position.set((i%2?-.5:.5),.6,-3-i*8); s.userData.ph=rand(0,6.28); s.userData.got=false; world.add(s); items.push(s); }
-  const player=buildCousin(hero); player.position.set(0,.3,2); player.rotation.y=Math.PI; world.add(player);
-  camera.position.set(0,4.5,9);
-  let dist=0, t=0, collected=0, done=false, spd=5; const GOAL=8, MAXSPD=24, DIST_END=SL+4;
-  setInstr('◀▶ stai sul bordo · scivola fino in fondo! 🏄');
+  const GOAL=8, SW=1.8;
+  // Curved steep slide: steep descent → S-curve → ramp → jump
+  const curve=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0,11,-18),
+    new THREE.Vector3(0,8,-13),
+    new THREE.Vector3(0,4.5,-8),
+    new THREE.Vector3(0,2.5,-3),
+    new THREE.Vector3(0,1.2,1),
+    new THREE.Vector3(0,1.0,4),
+    new THREE.Vector3(0,1.5,6.5),
+    new THREE.Vector3(0,2.8,8.5),
+  ]);
+  const DIST_TOTAL=curve.getLength();
+  // Build slide surface from oriented segments
+  const segs=curve.getPoints(46);
+  for(let i=0;i<segs.length-1;i++){
+    const p0=segs[i],p1=segs[i+1];
+    const mid=new THREE.Vector3().addVectors(p0,p1).multiplyScalar(.5);
+    const dir=new THREE.Vector3().subVectors(p1,p0).normalize();
+    const len=p0.distanceTo(p1)+.04;
+    const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),dir);
+    const fl=new THREE.Mesh(new THREE.BoxGeometry(SW,.15,len),M(0x55aadd,.15));
+    fl.position.copy(mid); fl.setRotationFromQuaternion(q); world.add(fl);
+    // side rails
+    [-SW*.55,SW*.55].forEach(ox=>{
+      const right=new THREE.Vector3(1,0,0).applyQuaternion(q);
+      const wpos=mid.clone().addScaledVector(right,ox);
+      const wl=new THREE.Mesh(new THREE.BoxGeometry(.16,.5,len),M(0x2288bb,.3));
+      wl.position.copy(wpos).y+=.28; wl.setRotationFromQuaternion(q); world.add(wl);
+    });
+  }
+  // Support tower
+  B(3,11,1.5,0x88bbdd,0,5.5,-18); B(4,.4,2.5,0x77aacc,0,11.2,-17.5);
+  B(.12,11,.12,0x449aaa,-.6,5.5,-17.3); B(.12,11,.12,0x449aaa,.6,5.5,-17.3);
+  for(let i=0;i<7;i++) B(1.2,.1,.12,0x559acc,0,i*1.6+.5,-17.3);
+  const topLabel=labelSprite('🏄 Partenza!',2); topLabel.position.set(0,12.8,-18); world.add(topLabel);
+  // Splash pool
+  const pool=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,.25,24),new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.82})); pool.position.set(0,.13,16); world.add(pool);
+  const plab=labelSprite('💦 Splash!',2.2); plab.position.set(0,1.5,16); world.add(plab);
+  // Stars along curve
+  const items=[]; for(let i=0;i<8;i++){
+    const pt=curve.getPoint((i+.5)/8);
+    const s=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),M(0xffd700,.3));
+    s.position.set(pt.x+(i%2?-.5:.5),pt.y+.6,pt.z); s.userData.ph=rand(0,6.28); s.userData.got=false; world.add(s); items.push(s); }
+  const player=buildCousin(hero); player.position.copy(curve.getPoint(0)); player.rotation.y=Math.PI; world.add(player);
+  let dist=0, t=0, collected=0, done=false, spd=2, jumping=false, jvy=0, jvz=0;
+  setInstr('◀▶ stai al centro · scivola e salta nel finale! 🏄');
   return { update(dt){ if(done)return; t+=dt;
-    spd=Math.min(MAXSPD,spd+4*dt); dist+=spd*dt;
-    if(keys['ArrowLeft'])player.position.x=Math.max(-(SW/2-.25),player.position.x-3*dt);
-    if(keys['ArrowRight'])player.position.x=Math.min(SW/2-.25,player.position.x+3*dt);
-    player.position.z=2-dist;
-    walkAnim(player,t*10);
-    camera.position.set(player.position.x*.3,4.5,player.position.z+8); camera.lookAt(player.position.x*.2,1,player.position.z-5);
-    items.forEach(it=>{ if(it.userData.got)return; it.rotation.y+=dt*2.5; it.position.y=.6+Math.sin(t*3+it.userData.ph)*.15;
-      if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1.0){ it.userData.got=true; it.visible=false; collected++; beep(700+collected*40,.09); } });
+    if(!jumping){
+      spd=Math.min(20,spd+4.5*dt); dist=Math.min(DIST_TOTAL,dist+spd*dt);
+      const u=dist/DIST_TOTAL, pos=curve.getPoint(u), tang=curve.getTangent(u);
+      if(keys['ArrowLeft'])pos.x=Math.max(-.65,pos.x-2.5*dt);
+      if(keys['ArrowRight'])pos.x=Math.min(.65,pos.x+2.5*dt);
+      player.position.copy(pos); player.rotation.y=Math.atan2(-tang.x,-tang.z);
+      camera.position.set(-14,Math.max(6,pos.y+3.5),pos.z-4); camera.lookAt(0,pos.y,pos.z-1);
+      if(u>=.99){ jumping=true; jvy=4; jvz=9; beep(600,.15); }
+    } else {
+      jvy-=18*dt; player.position.y+=jvy*dt; player.position.z+=jvz*dt;
+      player.rotation.x-=dt*4;
+      camera.position.set(-14,Math.max(3,player.position.y+3.5),player.position.z-4);
+      camera.lookAt(0,player.position.y,player.position.z-1);
+      if(player.position.y<=.3&&jvy<0){ beep(300,.3,'sine',.12); setTimeout(()=>beep(600,.18),80); done=true; finishGame(12+collected*2,'SPLASH! 🏄💦 '+collected+' stelle'); }
+    }
+    items.forEach(it=>{ if(it.userData.got)return; it.rotation.y+=dt*2.5;
+      if(Math.hypot(player.position.x-it.position.x,player.position.y-it.position.y,player.position.z-it.position.z)<1.1){ it.userData.got=true; it.visible=false; collected++; beep(700+collected*40,.09); } });
     setScore('🏄 Stelle: '+collected+'/'+GOAL);
-    if(dist>=DIST_END&&!done){ done=true; finishGame(12+collected*2,'Che scivolata! 🏄 '+collected+' stelle'); }
   }};
 }
 function GameGavettoni(){
