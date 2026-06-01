@@ -60,6 +60,7 @@
   #travel.on{display:flex;}
   #tv-em{font-size:4.5em;position:absolute;top:42%;left:-15%;transition:none;}
   #tv-txt{color:#ffd86b;font-size:1.4em;font-weight:bold;text-align:center;margin-top:56%;padding:0 20px;}
+  #tv-dest{position:absolute;right:6%;top:50%;transform:translateY(-50%);width:min(180px,28vw);height:min(180px,28vw);border-radius:14px;box-shadow:0 0 24px rgba(0,100,255,.3);}
 </style>
 </head>
 <body>
@@ -109,6 +110,7 @@
 <div id="travel">
   <div id="tv-em"></div>
   <div id="tv-txt"></div>
+  <canvas id="tv-dest" width="200" height="200"></canvas>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1889,7 +1891,46 @@ document.getElementById('charNext').onclick=()=>{ document.querySelectorAll('.mk
 document.getElementById('mapBack').onclick=()=>{ show('s_char'); };
 const TRAVEL_VEHICLES={roma:'✈️',matera:'🚂',rossano:'🚗'};
 const TRAVEL_LABELS={roma:'Roma',matera:'Matera',rossano:'Rossano'};
-function travelTo(c,cb){ const ov=document.getElementById('travel'); const em=document.getElementById('tv-em'); const tx=document.getElementById('tv-txt'); em.textContent=TRAVEL_VEHICLES[c]||'🚗'; tx.textContent='In viaggio verso '+TRAVEL_LABELS[c]+'...'; em.style.left='-15%'; em.style.transition='none'; ov.classList.add('on'); requestAnimationFrame(()=>requestAnimationFrame(()=>{ em.style.transition='left 2s ease-in-out'; em.style.left='115%'; })); setTimeout(()=>{ ov.classList.remove('on'); cb(); },2600); }
+function drawTravelDest(cv,dest){ const x=cv.getContext('2d'),W=cv.width,H=cv.height; x.clearRect(0,0,W,H);
+  if(dest==='roma'){
+    const sk=x.createLinearGradient(0,0,0,H*.72); sk.addColorStop(0,'#0d1b40'); sk.addColorStop(1,'#1e3668'); x.fillStyle=sk; x.fillRect(0,0,W,H*.72);
+    x.fillStyle='#2a1f10'; x.fillRect(0,H*.72,W,H*.28);
+    x.fillStyle='rgba(255,255,220,.9)'; [[28,18],[80,12],[134,26],[168,10],[48,44],[112,7],[182,33],[18,54],[94,40]].forEach(([sx,sy])=>{ x.beginPath(); x.arc(sx,sy,1.2,0,Math.PI*2); x.fill(); });
+    const cx=W/2, baseY=H*.74;
+    [[H*.44,160,28],[H*.31,128,22],[H*.20,98,15]].forEach(([yoff,w,h],i)=>{
+      x.fillStyle=['#9a8060','#b09470','#c0a880'][i]; x.fillRect(cx-w/2,baseY-yoff-h,w,h);
+      const n=[8,7,5][i],aw=w/n; x.fillStyle='#1a1008';
+      for(let j=0;j<n;j++){ const ax=cx-w/2+j*aw+aw*.5,ay=baseY-yoff-2; x.beginPath(); x.arc(ax,ay,aw*.3,Math.PI,Math.PI*2); x.rect(ax-aw*.3,ay,aw*.6,h*.55); x.fill(); }
+    });
+    x.fillStyle='#c8aa85'; x.fillRect(cx-52,baseY-H*.46,104,5);
+    x.fillStyle='#ffd86b'; x.font='bold 13px monospace'; x.textAlign='center'; x.fillText('COLOSSEO',W/2,H*.96);
+  } else if(dest==='matera'){
+    const sk=x.createLinearGradient(0,0,0,H*.58); sk.addColorStop(0,'#10082a'); sk.addColorStop(1,'#281040'); x.fillStyle=sk; x.fillRect(0,0,W,H*.58);
+    x.fillStyle='#fffff0'; x.beginPath(); x.arc(158,26,14,0,Math.PI*2); x.fill();
+    x.fillStyle='#281040'; x.beginPath(); x.arc(165,22,12,0,Math.PI*2); x.fill();
+    x.fillStyle='rgba(255,255,220,.75)'; [[14,16],[46,9],[78,20],[108,6],[132,16],[18,38],[62,33],[184,13],[96,44]].forEach(([sx,sy])=>{ x.beginPath(); x.arc(sx,sy,1,0,Math.PI*2); x.fill(); });
+    x.fillStyle='#3a2818'; x.beginPath(); x.moveTo(0,H); x.lineTo(0,H*.72); x.quadraticCurveTo(W*.25,H*.44,W*.5,H*.38); x.quadraticCurveTo(W*.75,H*.44,W,H*.58); x.lineTo(W,H); x.fill();
+    [[W*.47,H*.43,16,12],[W*.36,H*.51,18,13],[W*.58,H*.51,18,13],[W*.26,H*.59,18,13],[W*.47,H*.58,20,14],[W*.68,H*.58,18,13],[W*.16,H*.67,18,13],[W*.37,H*.66,20,14],[W*.58,H*.65,20,14],[W*.78,H*.65,18,12]].forEach(([hx,hy,hw,hh])=>{
+      x.fillStyle='#c0a878'; x.fillRect(hx-hw/2,hy-hh,hw,hh); x.fillStyle='#a08855'; x.fillRect(hx-hw/2,hy-hh,hw,3); x.fillStyle='#4a3018'; x.fillRect(hx-2.5,hy-7,5,7); });
+    x.fillStyle='#d4c090'; x.fillRect(W*.44,H*.30,14,12); x.fillStyle='#c0b080'; x.beginPath(); x.arc(W*.51,H*.30,9,Math.PI,Math.PI*2); x.fill();
+    x.strokeStyle='#aaa'; x.lineWidth=2; x.beginPath(); x.moveTo(W*.51,H*.21); x.lineTo(W*.51,H*.30); x.moveTo(W*.48,H*.24); x.lineTo(W*.54,H*.24); x.stroke();
+    x.fillStyle='#ffd86b'; x.font='bold 13px monospace'; x.textAlign='center'; x.fillText('SASSI',W/2,H*.96);
+  } else if(dest==='rossano'){
+    const sk=x.createLinearGradient(0,0,0,H*.56); sk.addColorStop(0,'#cc4408'); sk.addColorStop(.5,'#ff7820'); sk.addColorStop(1,'#ffc050'); x.fillStyle=sk; x.fillRect(0,0,W,H*.56);
+    x.fillStyle='rgba(255,230,0,.9)'; x.beginPath(); x.arc(W*.66,H*.22,19,0,Math.PI*2); x.fill();
+    x.strokeStyle='rgba(255,210,0,.25)'; x.lineWidth=8; x.beginPath(); x.arc(W*.66,H*.22,29,0,Math.PI*2); x.stroke();
+    const sea=x.createLinearGradient(0,H*.56,0,H*.83); sea.addColorStop(0,'#0058a8'); sea.addColorStop(1,'#0088cc'); x.fillStyle=sea; x.fillRect(0,H*.56,W,H*.32);
+    x.strokeStyle='rgba(255,255,255,.5)'; x.lineWidth=2;
+    [H*.61,H*.67,H*.73].forEach(wy=>{ x.beginPath(); for(let wx=0;wx<=W+24;wx+=24){ x.quadraticCurveTo(wx+6,wy-5,wx+12,wy); x.quadraticCurveTo(wx+18,wy+5,wx+24,wy); } x.stroke(); });
+    const sand=x.createLinearGradient(0,H*.83,0,H); sand.addColorStop(0,'#e8cc78'); sand.addColorStop(1,'#c8a850'); x.fillStyle=sand; x.fillRect(0,H*.83,W,H*.17);
+    x.fillStyle='#ee3333'; x.beginPath(); x.arc(W*.25,H*.86,14,Math.PI,Math.PI*2); x.fill();
+    x.fillStyle='#ffee00'; x.beginPath(); x.arc(W*.25,H*.86,14,0,Math.PI); x.fill();
+    x.strokeStyle='#7a4a1a'; x.lineWidth=2.5; x.beginPath(); x.moveTo(W*.25,H*.86); x.lineTo(W*.25,H*.98); x.stroke();
+    x.fillStyle='#eeeeee'; x.fillRect(W*.78,H*.70,9,H*.25); x.fillStyle='#e04040'; [H*.70,H*.77,H*.84].forEach(ty=>x.fillRect(W*.78,ty,9,4)); x.fillStyle='#ffee40'; x.beginPath(); x.arc(W*.825,H*.68,6,0,Math.PI*2); x.fill();
+    x.fillStyle='#ffd86b'; x.font='bold 13px monospace'; x.textAlign='center'; x.fillText('MARE',W/2,H*.97);
+  }
+}
+function travelTo(c,cb){ const ov=document.getElementById('travel'); const em=document.getElementById('tv-em'); const tx=document.getElementById('tv-txt'); const cv=document.getElementById('tv-dest'); em.textContent=TRAVEL_VEHICLES[c]||'🚗'; tx.textContent='In viaggio verso '+TRAVEL_LABELS[c]+'...'; drawTravelDest(cv,c); em.style.left='-15%'; em.style.transition='none'; ov.classList.add('on'); requestAnimationFrame(()=>requestAnimationFrame(()=>{ em.style.transition='left 2s ease-in-out'; em.style.left='115%'; })); setTimeout(()=>{ ov.classList.remove('on'); cb(); },2600); }
 document.querySelectorAll('.mkb').forEach(m=>{ m.addEventListener('click',()=>{ city=m.dataset.city; travelTo(city,enterHub); }); });
 // rendi trasparente lo sfondo bianco della mappa
 (function(){ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.width; c.height=im.height; const x=c.getContext('2d'); x.drawImage(im,0,0); const d=x.getImageData(0,0,c.width,c.height), a=d.data; for(let i=0;i<a.length;i+=4){ if(a[i]>234&&a[i+1]>234&&a[i+2]>234) a[i+3]=0; } x.putImageData(d,0,0); document.getElementById('italyImg').src=c.toDataURL(); }catch(e){} }; im.src='italia.jpg'; })();
