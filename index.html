@@ -401,8 +401,8 @@ function DriveGame(opts){
   if(slide){ for(let i=0;i<4;i++){ const flume=new THREE.Mesh(new THREE.TorusGeometry(4,.6,8,16,Math.PI),M([0x6bd0ff,0xff6b6b,0xffd24a,0x9bff5b][i],.4)); flume.position.set((i%2?1:-1)*13,3.2,-15-i*16); flume.rotation.set(Math.PI/2,0,.35); world.add(flume); const sup=cyl(.2,.2,3.4,0xcfd6da); sup.position.set((i%2?1:-1)*13,1.6,-15-i*16); world.add(sup); } }
   const haz=[], money=[]; const COL=[0x2980b9,0x27ae60,0xf1c40f,0x8e44ad,0xe67e22,0xecf0f1];
   let dist=0, speed=slide?20:16, spawn=0, cspawn=0, crashT=0, passed=0, won=false, tt=0, kamNext=130, kamT=0;
-  const race=!!opts.race; const opps=race?makeOpponents(3,(rid)=>makeVehicle(opts.veh,rid),MAXS*0.72,8):[]; opps.forEach(o=>o.lane=[-LANEX,LANEX,0][o.idx%3]);
-  setInstr(bike?'◀ ▶ pedala ed evita alberi, sassi e ostacoli! 🚲':slide?'◀ ▶ guida sullo scivolo, prendi le ciambelle 🛟':race?'◀▶ sterza · ▲ accelera · ▼ frena · batti gli avversari! 🏍️':'◀ ▶ sterza · supera/schiva · 🪙 = punti');
+  const race=!!opts.race; const opps=race?makeOpponents(3,(rid)=>makeVehicle(opts.veh,rid),MAXS*0.90,8):[]; opps.forEach(o=>o.lane=[-LANEX,LANEX,0][o.idx%3]);
+  setInstr(bike?'◀ ▶ pedala ed evita alberi, sassi e ostacoli! 🚲':slide?'◀ ▶ guida sullo scivolo, prendi le ciambelle 🛟':race?'◀▶ sterza · ▲ accelera · ▼ frena · AZIONE = impenna! 🏍️':'◀ ▶ sterza · supera/schiva · 🪙 = punti');
   camera.position.set(0,4.2,12); camera.lookAt(0,1,0);
   function coin(){ const m=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.08,18),M(0xffd700,.3)); m.rotation.x=Math.PI/2; m.castShadow=true; return m; }
   function ringFloat(){ const m=new THREE.Mesh(new THREE.TorusGeometry(.4,.14,8,16),M([0xff6b6b,0x6bd0ff,0xffd24a][Math.floor(Math.random()*3)],.4)); m.castShadow=true; return m; }
@@ -414,7 +414,7 @@ function DriveGame(opts){
     g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); g.userData.own=0; return g; }
   return { update(dt){ if(won)return; tt+=dt;
     let cruise=(slide?20:16)+dist*0.02;
-    if(race){ cruise=(keys['ArrowUp']||keys['Space'])?MAXS:MAXS*0.78; if(keys['ArrowDown'])cruise=MAXS*0.45; }
+    if(race){ cruise=keys['ArrowUp']?MAXS:MAXS*0.78; if(keys['ArrowDown'])cruise=MAXS*0.45; }
     if(slide){ if(dist>=kamNext){ kamNext+=rand(120,180); kamT=2.3; beep(1000,.18); showMsg('🌀 KAMIKAZE!'); } if(kamT>0){ kamT-=dt; cruise*=1.7; if(kamT<=0)showMsg(''); } }
     const cap=MAXS*((slide&&kamT>0)?1.6:1);
     speed += (Math.min(cap,cruise)-speed)*Math.min(1,dt*1.6); dist+=speed*dt;
@@ -422,6 +422,7 @@ function DriveGame(opts){
     const tx=veh.position.x+((keys['ArrowLeft']?-1:0)+(keys['ArrowRight']?1:0))*lv*dt;
     veh.position.x=THREE.MathUtils.clamp(tx,-LANEX,LANEX);
     veh.rotation.z=THREE.MathUtils.lerp(veh.rotation.z,(keys['ArrowLeft']?0.12:0)+(keys['ArrowRight']?-0.12:0),0.2);
+    if(opts.veh==='moto'){ veh.rotation.x=THREE.MathUtils.lerp(veh.rotation.x,keys['Space']?-0.5:0,0.1); }
     wheels.forEach(w=>w.rotation.x-=speed*dt);
     stripes.forEach(s=>{ s.position.z+=speed*dt; if(s.position.z>14)s.position.z-=120; });
     scenery.forEach(t=>{ t.position.z+=speed*dt; if(t.position.z>14){ t.position.z-=120; t.position.x=(Math.random()<.5?-1:1)*(ROADW/2+2+rand(0,3)); } });
@@ -512,7 +513,7 @@ function GameBiciMontagna(){
 /* ===================== SCUOLA GUIDA (pista con curve) ===================== */
 function DrivingSchool(){
   applyTheme(); const gr=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); gr.rotation.x=-Math.PI/2; gr.receiveShadow=true; world.add(gr); const clouds=addSky();
-  const wp=[[0,20],[16,15],[20,2],[13,-14],[0,-20],[-15,-13],[-21,2],[-13,15]].map(p=>new THREE.Vector3(p[0],0,p[1]));
+  const wp=[[0,26],[14,22],[24,12],[28,0],[22,-14],[10,-24],[0,-28],[-10,-24],[-22,-14],[-28,0],[-24,12],[-14,22]].map(p=>new THREE.Vector3(p[0],0,p[1]));
   const curve=new THREE.CatmullRomCurve3(wp,true,'catmullrom',0.5);
   const N=170, samples=curve.getPoints(N), W=6;
   for(let i=0;i<samples.length-1;i++){ const a=samples[i],b=samples[i+1]; const mid=a.clone().add(b).multiplyScalar(.5); const len=a.distanceTo(b)+0.5;
@@ -525,6 +526,14 @@ function DrivingSchool(){
     if(i%2===0)[-1,1].forEach(sg=>{ const e=new THREE.Mesh(new THREE.BoxGeometry(.1,.02,.6),M(0xffffff,.5)); e.position.set(p.x+nx*(W/2-.25)*sg,.08,p.z+nz*(W/2-.25)*sg); e.rotation.y=ry; world.add(e); }); }
   // linea di partenza a scacchi
   { const p=curve.getPointAt(0), tg=curve.getTangentAt(0), ry=Math.atan2(tg.x,tg.z), nx=tg.z,nz=-tg.x; for(let k=-3;k<=3;k++){ const sq=new THREE.Mesh(new THREE.BoxGeometry(.75,.03,.75),M((k+3)%2?0x111111:0xffffff)); sq.position.set(p.x+nx*k*0.8,.09,p.z+nz*k*0.8); sq.rotation.y=ry; world.add(sq); } }
+  // ponte che fa incrociare le strade (sovrappasso al fondo, Z≈-28)
+  { const BY=4.3,BZ0=-10,BZ1=-40,BW=W,BMid=(BZ0+BZ1)/2,BLen=Math.abs(BZ1-BZ0);
+    const deck=new THREE.Mesh(new THREE.BoxGeometry(BW,.25,BLen),M(0x3a3d44,.9)); deck.position.set(0,BY,BMid); world.add(deck);
+    for(let zi=BZ0-1;zi>BZ1+1;zi-=2.4){ const d=new THREE.Mesh(new THREE.BoxGeometry(.14,.02,1.0),M(0xf5d020,.5)); d.position.set(0,BY+.14,zi); world.add(d); }
+    [-1,1].forEach(s=>{ const el=new THREE.Mesh(new THREE.BoxGeometry(.1,.02,BLen),M(0xffffff,.5)); el.position.set(s*(BW/2-.25),BY+.14,BMid); world.add(el); });
+    [-1,1].forEach(s=>{ const rail=new THREE.Mesh(new THREE.BoxGeometry(.2,.55,BLen),M(0xcccccc,.6)); rail.position.set(s*(BW/2+.22),BY+.42,BMid); world.add(rail); });
+    for(let zi=BZ0-4;zi>BZ1+4;zi-=8){ [-BW/2+.3,BW/2-.3].forEach(xi=>{ const pl=new THREE.Mesh(new THREE.BoxGeometry(.55,.55,BY),M(0x9a9a9a,.9)); pl.position.set(xi,BY/2-.12,zi); pl.castShadow=true; world.add(pl); }); const beam=new THREE.Mesh(new THREE.BoxGeometry(BW+1,.4,.5),M(0x888888,.8)); beam.position.set(0,BY-.3,zi); world.add(beam); }
+    const bsl=labelSprite('🌉 Ponte',3); bsl.position.set(0,BY+1.8,BZ0); world.add(bsl); }
   // semafori, tribuna con tifosi, alberi
   function semaforo(x,z){ const g=new THREE.Group(); const pole=cyl(.1,.12,3,0x333333); pole.position.y=1.5; g.add(pole); const bx2=new THREE.Mesh(new THREE.BoxGeometry(.42,1.1,.3),M(0x222222)); bx2.position.y=3; g.add(bx2); ['#e74c3c','#f1c40f','#2ecc71'].forEach((col,k)=>{ const l=new THREE.Mesh(new THREE.SphereGeometry(.12,10,10),new THREE.MeshStandardMaterial({color:col,emissive:new THREE.Color(col),emissiveIntensity:.6})); l.position.set(0,3.35-k*.33,.2); g.add(l); }); g.position.set(x,0,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(g); }
   [0,0.33].forEach(u=>{ const p=curve.getPointAt(u), tg=curve.getTangentAt(u), nx=tg.z,nz=-tg.x; semaforo(p.x+nx*(W/2+1.1),p.z+nz*(W/2+1.1)); });
@@ -665,9 +674,10 @@ function walkCollect(th){
   let sprayCan=null, hasSpray=false; const splats=[];
   if(th.spray){ sprayCan=new THREE.Group(); const bdy=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.45,10),M(0xff3b6b)); const cp=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.1,8),M(0x333333)); cp.position.y=.27; sprayCan.add(bdy,cp); sprayCan.position.set(-5,.45,4); world.add(sprayCan); const sl=labelSprite('🎨 spray'); sl.position.set(-5,1.2,4); world.add(sl); }
   const bp=th.ballpit||null; const bpBalls=[], bpBalloons=[]; let bpDive=0;
-  if(bp){ const water=new THREE.Mesh(new THREE.PlaneGeometry(bp.w,bp.l),new THREE.MeshStandardMaterial({color:0x2aa8e0,transparent:true,opacity:.72,roughness:.2})); water.rotation.x=-Math.PI/2; water.position.set(bp.x,.22,bp.z); world.add(water);
+  if(bp){ const floorC=bp.floorColor||0x2aa8e0; const water=new THREE.Mesh(new THREE.PlaneGeometry(bp.w,bp.l),new THREE.MeshStandardMaterial({color:floorC,transparent:!bp.floorColor,opacity:bp.floorColor?1:.72,roughness:.25})); water.rotation.x=-Math.PI/2; water.position.set(bp.x,.22,bp.z); world.add(water);
     [-bp.w/2,bp.w/2].forEach(dx=>B(.3,.5,bp.l+.3,0xeef4f8,bp.x+dx,.25,bp.z)); [-bp.l/2,bp.l/2].forEach(dz=>B(bp.w+.3,.5,.3,0xeef4f8,bp.x,.25,bp.z+dz));
-    for(let i=0;i<18;i++){ const b=new THREE.Mesh(new THREE.SphereGeometry(.3,10,10),M(TC[i%TC.length],.4)); b.position.set(bp.x+rand(-bp.w/2+.6,bp.w/2-.6),.5,bp.z+rand(-bp.l/2+.6,bp.l/2-.6)); b.userData.vy=0; b.userData.bob=rand(0,6); world.add(b); bpBalls.push(b); }
+    const bCount=bp.ballCount||18; const bSize=bp.ballColor?0.2:0.3;
+    for(let i=0;i<bCount;i++){ const ballCol=bp.ballColor&&(i%6!==0)?bp.ballColor:TC[i%TC.length]; const b=new THREE.Mesh(new THREE.SphereGeometry(bSize,10,10),M(ballCol,.4)); b.position.set(bp.x+rand(-bp.w/2+.5,bp.w/2-.5),.5,bp.z+rand(-bp.l/2+.5,bp.l/2-.5)); b.userData.vy=0; b.userData.bob=rand(0,6); world.add(b); bpBalls.push(b); }
     for(let i=0;i<8;i++){ const g=new THREE.Group(); const bo=new THREE.Mesh(new THREE.SphereGeometry(.38,12,12),new THREE.MeshStandardMaterial({color:TC[i%TC.length],emissive:0x111111,emissiveIntensity:.1})); bo.scale.y=1.2; const str=cyl(.01,.01,.7,0xffffff); str.position.y=-.6; g.add(bo,str); g.position.set(bp.x+rand(-bp.w/2+.6,bp.w/2-.6),1.4,bp.z+rand(-bp.l/2+.6,bp.l/2-.6)); g.userData.bob=rand(0,6); world.add(g); bpBalloons.push(g); } }
   const exitDoor=th.exitDoor||null;
   if(exitDoor){ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(exitDoor[0],0,exitDoor[1]); world.add(dg); const elab=labelSprite('🚪 Esci'); elab.position.set(exitDoor[0],2.9,exitDoor[1]); world.add(elab); }
@@ -761,8 +771,12 @@ const THEMES = {
       A.push(aNPC(oc[0],-4,.5,0,'write',P)); A.push(aNPC(oc[1],-4,3,0,'jump',P));
       A.push(aNPC(oc[2],0,-8.2,Math.PI,'draw',P)); A.push(aNPC(oc[3],4,3,0,'throw',P));
       return A; }},
-  parco:{emoji:'🎈',ground:0x6fae5a,size:20,goal:10,time:45,instr:'Raccogli i palloncini! Avvicinati all\'altalena o allo scivolo per usarli 🛝',win:'Che festa al parco! 🎈',
-    decor(){ for(let i=0;i<7;i++){ let x,z,tr2=0; do{ x=rand(-8,8); z=rand(-8,8); tr2++; }while(tr2<14 && (Math.hypot(x+6,z-2)<3.8 || Math.hypot(x-6,z+2)<3.8)); const tr=cyl(.2,.26,1.4,0x7a4a28); tr.position.set(x,.7,z); tr.castShadow=true; world.add(tr); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.1,2,9),M(0x2f8f4a)); lv.position.set(x,2.2,z); lv.castShadow=true; world.add(lv); } B(2.5,.4,.6,0x8a5a2b,-4,.4,3); B(2.5,.4,.6,0x8a5a2b,4,.4,-3); },
+  parco:{emoji:'🎈',ground:0x6fae5a,size:20,goal:10,time:45,exitDoor:[-7.5,8],instr:'Raccogli i palloncini! Avvicinati all\'altalena o allo scivolo per usarli 🛝 · 🚪 esci dal parco',win:'Che festa al parco! 🎈',
+    decor(){ for(let i=0;i<7;i++){ let x,z,tr2=0; do{ x=rand(-8,8); z=rand(-8,8); tr2++; }while(tr2<14 && (Math.hypot(x+6,z-2)<3.8 || Math.hypot(x-6,z+2)<3.8 || Math.hypot(x-5,z+6)<3.2)); const tr=cyl(.2,.26,1.4,0x7a4a28); tr.position.set(x,.7,z); tr.castShadow=true; world.add(tr); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.1,2,9),M(0x2f8f4a)); lv.position.set(x,2.2,z); lv.castShadow=true; world.add(lv); } B(2.5,.4,.6,0x8a5a2b,-4,.4,3); B(2.5,.4,.6,0x8a5a2b,4,.4,-3);
+      // laghetto
+      const lake=new THREE.Mesh(new THREE.CircleGeometry(2.6,22),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.82,roughness:.2,metalness:.15})); lake.rotation.x=-Math.PI/2; lake.position.set(5,.04,-6); world.add(lake);
+      for(let k=0;k<10;k++){ const a=k/10*Math.PI*2, r=2.5+Math.random()*.25; const st=new THREE.Mesh(new THREE.DodecahedronGeometry(.28+Math.random()*.14),M(0x7a8a6a,.9)); st.position.set(5+Math.cos(a)*r,.12,-6+Math.sin(a)*r); world.add(st); }
+      const lly=cyl(.06,.06,.55,0x2f8f4a); lly.position.set(4.4,.28,-5.4); world.add(lly); const llf=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M(0xffe14a,.4)); llf.scale.set(1,.3,1); llf.position.set(4.4,.55,-5.4); world.add(llf); },
     item(){ const g=new THREE.Group(); const ball=new THREE.Mesh(new THREE.SphereGeometry(.32,14,14),new THREE.MeshStandardMaterial({color:TC[Math.floor(Math.random()*TC.length)],emissive:0x222222,emissiveIntensity:.15})); ball.position.y=.7; const str=cyl(.01,.01,.7,0xffffff); str.position.y=.2; g.add(ball,str); return g; },
     activities(){ const oc=otherCousins(); const PT=['talk','drink','jump','write','draw']; return [aNPC(oc[2],-2,6,0,'talk',PT), aNPC(oc[3],-1.1,6.2,Math.PI,'talk',PT)]; },
     rides(){ const R=[];
@@ -807,7 +821,7 @@ const THEMES = {
   cinese:{emoji:'🏮',ground:0xc04040,size:16,goal:7,time:52,deliver:true,drop:[0,-6],dropLabel:'🏮 Scaffale',instr:'Raccogli un pacco e portalo allo scaffale!',win:'Negozio cinese rifornito! 🏮',
     decor(){ B(.4,3,12,0x7a2020,-6,1.5,0); B(.4,3,12,0x7a2020,6,1.5,0); B(12,3,.4,0x7a2020,0,1.5,-6); B(5,1.8,1,0x8a3030,0,.9,-6); for(let i=0;i<5;i++){ const lan=new THREE.Mesh(new THREE.SphereGeometry(.35,12,12),new THREE.MeshStandardMaterial({color:0xff3b3b,emissive:0xaa0000,emissiveIntensity:.4})); lan.position.set(-5+i*2.5,3,-5.6); world.add(lan); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.3; const rib=new THREE.Mesh(new THREE.BoxGeometry(.55,.08,.55),M(0xffd24a)); rib.position.y=0; b.add(rib); return b; }},
-  color_hotel:{emoji:'🧳',ground:0x88c0c0,size:18,goal:8,time:60,spray:{wallZ:-8},ballpit:{x:4.5,z:3,w:7,l:7},instr:'Raccogli le valigie · spray sui muri 🎨 · tuffati nella vasca palline! 🫧',win:'Benvenuti al Color Hotel! 🏨',
+  color_hotel:{emoji:'🧳',ground:0x88c0c0,size:18,goal:8,time:60,spray:{wallZ:-8},ballpit:{x:4.5,z:3,w:7,l:7,floorColor:0xf2f2ee,ballColor:0xf5f5f5,ballCount:60},instr:'Raccogli le valigie · spray sui muri 🎨 · tuffati nella vasca palline! 🫧',win:'Benvenuti al Color Hotel! 🏨',
     decor(){ B(18,3.2,.3,0xeae2d0,0,1.6,-8); B(.3,3.2,18,0xeae2d0,-8.6,1.6,0); B(.3,3.2,18,0xeae2d0,8.6,1.6,0); B(6,1.2,1.6,0x33aaaa,-3,.6,-7); for(let i=0;i<6;i++){ const col=cyl(.3,.3,2.6,TC[i]); col.position.set(-7+i*2.8,1.3,-7.5); col.castShadow=true; world.add(col); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.7,.35),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.35; const hd=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,12),M(0x333333)); hd.position.y=.45; b.add(hd); return b; }},
   piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:60,instr:'Raccogli le monete · entra nelle 🚪 o usa altalena/scivoli! ⛲',win:'Piazzetta scintillante! ⛲',
@@ -1348,7 +1362,7 @@ function GameScuola(){
       const f=new THREE.Mesh(new THREE.PlaneGeometry(20,24),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(20,5,.3,0xeae0c8,0,2.5,-12); E(.3,5,24,0xeae0c8,-10,2.5,0); E(.3,5,24,0xeae0c8,10,2.5,0);
       E(4,1.1,1.5,0x9c6b3f,-6,.55,-9); const sb=labelSprite('Reception',2.4); sb.position.set(-6,2.2,-9); env.add(sb);
-      E(.9,.5,.7,0x6a4a2a,-6,.25,-7.9); const bruno=renameCousin(buildCousin('babbo'),'Bruno (bidello)'); bruno.position.set(-6,.5,-7.9); bruno.userData.legs[0].rotation.x=-1.3; bruno.userData.legs[1].rotation.x=-1.3; env.add(bruno);   // bidello seduto
+      E(.9,.5,.7,0x6a4a2a,-6,.25,-7.9); const bruno=renameCousin(buildCousin('babbo'),'Bruno'); bruno.position.set(-6,.5,-7.9); bruno.userData.legs[0].rotation.x=-1.3; bruno.userData.legs[1].rotation.x=-1.3; env.add(bruno);   // bidello seduto
       for(let i=0;i<6;i++) E(4.5,.45,.7,0xb4a7b0,0,.22+i*.45,-6-i*0.7);
       const s2=labelSprite('⬆️ Sali in Aula',3.2); s2.position.set(0,3.6,-10); env.add(s2);
       player.position.set(0,0,9); player.rotation.y=Math.PI;
