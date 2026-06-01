@@ -901,7 +901,7 @@ const THEMES = {
     decor(){ for(let i=0;i<8;i++){ const fc=[0xff5b5b,0x5bd0ff,0xffe14a,0x6bff8a][i%4]; B(.12,2.8,.12,fc,-7+i*2,1.4,-6); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),M(fc)); fl.position.set(-7+i*2,2.8,-6); world.add(fl); }
       const cols=[0xffcc33,0xff6b6b,0x6bd0ff]; [[-7.5,0],[0,-7.5],[7.5,0]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); }); }},
   acquapark_hub:{emoji:'💦',ground:0x5ab8d0,size:18,goal:0,time:999,exitDoor:[0,7],music:true,musicFn:startAcquaparkMusic,
-    gameDoors:[{gid:'acquapark_slide',x:-8.5,z:-2,rot:Math.PI/2,label:'🌊 Scivolo',col:0x5bd0ff},{gid:'acquapark_onde',x:-3,z:-8.5,rot:0,label:'🌊 Onde',col:0x2080ff},{gid:'acquapark_fiume',x:8.5,z:-2,rot:-Math.PI/2,label:'🛟 Fiume',col:0x2fa8e0},{gid:'acquapark_scivolo2',x:3,z:-8.5,rot:0,label:'🏄 Scivolo Stretto',col:0xffaa00}],
+    gameDoors:[{gid:'acquapark_slide',x:-8.5,z:-2,rot:Math.PI/2,label:'🌊 Scivolo',col:0x5bd0ff},{gid:'acquapark_onde',x:-3,z:-8.5,rot:0,label:'🌊 Onde',col:0x2080ff},{gid:'acquapark_fiume',x:8.5,z:-2,rot:-Math.PI/2,label:'🛟 Fiume',col:0x2fa8e0},{gid:'acquapark_scivolo2',x:3,z:-8.5,rot:0,label:'🔥 Kamikaze',col:0xffaa00}],
     instr:'Cammina verso le porte colorate per scegliere! 🌊🛟 · 🚪 verde dietro di te = esci',win:'',
     decor(){ const pool=new THREE.Mesh(new THREE.PlaneGeometry(16,8),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.75,roughness:.15})); pool.rotation.x=-Math.PI/2; pool.position.set(0,.05,-4); world.add(pool);
       const cols=[0x5bd0ff,0x2080ff,0x2fa8e0,0xffaa00]; [[-8.5,-2],[-3,-8.5],[8.5,-2],[3,-8.5]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); });
@@ -1560,7 +1560,7 @@ function GameScivoloStretto(){
   B(3,14,1.5,0x88bbdd,0,7,-28); B(4,.4,2.5,0x77aacc,0,14.2,-27.5);
   B(.12,14,.12,0x449aaa,-.6,7,-27.3); B(.12,14,.12,0x449aaa,.6,7,-27.3);
   for(let i=0;i<9;i++) B(1.2,.1,.12,0x559acc,0,i*1.6+.5,-27.3);
-  const topLabel=labelSprite('🏄 Partenza!',2); topLabel.position.set(0,15.8,-28); world.add(topLabel);
+  const topLabel=labelSprite('🔥 Kamikaze!',2); topLabel.position.set(0,15.8,-28); world.add(topLabel);
   // Splash pool further out to match trajectory
   const pool=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,.25,24),new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.82})); pool.position.set(0,.13,26); world.add(pool);
   const plab=labelSprite('💦 Splash!',2.2); plab.position.set(0,1.5,26); world.add(plab);
@@ -1573,7 +1573,7 @@ function GameScivoloStretto(){
   const player=buildCousin(hero); player.rotation.order='YXZ';
   player.position.copy(curve.getPoint(0)); world.add(player);
   let dist=0, t=0, collected=0, done=false, spd=3, jumping=false, jvy=0, jvz=0;
-  setInstr('◀▶ stai al centro · scivola e salta nel finale! 🏄');
+  setInstr('◀▶ stai al centro · Kamikaze! scivola e salta! 🔥');
   return { update(dt){ if(done)return; t+=dt;
     if(!jumping){
       spd=Math.min(34,spd+7*dt); dist=Math.min(DIST_TOTAL,dist+spd*dt);
