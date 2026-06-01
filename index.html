@@ -928,7 +928,21 @@ const THEMES = {
     decor(){ const pool=new THREE.Mesh(new THREE.PlaneGeometry(16,8),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.75,roughness:.15})); pool.rotation.x=-Math.PI/2; pool.position.set(0,.05,-4); world.add(pool);
       const cols=[0x5bd0ff,0x2080ff,0x2fa8e0,0xffaa00]; [[-8.5,-2],[-3,-8.5],[8.5,-2],[3,-8.5]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); });
       for(let i=0;i<6;i++){ const u=cyl(.15,.18,.38,0xff8c1a); u.position.set(-5+i*2,0,-6); world.add(u); const top=new THREE.Mesh(new THREE.SphereGeometry(.48,8,8),M([0xff5b5b,0xffe14a,0x6bd0ff][i%3])); top.position.set(-5+i*2,.58,-6); world.add(top); }
-      for(let i=0;i<8;i++){ const fl=new THREE.Mesh(new THREE.SphereGeometry(.28,8,8),M(TC[i%TC.length],.5)); fl.position.set(-7+i*2,2.2,-8.5); world.add(fl); } }},
+      for(let i=0;i<8;i++){ const fl=new THREE.Mesh(new THREE.SphereGeometry(.28,8,8),M(TC[i%TC.length],.5)); fl.position.set(-7+i*2,2.2,-8.5); world.add(fl); }
+      // fontana colorata centrale
+      { const base=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.8,.35,24),M(0xd8f0ff)); base.position.set(0,.17,0); world.add(base);
+        const pillar=cyl(.17,.17,2.4,0xa0d8ef); pillar.position.set(0,1.4,0); world.add(pillar);
+        const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.85,.55,.16,20),new THREE.MeshStandardMaterial({color:0xc8eeff,roughness:.2,metalness:.1})); bowl.position.set(0,2.68,0); world.add(bowl);
+        const wc=[0x5bd0ff,0xff5bd0,0x5bff8a,0xffe14a,0xff5b5b,0xc05bff];
+        for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const jet=new THREE.Mesh(new THREE.CylinderGeometry(.04,.07,1.05,8),new THREE.MeshStandardMaterial({color:wc[i],emissive:new THREE.Color(wc[i]),emissiveIntensity:.7,transparent:true,opacity:.8})); jet.position.set(Math.sin(a)*.45,3.05,Math.cos(a)*.45); jet.rotation.z=Math.sin(a)*.5; jet.rotation.x=Math.cos(a)*.5; world.add(jet); const drop=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),new THREE.MeshStandardMaterial({color:wc[i],emissive:new THREE.Color(wc[i]),emissiveIntensity:.55,transparent:true,opacity:.75})); drop.position.set(Math.sin(a)*1.15,.38,Math.cos(a)*1.15); world.add(drop); }
+        const fl2=labelSprite('⛲ Fontana Acquatica',2.2); fl2.position.set(0,4.0,0); world.add(fl2); } },
+    activities(){ const oc=otherCousins(); const A=[];
+      const masc=aNPC(oc[0],0,5,Math.PI,'jump',['jump','talk']);
+      renameCousin(masc.m,'🌊 Acquino!');
+      masc.m.scale.setScalar(1.15);
+      A.push(masc);
+      for(let i=1;i<4;i++) A.push(aNPC(oc[i%oc.length],-4+i*2.5,rand(-4,2),rand(0,6.28),'talk',['talk','drink','jump']));
+      return A; }},
 };
 
 /* ===================== ABILITÀ ===================== */
