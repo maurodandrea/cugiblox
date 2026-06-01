@@ -709,7 +709,7 @@ function walkCollect(th){
   if(gameDoors) gameDoors.forEach(gd=>{ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),M(0x8a5a2b)); j1.position.set(-.95,1.3,0); const j2=j1.clone(); j2.position.x=.95; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2.1,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.6,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.5),new THREE.MeshStandardMaterial({color:gd.col||0xffcf6b,emissive:gd.col||0xffcf6b,emissiveIntensity:.35,transparent:true,opacity:.6,side:THREE.DoubleSide})); pan.position.set(0,1.3,0); dg.add(j1,j2,dtop,pan); dg.position.set(gd.x,0,gd.z); if(gd.rot) dg.rotation.y=gd.rot; world.add(dg); const gl=labelSprite(gd.label,3); gl.position.set(gd.x,3.2,gd.z); world.add(gl); });
   if(th.music) (th.musicFn||startMusic)();
   camera.position.set(0,8,10);
-  let collected=0, time=th.time||45, t=0, done=false, carried=null;
+  let collected=0, time=th.time||45, t=0, done=false, carried=null, seated=false;
   setInstr(th.instr);
   return { update(dt){ if(done)return; t+=dt; time-=dt;
     if(acts) acts.forEach(n=>stepActivity(n,t)); else stepCrowd(crowd,dt,t,half-0.5);
@@ -726,6 +726,7 @@ function walkCollect(th){
     const moved=thirdPersonWalk(player,dt,5); walkAnim(player,(moved&&!carried)?t*9:0);
     player.position.x=THREE.MathUtils.clamp(player.position.x,-half-1,half+1); player.position.z=THREE.MathUtils.clamp(player.position.z,-half-1,half+1);
     followCam(player,7,5.6,1);
+    if(th.tables&&!carried){ let nearTable=false; for(const [tx,tz] of th.tables){ if(Math.hypot(player.position.x-tx,player.position.z-tz)<1.6){ nearTable=true; break; } } if(nearTable&&hit('Space')){ seated=!seated; if(!seated){player.position.y=0;player.userData.legs[0].rotation.x=0;player.userData.legs[1].rotation.x=0;} beep(seated?500:400,.07); } else if(seated&&!nearTable){seated=false;player.position.y=0;player.userData.legs[0].rotation.x=0;player.userData.legs[1].rotation.x=0;} if(seated){player.userData.legs[0].rotation.x=-1.3;player.userData.legs[1].rotation.x=-1.3;player.position.y=THREE.MathUtils.lerp(player.position.y,.55,.2);} }
     if(th.furniture){ let pose=null; for(const fr of th.furniture){ if(Math.hypot(player.position.x-fr.x,player.position.z-fr.z)<1.7){ pose=fr.type; break; } }
       if(pose==='bed'){ player.rotation.x=-Math.PI/2; player.position.y=THREE.MathUtils.lerp(player.position.y,1.05,0.2); }
       else if(pose==='sofa'){ player.rotation.x=0; player.userData.legs[0].rotation.x=-1.3; player.userData.legs[1].rotation.x=-1.3; player.position.y=THREE.MathUtils.lerp(player.position.y,0.55,0.2); }
@@ -755,8 +756,11 @@ function walkCollect(th){
     if(th.deliver){
       if(!carried){ for(let i=items.length-1;i>=0;i--){ const it=items[i]; if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1){ carried=it; items.splice(i,1); beep(620,.07); break; } } }
       else { carried.position.set(player.position.x,1.75,player.position.z); carried.rotation.y+=dt*3;
-        if(Math.hypot(player.position.x-dpos.x,player.position.z-dpos.z)<1.7){ collected++; beep(900+collected*40,.1); world.remove(carried); carried=null; } }
-      setInstr(carried?'Portalo a: '+(th.dropLabel||'consegna')+' (la pedana verde)':th.instr);
+        let atDrop=Math.hypot(player.position.x-dpos.x,player.position.z-dpos.z)<1.7;
+        if(!atDrop&&th.tables){ for(const [tx,tz] of th.tables){ if(Math.hypot(player.position.x-tx,player.position.z-tz)<1.6){atDrop=true;break;} } }
+        if(atDrop){ collected++; beep(900+collected*40,.1); world.remove(carried); carried=null; } }
+      if(!seated) setInstr(carried?'Portalo a: '+(th.dropLabel||'consegna')+' (la pedana verde)':th.instr);
+      else setInstr('Seduto 🍝 · AZIONE per alzarsi');
     } else {
       for(let i=items.length-1;i>=0;i--){ const it=items[i]; it.rotation.y+=dt*2;
         if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1){ collected++; beep(700+collected*45,.08); world.remove(it); items.splice(i,1); } }
@@ -835,10 +839,11 @@ const THEMES = {
     item(){ const c=cyl(.22,.16,.5,TC[Math.floor(Math.random()*TC.length)]); c.position.y=.3; return c; },
     activities(){ const oc=otherCousins(); const A=[]; const treats=['gelato','patatine','caffe','yogurt','cornetto','cocktail']; const pos=[[-4,-3.4],[-2,-2.6],[0,-3.4],[2,-2.6],[4,-3.4],[-3,3]];
       treats.forEach((k,i)=>{ const n=aNPC(oc[i%oc.length],pos[i][0],pos[i][1],Math.PI,'drink',['drink','talk']); const tr=makeTreat(k); n.m.userData.arms[0].add(tr); tr.position.set(0,-.32,.06); A.push(n); });
-      const bm1=aNPC(oc[6%oc.length],-2,-7,0,'cash',['cash','talk']); renameCousin(bm1.m,randStaffName()); A.push(bm1);
-      const bm2=aNPC(oc[7%oc.length],2,-7,0,'cook',['cook','talk']); renameCousin(bm2.m,randStaffName()); A.push(bm2);
+      B(7,.38,1.3,0x4a2a18,0,.19,-7.2);
+      const bm1=aNPC(oc[6%oc.length],-2,-7,0,'cash',['cash','talk']); renameCousin(bm1.m,randStaffName()); bm1.m.position.y=.38; A.push(bm1);
+      const bm2=aNPC(oc[7%oc.length],2,-7,0,'cook',['cook','talk']); renameCousin(bm2.m,randStaffName()); bm2.m.position.y=.38; A.push(bm2);
       return A; }},
-  ristorante:{emoji:'🍝',ground:0xcaa68a,size:18,goal:8,time:55,deliver:true,drop:[0,-7],dropLabel:'🍝 Cucina',instr:'Prendi un piatto e portalo in cucina! 🎵',win:'Buon appetito! 🍝',music:true,
+  ristorante:{emoji:'🍝',ground:0xcaa68a,size:18,goal:8,time:55,deliver:true,drop:[0,-7],dropLabel:'🍝 Cucina',instr:'Prendi un piatto e portalo in cucina! 🎵',win:'Buon appetito! 🍝',music:true,tables:[[-5,3],[0,4],[5,3],[-5,-2],[5,-2]],
     decor(){ B(18,3,.3,0xe9d8b8,0,1.5,-9); B(.3,3,18,0xe9d8b8,-9,1.5,0); B(.3,3,18,0xe9d8b8,9,1.5,0);   // pareti
       B(5,1.3,1.6,0x6a4a3a,0,.65,-7);                                              // bancone cucina
       const tp=[[-5,3],[0,4],[5,3],[-5,-2],[5,-2]]; tp.forEach(([x,z])=>{ const t=cyl(1,1,.18,0xffffff); t.position.set(x,1,z); t.castShadow=true; world.add(t); const leg=cyl(.12,.12,1,0x8a5a2b); leg.position.set(x,.5,z); world.add(leg);
@@ -852,8 +857,8 @@ const THEMES = {
     activities(){ const oc=otherCousins(); const A=[]; const R=['cook','cash','talk','drink','write'];
       B(1.4,.9,.8,0x888888,-3,.45,-7); const rck=aNPC(oc[0],-3,-6.1,0,'cook',R); renameCousin(rck.m,randStaffName()); A.push(rck);
       B(.9,.9,.7,0x6a4a3a,5.5,.45,-6); const rcs=aNPC(oc[1],5.5,-5.2,0,'cash',R); renameCousin(rcs.m,randStaffName()); A.push(rcs);
-      const w=aNPC(oc[2],-1,5,Math.PI,'serve'); w.z0=5; w.span=10; renameCousin(w.m,randStaffName()); A.push(w);
-      const w2=aNPC(oc[4%oc.length],4,2,0,'serve'); w2.z0=2; w2.span=8; renameCousin(w2.m,randStaffName()); A.push(w2);
+      const w=aNPC(oc[2],-1,5,Math.PI,'serve'); w.z0=5; w.span=10; renameCousin(w.m,randStaffName()); { const pl=new THREE.Mesh(new THREE.CylinderGeometry(.28,.25,.06,12),M(0xffffff,.4)); const fd=new THREE.Mesh(new THREE.SphereGeometry(.13,8,8),M(0xff6b6b,.5)); fd.position.y=.07; pl.add(fd); pl.position.set(0,-.35,.06); w.m.userData.arms[0].add(pl); } A.push(w);
+      const w2=aNPC(oc[4%oc.length],4,2,0,'serve'); w2.z0=2; w2.span=8; renameCousin(w2.m,randStaffName()); { const pl=new THREE.Mesh(new THREE.CylinderGeometry(.28,.25,.06,12),M(0xffffff,.4)); const fd=new THREE.Mesh(new THREE.SphereGeometry(.13,8,8),M(0x6bd0ff,.5)); fd.position.y=.07; pl.add(fd); pl.position.set(0,-.35,.06); w2.m.userData.arms[0].add(pl); } A.push(w2);
       const w3=aNPC(oc[5%oc.length],-4,1,0,'serve'); w3.z0=1; w3.span=9; renameCousin(w3.m,randStaffName()); A.push(w3);
       B(1,2,.2,0x5a3a2a,-7.6,1,-2); A.push(aNPC(oc[3],-6.6,-1,Math.PI/2,'talk',R));
       return A; }},
