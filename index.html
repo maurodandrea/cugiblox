@@ -1421,8 +1421,9 @@ function GameScuola(){
       if(player.position.z<-8.5 && Math.abs(player.position.x)<2){ beep(700,.1); setStage('ground'); }
       else if(Math.hypot(player.position.x-busPos.x,player.position.z-busPos.z)<2.3){ beep(700,.1); setStage('bus'); } }
     else if(stage==='bus'){ if(player.position.z>5.4 && Math.abs(player.position.x)<1.4){ beep(600,.1); setStage('ext'); } }
-    else if(stage==='ground'){ if(player.position.z<-7.5 && Math.abs(player.position.x)<2.6){ beep(800,.1); setTimeout(()=>beep(1000,.1),90); setStage('aula'); } }
+    else if(stage==='ground'){ if(player.position.z<-7.5 && Math.abs(player.position.x)<2.6){ beep(800,.1); setTimeout(()=>beep(1000,.1),90); setStage('aula'); } else if(player.position.z>10 && Math.abs(player.position.x)<2.5){ beep(500,.1); setStage('ext'); } }
     else { stepCrowd(mover,dt,t,7);
+      if(player.position.z>6.5 && Math.abs(player.position.x)<2.5){ beep(600,.1); setStage('ground'); return; }
       for(let i=books.length-1;i>=0;i--){ const b=books[i]; b.rotation.y+=dt*2; if(Math.hypot(player.position.x-b.position.x,player.position.z-b.position.z)<1){ collected++; beep(700+collected*50,.08); env.remove(b); books.splice(i,1); } }
       setScore('📚 '+collected+'/'+GOAL); if(collected>=GOAL){ done=true; finishGame(18,'Lezione finita! 📚'); } }
   }};
