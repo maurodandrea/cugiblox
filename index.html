@@ -1299,25 +1299,30 @@ function GamePesca(){
   const fisher=buildCousin(hero); fisher.position.set(0,.4,4); fisher.rotation.y=Math.PI; world.add(fisher);
   const rod=cyl(.04,.06,3,0x6b4423); rod.position.set(.4,1.3,3.2); rod.rotation.x=-0.5; world.add(rod);
   const rodTip=new THREE.Vector3(.4,2.4,2.2);
-  const bob=new THREE.Mesh(new THREE.SphereGeometry(.18,12,12),M(0xff3b3b,.4)); bob.position.set(0,.35,-3); world.add(bob);
+  const bob=new THREE.Mesh(new THREE.SphereGeometry(.18,12,12),M(0xff3b3b,.4)); bob.position.set(0,.35,-10); world.add(bob);
   const lineGeo=new THREE.BufferGeometry().setFromPoints([rodTip,bob.position.clone()]); const fline=new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:0xffffff})); world.add(fline);
-  const fish=[]; for(let i=0;i<6;i++){ const f=buildFish([0xffa500,0x8e44ad,0x2ecc71,0xe74c3c,0x3498db][i%5]); f.position.set(rand(-7,7),.28,rand(-15,-3)); f.userData.s=rand(.6,1.3)*(Math.random()<.5?1:-1); world.add(f); fish.push(f); }
+  const fish=[]; for(let i=0;i<6;i++){ const f=buildFish([0xffa500,0x8e44ad,0x2ecc71,0xe74c3c,0x3498db][i%5]); f.position.set(rand(-7,7),.28,rand(-18,-5)); f.userData.s=rand(.6,1.3)*(Math.random()<.5?1:-1); world.add(f); fish.push(f); }
   camera.position.set(0,3.4,8); camera.lookAt(0,.3,-6);
-  let phase='wait', waitT=rand(1.5,3.5), biteT=0, caught=0, biter=null, reelT=0; const GOAL=4;
+  let phase='wait', waitT=rand(1.5,3.5), biteT=0, caught=0, biter=null; const GOAL=4;
   setInstr('Aspetta che un pesce abbocchi...'); setScore('Pesci: 0/'+GOAL);
   return { update(dt){ const t=performance.now()*0.001;
     fish.forEach(f=>{ if(f===biter)return; f.position.x+=f.userData.s*dt; if(f.position.x>8||f.position.x<-8)f.userData.s*=-1; f.rotation.y=f.userData.s>0?Math.PI/2:-Math.PI/2; });
-    bob.position.y=.35+Math.sin(t*3)*.04;
-    if(phase==='wait'){ waitT-=dt; if(waitT<=0){ biter=fish[Math.floor(Math.random()*fish.length)]; phase='approach'; setInstr('Un pesce si avvicina all\'esca...'); } }
-    else if(phase==='approach'){ const d=new THREE.Vector3(bob.position.x-biter.position.x,0,bob.position.z-biter.position.z); biter.position.x+=Math.sign(d.x)*Math.min(Math.abs(d.x),2*dt); biter.position.z+=Math.sign(d.z)*Math.min(Math.abs(d.z),2*dt); biter.lookAt(bob.position.x,biter.position.y,bob.position.z);
-      if(Math.hypot(d.x,d.z)<.6){ phase='bite'; biteT=1.3; beep(700,.1); setInstr('🎣 ABBOCCA! Premi AZIONE!'); } }
-    else if(phase==='bite'){ biteT-=dt; bob.position.y=.1-Math.abs(Math.sin(t*18))*.2; if(hit('Space')){ phase='reel'; reelT=0; beep(500,.1); setInstr('Premi AZIONE ripetutamente per tirarlo a riva!'); }
-      else if(biteT<=0){ phase='wait'; waitT=rand(1.5,3); biter=null; bob.position.y=.35; setInstr('Scappato! Aspetta il prossimo...'); } }
-    else if(phase==='reel'){ if(hit('Space')){ biter.position.z+=0.7; biter.position.x+=(0-biter.position.x)*0.15; beep(620,.05); } else { biter.position.z-=0.25*dt*6; reelT+=dt; }
-      biter.lookAt(0,biter.position.y,10);
-      if(biter.position.z>=3){ caught++; beep(950,.12); setTimeout(()=>beep(1200,.1),90); biter.position.set(rand(-7,7),.25,rand(-15,-4)); biter=null; phase='wait'; waitT=rand(1.2,2.6); bob.position.y=.35; setInstr('Preso! Aspetta il prossimo...'); if(caught>=GOAL){ finishGame(14+caught,'Bella pesca! 🎣 '+caught+' pesci'); phase='done'; } } }
-    const target = (phase==='bite'||phase==='reel'||phase==='approach') && biter ? biter.position : bob.position;
-    lineGeo.setFromPoints([rodTip, target]);
+    if(phase==='wait'){ bob.position.y=.35+Math.sin(t*3)*.05; waitT-=dt; if(waitT<=0){ biter=fish[Math.floor(Math.random()*fish.length)]; phase='approach'; setInstr('Un pesce si avvicina all\'esca...'); } }
+    else if(phase==='approach'){ bob.position.y=.35+Math.sin(t*3)*.05;
+      const d=new THREE.Vector3(bob.position.x-biter.position.x,0,bob.position.z-biter.position.z); biter.position.x+=Math.sign(d.x)*Math.min(Math.abs(d.x),2*dt); biter.position.z+=Math.sign(d.z)*Math.min(Math.abs(d.z),2*dt); biter.lookAt(bob.position.x,biter.position.y,bob.position.z);
+      if(Math.hypot(d.x,d.z)<.6){ phase='bite'; biteT=1.5; beep(700,.1); setInstr('🎣 ABBOCCA! Premi AZIONE!'); } }
+    else if(phase==='bite'){ biteT-=dt;
+      bob.position.y=-.12-Math.abs(Math.sin(t*18))*.2; // galleggiante affonda
+      biter.position.x=bob.position.x+Math.sin(t*5)*.08;
+      biter.position.z=bob.position.z+Math.cos(t*5)*.08;
+      biter.position.y=-.2; // pesce sotto la superficie
+      if(hit('Space')){ phase='reel'; beep(500,.1); setInstr('Premi AZIONE ripetutamente per tirarlo a riva!'); }
+      else if(biteT<=0){ phase='wait'; waitT=rand(1.5,3); biter=null; bob.position.set(0,.35,-10); setInstr('Scappato! Aspetta il prossimo...'); } }
+    else if(phase==='reel'){ if(hit('Space')){ biter.position.z+=0.7; biter.position.x+=(0-biter.position.x)*0.15; beep(620,.05); } else { biter.position.z-=0.25*dt*6; }
+      biter.position.y=Math.min(.28,biter.position.y+dt*1.5); biter.lookAt(0,biter.position.y,10);
+      if(biter.position.z>=3){ caught++; beep(950,.12); setTimeout(()=>beep(1200,.1),90); biter.position.set(rand(-7,7),.28,rand(-18,-5)); biter=null; phase='wait'; waitT=rand(1.2,2.6); bob.position.set(0,.35,-10); setInstr('Preso! Aspetta il prossimo...'); if(caught>=GOAL){ finishGame(14+caught,'Bella pesca! 🎣 '+caught+' pesci'); phase='done'; } } }
+    const lineTarget=(phase==='reel'&&biter)?biter.position:bob.position;
+    lineGeo.setFromPoints([rodTip, lineTarget]);
     setScore('🎣 Pesci: '+caught+'/'+GOAL);
   }};
 }
