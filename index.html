@@ -1863,10 +1863,10 @@ function GameScuola(){
         E(.06,1.6,1.1,col,px,py,pz); });
       ['🎨','🌈','⭐','🏠'].forEach((em,i)=>{ const l=labelSprite(em,1.3); l.position.set(i<2?-8.6:8.6,2,-3+(i%2)*4); env.add(l); });
       E(3,.65,1.2,0x9c6b3f,0,.32,-7); E(.8,.5,.7,0x6a4a2a,0,.25,-7.9);
-      const fem=['letizia','giorgia','eleonora'].find(i=>i!==hero)||otherChar(); const teach=renameCousin(buildCousin(fem),'Maestra'); teach.position.set(-.3,0,-6.2); teach.rotation.y=Math.PI; teach.userData.arms[0].rotation.x=-2.0; teach.userData.arms[0].rotation.z=0.4; env.add(teach);
+      const fem=['letizia','giorgia','eleonora'].find(i=>i!==hero)||otherChar(); const teach=renameCousin(buildCousin(fem),'Maestra'); teach.position.set(-.3,0,-6.2); teach.rotation.y=0; teach.userData.arms[0].rotation.x=-1.5; teach.userData.arms[0].rotation.z=-0.4; env.add(teach);
       for(let r=0;r<3;r++)for(let cc=0;cc<3;cc++) E(1.6,.9,1,0xa6794a,-4+cc*4,.45,r*3);
       const studs=otherCousins().filter(id=>id!==fem);
-      studs.forEach((id,i)=>{ const c=buildCousin(id); if(i<6){ const row=Math.floor(i/3), col=i%3; c.position.set(-4+col*4,.5,row*3); c.userData.legs[0].rotation.x=-1.3; c.userData.legs[1].rotation.x=-1.3; c.userData.arms[0].rotation.x=-1.2+Math.sin(i)*0.3; c.userData.arms[0].rotation.z=Math.cos(i)*0.2; env.add(c); }
+      studs.forEach((id,i)=>{ const c=buildCousin(id); if(i<6){ const row=Math.floor(i/3), col=i%3; c.position.set(-4+col*4,.5,row*3); c.rotation.y=Math.PI; c.userData.legs[0].rotation.x=-1.3; c.userData.legs[1].rotation.x=-1.3; c.userData.arms[0].rotation.x=-1.2+Math.sin(i)*0.3; c.userData.arms[0].rotation.z=Math.cos(i)*0.2; env.add(c); }
         else { c.position.set(rand(-7,7),0,rand(2,6)); c.userData.h=rand(0,6.28); c.userData.tw=rand(1,3); env.add(c); mover.push(c); } });
       for(let i=0;i<GOAL;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,.45),M(TC[i%TC.length],.5)); b.position.set(rand(-7,7),.2,rand(-5,6)); env.add(b); books.push(b); }
       // porta uscita aula → piano terra
