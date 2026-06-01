@@ -143,7 +143,7 @@ const CITY_GAMES = {
 const META = {
   colosseo:{e:'🏟️',n:'Colosseo'}, scuola:{e:'🏫',n:'Scuola'}, casa:{e:'🏠',n:'Casa'}, parco:{e:'🌳',n:'Parco'},
   danza:{e:'💃',n:'Danza'}, piscina:{e:'🏊',n:'Piscina'}, color_hotel:{e:'🏨',n:'Color Hotel'}, guida:{e:'🚗',n:'Scuola Guida'},
-  moto:{e:'🏍️',n:'Moto'}, bici:{e:'🚲',n:'Bici'}, cavallo:{e:'🐴',n:'Cavallo'}, tennis:{e:'🎾',n:'Tennis'},
+  moto:{e:'🏍️',n:'Moto'}, bici:{e:'🚵',n:'Mountain Bike'}, cavallo:{e:'🐴',n:'Cavallo'}, tennis:{e:'🎾',n:'Tennis'},
   bar:{e:'🍹',n:'Bar'}, parco_avventure:{e:'🧗',n:'Parco Avventure'}, calcio:{e:'⚽',n:'Calcio'}, basket:{e:'🏀',n:'Basket'},
   mare:{e:'🏖️',n:'Mare'}, acquapark:{e:'🎢',n:'Acquapark'}, pesca:{e:'🎣',n:'Pesca'}, giostre:{e:'🎠',n:'Giostre'},
   piazzetta:{e:'⛲',n:'Piazzetta'}, gavettoni:{e:'🎈',n:'Gavettoni'}, ristorante:{e:'🍝',n:'Ristorante'}, bowling:{e:'🎳',n:'Bowling'}, pattinaggio:{e:'⛸️',n:'Pattinaggio'},
@@ -380,9 +380,15 @@ function makeVehicle(veh,rid){ const g=new THREE.Group(); g.userData.wheels=[]; 
   if(veh==='moto'){ B2(g,.4,.4,1.6,0x222b3a,0,.6,0); B2(g,.45,.3,.6,0xe74c3c,0,.85,.1);
     const wg=new THREE.CylinderGeometry(.4,.4,.16,18),wm=M(0x111,.6); [[0,.4,.8],[0,.4,-.8]].forEach(p=>{const w=new THREE.Mesh(wg,wm);w.rotation.z=Math.PI/2;w.position.set(...p);g.add(w);g.userData.wheels.push(w);});
     B2(g,.7,.08,.08,0x333333,0,1,.7); const r=buildCousin(rid); r.scale.multiplyScalar(.5); r.position.set(0,.6,-.1); g.add(r);
-  } else if(veh==='bici'){ B2(g,.1,.5,1.2,0x2ecc71,0,.7,0);
-    const wg=new THREE.CylinderGeometry(.45,.45,.08,18),wm=M(0x222,.6); [[0,.45,.7],[0,.45,-.7]].forEach(p=>{const w=new THREE.Mesh(wg,wm);w.rotation.z=Math.PI/2;w.position.set(...p);g.add(w);g.userData.wheels.push(w);});
-    const r=buildCousin(rid); r.scale.multiplyScalar(.55); r.position.set(0,.6,-.05); g.add(r);
+  } else if(veh==='bici'){
+    const fc=0x1e1e2a,ac=0xf05a0a,sk=0xb8b8c8;
+    const tube=(r,A,B,col)=>{const d=new THREE.Vector3(...B).sub(new THREE.Vector3(...A));const L=d.length();const c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,L,8),M(col,.9));c.position.copy(new THREE.Vector3(...A).addScaledVector(d.clone().normalize(),L/2));c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());g.add(c);return c;};
+    [[0,.42,.70],[0,.42,-.68]].forEach(p=>{const tire=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.12,20),M(0x111,.9));tire.rotation.z=Math.PI/2;tire.position.set(...p);g.add(tire);g.userData.wheels.push(tire);const rim=new THREE.Mesh(new THREE.TorusGeometry(.33,.025,8,22),M(sk,.7));rim.rotation.z=Math.PI/2;rim.position.set(...p);g.add(rim);});
+    tube(.048,[0,.75,.60],[0,.42,.0],fc); tube(.042,[0,.80,.59],[0,.93,-.18],fc); tube(.042,[0,.43,-.05],[0,.93,-.18],fc); tube(.030,[0,.42,.0],[0,.42,-.68],fc); tube(.032,[0,.93,-.18],[0,.42,-.68],fc);
+    tube(.036,[.06,.74,.62],[.06,.56,.70],sk); tube(.036,[-.06,.74,.62],[-.06,.56,.70],sk); tube(.036,[.06,.56,.70],[.06,.42,.70],ac); tube(.036,[-.06,.56,.70],[-.06,.42,.70],ac);
+    tube(.025,[0,.80,.60],[0,.92,.52],fc); tube(.022,[-.32,.92,.52],[.32,.92,.52],fc);
+    tube(.018,[-.18,.97,-.18],[.18,.97,-.18],0x222222); B2(g,.42,.04,.14,0x222222,0,.99,-.18);
+    const r=buildCousin(rid); r.scale.multiplyScalar(.55); r.position.set(0,.65,-.1); g.add(r);
   } else if(veh==='tube'){ const ring=new THREE.Mesh(new THREE.TorusGeometry(.7,.28,12,20),M(0xffd24a,.4)); ring.rotation.x=Math.PI/2; ring.position.y=.35; g.add(ring);
     const r=buildCousin(rid); r.scale.multiplyScalar(.5); r.position.set(0,.25,0); g.add(r);
   } else { B2(g,1.1,.5,2,0xe74c3c,0,.45,0); B2(g,.9,.45,1,0x8ecae6,0,.85,-.1);
@@ -474,9 +480,14 @@ function GameBiciMontagna(){
   const cx=t=>6*Math.sin(t*0.016)+3.2*Math.sin(t*0.043+1.2);
   const hy=t=>2.4*Math.sin(t*0.011)+1.3*Math.sin(t*0.026+0.5);
   const terr=t=>Math.floor(t/45)%3;   // 0 terra, 1 fango, 2 neve
-  const TCOL=[0x9c6b3a,0x5d4324,0xeaf2f7];
+  const mkTMat=(fn)=>{const cv=document.createElement('canvas');cv.width=cv.height=128;const ctx=cv.getContext('2d');fn(ctx);const tex=new THREE.CanvasTexture(cv);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(3,3);return new THREE.MeshStandardMaterial({map:tex,roughness:.92,metalness:0});};
+  const terrainMats=[
+    mkTMat(ctx=>{ctx.fillStyle='#9c6b3a';ctx.fillRect(0,0,128,128);for(let i=0;i<90;i++){ctx.fillStyle=`hsl(25,${30+Math.random()*20}%,${22+Math.random()*28}%)`;ctx.beginPath();ctx.arc(Math.random()*128,Math.random()*128,1+Math.random()*3.5,0,Math.PI*2);ctx.fill();}}),
+    mkTMat(ctx=>{ctx.fillStyle='#3d2510';ctx.fillRect(0,0,128,128);for(let i=0;i<28;i++){ctx.fillStyle=`rgba(20,40,80,${0.25+Math.random()*0.4})`;ctx.beginPath();ctx.ellipse(Math.random()*128,Math.random()*128,5+Math.random()*14,3+Math.random()*9,Math.random()*Math.PI,0,Math.PI*2);ctx.fill();}for(let i=0;i<50;i++){ctx.fillStyle=`hsl(18,${18+Math.random()*12}%,${12+Math.random()*14}%)`;ctx.fillRect(Math.random()*128,Math.random()*128,2+Math.random()*5,1+Math.random()*3);}}),
+    mkTMat(ctx=>{ctx.fillStyle='#eef4fb';ctx.fillRect(0,0,128,128);ctx.strokeStyle='rgba(160,190,230,0.45)';ctx.lineWidth=2;for(let i=0;i<6;i++){ctx.beginPath();ctx.moveTo(i*22+Math.random()*8,0);ctx.lineTo(i*22+Math.random()*8+6,128);ctx.stroke();}for(let i=0;i<55;i++){ctx.fillStyle=`rgba(210,228,252,${0.25+Math.random()*0.45})`;ctx.beginPath();ctx.arc(Math.random()*128,Math.random()*128,.5+Math.random()*2,0,Math.PI*2);ctx.fill();}}),
+  ];
   const slices=[], trees=[];
-  for(let i=0;i<N;i++){ const s=new THREE.Mesh(new THREE.BoxGeometry(HALF*2,.3,SEG+0.4),M(TCOL[0],.92)); s.receiveShadow=true; world.add(s); slices.push(s);
+  for(let i=0;i<N;i++){ const s=new THREE.Mesh(new THREE.BoxGeometry(HALF*2,.3,SEG+0.4),terrainMats[0]); s.receiveShadow=true; world.add(s); slices.push(s);
     const mkTree=()=>{ const g=new THREE.Group(); const tr=new THREE.Mesh(new THREE.CylinderGeometry(.2,.28,2.2,7),M(0x6b4423)); tr.position.y=1.1; const lv=new THREE.Mesh(new THREE.ConeGeometry(1,2.4,8),M(0x2f7a3a)); lv.position.y=2.8; g.add(tr,lv); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); return g; };
     const tl=mkTree(), tr2=mkTree(); world.add(tl,tr2); trees.push([tl,tr2]); }
   // ostacoli radi e vari: sasso (raro), tronco, pozzanghera
@@ -508,7 +519,7 @@ function GameBiciMontagna(){
     bike.userData.wheels.forEach(w=>w.rotation.x-=speed*dt);
     const by=hy(dist);
     for(let i=0;i<N;i++){ const ti=dist+i*SEG, s=slices[i], tt=terr(ti);
-      s.position.set(cx(ti)-bikeX, hy(ti)-by, 6-i*SEG); s.material.color.setHex(TCOL[tt]);
+      s.position.set(cx(ti)-bikeX, hy(ti)-by, 6-i*SEG); if(s.userData.tt!==tt){s.material=terrainMats[tt];s.userData.tt=tt;}
       const pr=trees[i], snowy=tt===2;
       pr[0].position.set(cx(ti)-bikeX-(HALF+1.4), hy(ti)-by, 6-i*SEG); pr[1].position.set(cx(ti)-bikeX+(HALF+1.4), hy(ti)-by, 6-i*SEG);
       pr[0].children[1].material.color.setHex(snowy?0xdfeaf0:0x2f7a3a); pr[1].children[1].material.color.setHex(snowy?0xdfeaf0:0x2f7a3a); }
