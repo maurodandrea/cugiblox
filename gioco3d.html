@@ -1288,12 +1288,14 @@ function GameBallPit(){
 }
 
 /* ===================== SCUOLA (esterno → piano terra → scale → aula) ===================== */
+function renameCousin(c,name){ const old=c.userData.nameTag; if(!old)return c; const nt=nameSprite(name); nt.position.copy(old.position); nt.scale.copy(old.scale); c.remove(old); c.add(nt); c.userData.nameTag=nt; return c; }
 function GameScuola(){
   applyTheme(); addSky();
   const env=new THREE.Group(); world.add(env);
   function clearEnv(){ for(let i=env.children.length-1;i>=0;i--){ const o=env.children[i]; o.traverse(n=>{ if(n.geometry)n.geometry.dispose(); if(n.material){(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map&&!m.map.__keep)m.map.dispose(); m.dispose&&m.dispose(); });} }); env.remove(o); } }
   function E(w,h,d,c,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); env.add(m); return m; }
   const player=buildCousin(hero); world.add(player);
+  const busPos={x:-13,z:6.5};
   let stage='', collected=0, t=0, done=false, books=[], mover=[]; const GOAL=6;
   function setStage(s){ clearEnv(); books=[]; mover=[]; stage=s;
     if(s==='ext'){
@@ -1301,8 +1303,11 @@ function GameScuola(){
       const road=new THREE.Mesh(new THREE.PlaneGeometry(60,5),M(0x3a3d44,.95)); road.rotation.x=-Math.PI/2; road.position.set(0,.05,5); env.add(road);
       for(let i=-6;i<=6;i++) E(1.2,.02,.3,0xffd54a,i*4,.07,5);
       const swk=new THREE.Mesh(new THREE.PlaneGeometry(60,2.2),M(0xcfd2d6,.95)); swk.rotation.x=-Math.PI/2; swk.position.set(0,.06,7.4); env.add(swk);
-      [-13,-8,8,13].forEach((x,k)=>{ const c=makeCar([0x2980b9,0x27ae60,0xe74c3c,0xf1c40f][k]); c.rotation.y=Math.PI/2; c.position.set(x,0,4.2); env.add(c); });
-      const bus=new THREE.Group(); const bb=new THREE.Mesh(new THREE.BoxGeometry(6.5,2.6,2.3),M(0xff8a1a)); bb.position.y=1.5; bus.add(bb); for(let i=0;i<5;i++){ const win=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.06),M(0x9fd0e8)); win.position.set(-2.4+i*1.2,1.9,1.18); bus.add(win); } [[-2.2,.45,1.05],[2.2,.45,1.05],[-2.2,.45,-1.05],[2.2,.45,-1.05]].forEach(p=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.35,12),M(0x111111)); w.rotation.z=Math.PI/2; w.position.set(...p); bus.add(w); }); bus.position.set(-2,0,4.3); bus.rotation.y=Math.PI/2; env.add(bus);
+      [-8,-3,8,13].forEach((x,k)=>{ const c=makeCar([0x2980b9,0x27ae60,0xe74c3c,0xf1c40f][k]); c.rotation.y=Math.PI/2; c.position.set(x,0,4.2); env.add(c); });
+      // area autobus (fermata) con bus parcheggiato LUNGO la strada
+      const bay=new THREE.Mesh(new THREE.PlaneGeometry(10,3),M(0x55595f,.95)); bay.rotation.x=-Math.PI/2; bay.position.set(busPos.x,.06,busPos.z); env.add(bay);
+      E(.2,2.4,3.2,0xb0b6bd,busPos.x-5.5,1.2,busPos.z); E(2.5,.15,3.4,0x88909a,busPos.x-4.3,2.4,busPos.z); const bsign=labelSprite('🚌 BUS',2.2); bsign.position.set(busPos.x-4.3,3,busPos.z); env.add(bsign);
+      const bus=new THREE.Group(); const bb=new THREE.Mesh(new THREE.BoxGeometry(8,2.6,2.3),M(0xff8a1a)); bb.position.y=1.5; bus.add(bb); for(let i=0;i<6;i++){ const win=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.06),M(0x9fd0e8)); win.position.set(-3+i*1.2,1.9,1.18); bus.add(win); const win2=win.clone(); win2.position.z=-1.18; bus.add(win2); } const door=new THREE.Mesh(new THREE.BoxGeometry(.9,1.6,.06),M(0x335)); door.position.set(2.6,1.0,1.18); bus.add(door); [[-2.6,.45,1.05],[2.6,.45,1.05],[-2.6,.45,-1.05],[2.6,.45,-1.05]].forEach(p=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.35,12),M(0x111111)); w.rotation.z=Math.PI/2; w.position.set(...p); bus.add(w); }); bus.position.set(busPos.x,0,busPos.z); env.add(bus);
       E(8,7,.5,0xe8c8a0,-6,3.5,-10); E(8,7,.5,0xe8c8a0,6,3.5,-10); E(20,1.4,.5,0xe8c8a0,0,6.4,-10); E(21,.7,3,0xb5651d,0,7.2,-10.4);
       for(let r=0;r<2;r++)for(let cc=0;cc<5;cc++){ if(cc===2)continue; E(1.3,1.3,.1,0x9fd0e8,-8+cc*4,2.4+r*2.2,-9.72); }
       E(.55,3.8,.55,0xcaa477,-2.4,1.9,-9); E(.55,3.8,.55,0xcaa477,2.4,1.9,-9);
@@ -1310,37 +1315,58 @@ function GameScuola(){
       const sign=labelSprite('🏫 SCUOLA',4.5); sign.position.set(0,8.3,-10); env.add(sign);
       const ocp=otherCousins(); for(let i=0;i<4;i++){ const p=buildCousin(ocp[i%ocp.length]); p.position.set(rand(-12,12),0,7.4); p.userData.dir=Math.random()<.5?1:-1; p.rotation.y=p.userData.dir>0?Math.PI/2:-Math.PI/2; env.add(p); mover.push(p); }
       player.position.set(0,0,11); player.rotation.y=Math.PI;
-      setInstr('Attraversa il cancello aperto della scuola! 🏫');
+      setInstr('🚪 cancello = scuola · 🚌 area bus = sali sull\'autobus');
+    } else if(s==='bus'){
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(3.2,13),M(0x6a4a3a,.9)); f.rotation.x=-Math.PI/2; env.add(f);
+      E(3.2,2.4,.2,0xff8a1a,0,1.2,-6.5); E(3.2,2.4,.2,0xff8a1a,0,1.2,6.5); E(.2,2.4,13,0xe07a10,-1.6,1.2,0); E(.2,2.4,13,0xe07a10,1.6,1.2,0);
+      for(let i=0;i<6;i++){ E(1.2,.9,.08,0x9fd0e8,-1.5,1.5,-5+i*2); E(1.2,.9,.08,0x9fd0e8,1.5,1.5,-5+i*2); }   // finestrini
+      for(let i=0;i<5;i++){ E(.7,.5,.5,0x2a5fd0,-.7,.5,-4+i*1.8); E(.7,.7,.2,0x2a5fd0,-.7,.95,-4.25+i*1.8); E(.7,.5,.5,0x2a5fd0,.7,.5,-4+i*1.8); E(.7,.7,.2,0x2a5fd0,.7,.95,-4.25+i*1.8); }   // sedili
+      const pole=cyl(.05,.05,2,0xcccccc); pole.position.set(0,1,0); env.add(pole);
+      const wheel=new THREE.Mesh(new THREE.TorusGeometry(.32,.05,8,20),M(0x222)); wheel.position.set(-.6,1.1,-5.6); wheel.rotation.y=.3; env.add(wheel);
+      const driver=renameCousin(buildCousin(otherChar()),'Autista'); driver.position.set(-.6,.5,-5.9); driver.userData.legs[0].rotation.x=-1.3; driver.userData.legs[1].rotation.x=-1.3; env.add(driver);
+      // qualche passeggero seduto
+      const ocp=otherCousins(); for(let i=0;i<2;i++){ const p=buildCousin(ocp[i]); p.position.set(i?.7:-.7,.5,1+i*1.8); p.userData.legs[0].rotation.x=-1.3; p.userData.legs[1].rotation.x=-1.3; env.add(p); }
+      const ed=new THREE.Mesh(new THREE.PlaneGeometry(1.2,2),new THREE.MeshStandardMaterial({color:0x6fc0e0,transparent:true,opacity:.5,side:THREE.DoubleSide})); ed.position.set(0,1,6.4); env.add(ed); const el=labelSprite('🚪 Scendi'); el.position.set(0,2.5,6.4); env.add(el);
+      player.position.set(0,0,4.5); player.rotation.y=0;
+      setInstr('Sei sull\'autobus! Esplora · vai alla 🚪 per scendere');
     } else if(s==='ground'){
       const f=new THREE.Mesh(new THREE.PlaneGeometry(20,24),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(20,5,.3,0xeae0c8,0,2.5,-12); E(.3,5,24,0xeae0c8,-10,2.5,0); E(.3,5,24,0xeae0c8,10,2.5,0);
-      E(4,1.1,1.5,0x9c6b3f,-6,.55,-9); const sb=labelSprite('Reception',2.4); sb.position.set(-6,2,-9); env.add(sb);
-      for(let i=0;i<6;i++) E(4.5,.45,.7,0xb4a7b0,0,.22+i*.45,-6-i*0.7);   // scale che salgono verso il fondo (direzione opposta)
+      E(4,1.1,1.5,0x9c6b3f,-6,.55,-9); const sb=labelSprite('Reception',2.4); sb.position.set(-6,2.2,-9); env.add(sb);
+      E(.9,.5,.7,0x6a4a2a,-6,.25,-7.9); const bruno=renameCousin(buildCousin('babbo'),'Bruno (bidello)'); bruno.position.set(-6,.5,-7.9); bruno.userData.legs[0].rotation.x=-1.3; bruno.userData.legs[1].rotation.x=-1.3; env.add(bruno);   // bidello seduto
+      for(let i=0;i<6;i++) E(4.5,.45,.7,0xb4a7b0,0,.22+i*.45,-6-i*0.7);
       const s2=labelSprite('⬆️ Sali in Aula',3.2); s2.position.set(0,3.6,-10); env.add(s2);
       player.position.set(0,0,9); player.rotation.y=Math.PI;
-      setInstr('Sei al piano terra · sali le scale in fondo per andare in aula');
-    } else { // aula
+      setInstr('Piano terra · saluta Bruno e sali le scale in fondo');
+    } else { // aula con tutti i cugini
       const f=new THREE.Mesh(new THREE.PlaneGeometry(18,16),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(18,4,.3,0xeae0c8,0,2,-8); E(.3,4,16,0xeae0c8,-9,2,0); E(.3,4,16,0xeae0c8,9,2,0);
       E(6,2.5,.2,0x224422,0,2,-7.84);
       E(3,1.1,1.2,0x9c6b3f,0,.55,-7); E(.8,.5,.7,0x6a4a2a,0,.25,-7.9);
-      const fem=['letizia','giorgia','eleonora'].find(i=>i!==hero)||otherChar(); const teach=buildCousin(fem); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; env.add(teach);
+      const fem=['letizia','giorgia','eleonora'].find(i=>i!==hero)||otherChar(); const teach=renameCousin(buildCousin(fem),CHARS[fem].name+' (maestra)'); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; env.add(teach);
       for(let r=0;r<3;r++)for(let cc=0;cc<3;cc++) E(1.6,.9,1,0xa6794a,-4+cc*4,.45,r*3);
+      const studs=otherCousins().filter(id=>id!==fem);
+      studs.forEach((id,i)=>{ const c=buildCousin(id); if(i<2){ c.position.set(-4+i*4,.5,0); c.userData.legs[0].rotation.x=-1.3; c.userData.legs[1].rotation.x=-1.3; env.add(c); }   // seduti ai banchi
+        else { c.position.set(rand(-7,7),0,rand(2,6)); c.userData.h=rand(0,6.28); c.userData.tw=rand(1,3); env.add(c); mover.push(c); } });   // che camminano
       for(let i=0;i<GOAL;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,.45),M(TC[i%TC.length],.5)); b.position.set(rand(-7,7),.2,rand(-5,6)); env.add(b); books.push(b); }
-      player.position.set(0,0,6); player.rotation.y=Math.PI;
-      setInstr('In aula! Raccogli i '+GOAL+' libri 📚');
+      player.position.set(0,0,6.5); player.rotation.y=Math.PI;
+      setInstr('In aula con tutti i cugini! Raccogli i '+GOAL+' libri 📚');
     }
   }
   setStage('ext');
   camera.position.set(0,5,14);
   return { update(dt){ if(done)return; t+=dt;
     const moved=thirdPersonWalk(player,dt,5); walkAnim(player,moved?t*9:0);
-    player.position.x=THREE.MathUtils.clamp(player.position.x,-9,9); player.position.z=THREE.MathUtils.clamp(player.position.z,-11,12);
+    const cx=stage==='ext'?16:stage==='bus'?1.4:8.5, cz=stage==='aula'?7:stage==='bus'?6.2:11.5;
+    player.position.x=THREE.MathUtils.clamp(player.position.x,-cx,cx); player.position.z=THREE.MathUtils.clamp(player.position.z,-cz,cz);
     followCam(player,7,5.4,1);
-    if(stage==='ext'){ mover.forEach((p,i)=>{ p.position.x+=p.userData.dir*1.5*dt; if(p.position.x>13){p.userData.dir=-1;p.rotation.y=-Math.PI/2;} else if(p.position.x<-13){p.userData.dir=1;p.rotation.y=Math.PI/2;} walkAnim(p,t*8+i); }); }
-    if(stage==='ext'){ if(player.position.z<-8.5 && Math.abs(player.position.x)<2){ beep(700,.1); setStage('ground'); } }
+    if(stage==='ext'){ mover.forEach((p,i)=>{ p.position.x+=p.userData.dir*1.5*dt; if(p.position.x>13){p.userData.dir=-1;p.rotation.y=-Math.PI/2;} else if(p.position.x<-13){p.userData.dir=1;p.rotation.y=Math.PI/2;} walkAnim(p,t*8+i); });
+      if(player.position.z<-8.5 && Math.abs(player.position.x)<2){ beep(700,.1); setStage('ground'); }
+      else if(Math.hypot(player.position.x-busPos.x,player.position.z-busPos.z)<2.3){ beep(700,.1); setStage('bus'); } }
+    else if(stage==='bus'){ if(player.position.z>5.4 && Math.abs(player.position.x)<1.4){ beep(600,.1); setStage('ext'); } }
     else if(stage==='ground'){ if(player.position.z<-7.5 && Math.abs(player.position.x)<2.6){ beep(800,.1); setTimeout(()=>beep(1000,.1),90); setStage('aula'); } }
-    else { for(let i=books.length-1;i>=0;i--){ const b=books[i]; b.rotation.y+=dt*2; if(Math.hypot(player.position.x-b.position.x,player.position.z-b.position.z)<1){ collected++; beep(700+collected*50,.08); env.remove(b); books.splice(i,1); } }
+    else { stepCrowd(mover,dt,t,7);
+      for(let i=books.length-1;i>=0;i--){ const b=books[i]; b.rotation.y+=dt*2; if(Math.hypot(player.position.x-b.position.x,player.position.z-b.position.z)<1){ collected++; beep(700+collected*50,.08); env.remove(b); books.splice(i,1); } }
       setScore('📚 '+collected+'/'+GOAL); if(collected>=GOAL){ done=true; finishGame(18,'Lezione finita! 📚'); } }
   }};
 }
