@@ -513,7 +513,7 @@ function GameBiciMontagna(){
 /* ===================== SCUOLA GUIDA (pista con curve) ===================== */
 function DrivingSchool(){
   applyTheme(); const gr=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); gr.rotation.x=-Math.PI/2; gr.receiveShadow=true; world.add(gr); const clouds=addSky();
-  const wp=[[0,26],[14,22],[24,12],[28,0],[22,-14],[10,-24],[0,-28],[-10,-24],[-22,-14],[-28,0],[-24,12],[-14,22]].map(p=>new THREE.Vector3(p[0],0,p[1]));
+  const wp=[[0,26],[16,24],[24,14],[28,2],[26,-10],[20,-18],[8,-24],[-2,-20],[-10,-26],[-22,-20],[-28,-6],[-24,10],[-12,22]].map(p=>new THREE.Vector3(p[0],0,p[1]));
   const curve=new THREE.CatmullRomCurve3(wp,true,'catmullrom',0.5);
   const N=170, samples=curve.getPoints(N), W=6;
   for(let i=0;i<samples.length-1;i++){ const a=samples[i],b=samples[i+1]; const mid=a.clone().add(b).multiplyScalar(.5); const len=a.distanceTo(b)+0.5;
@@ -821,7 +821,7 @@ const THEMES = {
   cinese:{emoji:'🏮',ground:0xc04040,size:16,goal:7,time:52,deliver:true,drop:[0,-6],dropLabel:'🏮 Scaffale',instr:'Raccogli un pacco e portalo allo scaffale!',win:'Negozio cinese rifornito! 🏮',
     decor(){ B(.4,3,12,0x7a2020,-6,1.5,0); B(.4,3,12,0x7a2020,6,1.5,0); B(12,3,.4,0x7a2020,0,1.5,-6); B(5,1.8,1,0x8a3030,0,.9,-6); for(let i=0;i<5;i++){ const lan=new THREE.Mesh(new THREE.SphereGeometry(.35,12,12),new THREE.MeshStandardMaterial({color:0xff3b3b,emissive:0xaa0000,emissiveIntensity:.4})); lan.position.set(-5+i*2.5,3,-5.6); world.add(lan); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.3; const rib=new THREE.Mesh(new THREE.BoxGeometry(.55,.08,.55),M(0xffd24a)); rib.position.y=0; b.add(rib); return b; }},
-  color_hotel:{emoji:'🧳',ground:0x88c0c0,size:18,goal:8,time:60,spray:{wallZ:-8},ballpit:{x:4.5,z:3,w:7,l:7,floorColor:0xf2f2ee,ballColor:0xf5f5f5,ballCount:60},instr:'Raccogli le valigie · spray sui muri 🎨 · tuffati nella vasca palline! 🫧',win:'Benvenuti al Color Hotel! 🏨',
+  color_hotel:{emoji:'🧳',ground:0x88c0c0,size:18,goal:8,time:60,spray:{wallZ:-8},ballpit:{x:4.5,z:3,w:7,l:7,floorColor:0xf2f2ee,ballColor:0xf5f5f5,ballCount:180},instr:'Raccogli le valigie · spray sui muri 🎨 · tuffati nella vasca palline! 🫧',win:'Benvenuti al Color Hotel! 🏨',
     decor(){ B(18,3.2,.3,0xeae2d0,0,1.6,-8); B(.3,3.2,18,0xeae2d0,-8.6,1.6,0); B(.3,3.2,18,0xeae2d0,8.6,1.6,0); B(6,1.2,1.6,0x33aaaa,-3,.6,-7); for(let i=0;i<6;i++){ const col=cyl(.3,.3,2.6,TC[i]); col.position.set(-7+i*2.8,1.3,-7.5); col.castShadow=true; world.add(col); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.7,.35),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.35; const hd=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,12),M(0x333333)); hd.position.y=.45; b.add(hd); return b; }},
   piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:60,instr:'Raccogli le monete · entra nelle 🚪 o usa altalena/scivoli! ⛲',win:'Piazzetta scintillante! ⛲',
@@ -1342,6 +1342,14 @@ function GameScuola(){
       E(.55,3.8,.55,0xcaa477,-2.4,1.9,-9); E(.55,3.8,.55,0xcaa477,2.4,1.9,-9);
       [-1,1].forEach(side=>{ const g=new THREE.Group(); for(let i=0;i<4;i++){ const bar=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,2.8,6),M(0x556677)); bar.position.set(-0.6+i*0.4,0,0); g.add(bar);} const fr=new THREE.Mesh(new THREE.BoxGeometry(1.4,.08,.08),M(0x556677)); fr.position.y=1.3; const fr2=fr.clone(); fr2.position.y=-1.3; g.add(fr,fr2); g.position.set(side*2.4,1.6,-9); g.rotation.y=side*1.15; env.add(g); });
       const sign=labelSprite('🏫 SCUOLA',4.5); sign.position.set(0,8.3,-10); env.add(sign);
+      // bandiera italiana
+      { const flagpole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,4.5,8),M(0xcccccc)); flagpole.position.set(9.5,2.25,-9); env.add(flagpole); const fg=new THREE.Mesh(new THREE.BoxGeometry(2,.06,.04),M(0xaaaaaa)); fg.position.set(10.5,4.5,-9); env.add(fg); const f1=new THREE.Mesh(new THREE.BoxGeometry(.65,1,.02),M(0x009246)); f1.position.set(10.17,4.5,-9); env.add(f1); const f2=new THREE.Mesh(new THREE.BoxGeometry(.65,1,.02),M(0xffffff)); f2.position.set(10.82,4.5,-9); env.add(f2); const f3=new THREE.Mesh(new THREE.BoxGeometry(.65,1,.02),M(0xce2b37)); f3.position.set(11.47,4.5,-9); env.add(f3); }
+      // canestro basket nel cortile
+      { const bp=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,3.2,8),M(0x555555)); bp.position.set(-11,1.6,2); env.add(bp); const arm=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,1.2),M(0x555555)); arm.position.set(-11,3.2,2.6); env.add(arm); const brd=new THREE.Mesh(new THREE.BoxGeometry(1.2,.9,.08),M(0xffffff,.5)); brd.position.set(-11,3.0,3.2); env.add(brd); const hoop=new THREE.Mesh(new THREE.TorusGeometry(.38,.04,8,20),M(0xff7a1a)); hoop.rotation.x=Math.PI/2; hoop.position.set(-11,2.7,3.2); env.add(hoop); }
+      // cespugli ai lati dell'ingresso
+      [-3.5,3.5].forEach(x=>{ const bush=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),M(0x2f8f4a)); bush.scale.y=.8; bush.position.set(x,.5,-8.1); env.add(bush); });
+      // panchine nel cortile
+      [[-7,2],[7,2],[-7,-4],[7,-4]].forEach(([x,z])=>{ E(2,.4,.5,0xa67850,x,.2,z); E(2,.1,.5,0xc8964a,x,.6,z); });
       const ocp=otherCousins(); for(let i=0;i<4;i++){ const p=buildCousin(ocp[i%ocp.length]); p.position.set(rand(-12,12),0,7.4); p.userData.dir=Math.random()<.5?1:-1; p.rotation.y=p.userData.dir>0?Math.PI/2:-Math.PI/2; env.add(p); mover.push(p); }
       player.position.set(0,0,11); player.rotation.y=Math.PI;
       setInstr('🚪 cancello = scuola · 🚌 area bus = sali sull\'autobus');
@@ -1361,25 +1369,45 @@ function GameScuola(){
     } else if(s==='ground'){
       const f=new THREE.Mesh(new THREE.PlaneGeometry(20,24),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(20,5,.3,0xeae0c8,0,2.5,-12); E(.3,5,24,0xeae0c8,-10,2.5,0); E(.3,5,24,0xeae0c8,10,2.5,0);
+      // parete di fondo con finestre
+      for(let i=-3;i<=3;i+=2){ if(Math.abs(i)>1) E(1.8,1.4,.1,0x9fd0e8,i*2.4,2.5,-11.8); }
+      // reception
       E(4,1.1,1.5,0x9c6b3f,-6,.55,-9); const sb=labelSprite('Reception',2.4); sb.position.set(-6,2.2,-9); env.add(sb);
-      E(.9,.5,.7,0x6a4a2a,-6,.25,-7.9); const bruno=renameCousin(buildCousin('babbo'),'Bruno'); bruno.position.set(-6,.5,-7.9); bruno.userData.legs[0].rotation.x=-1.3; bruno.userData.legs[1].rotation.x=-1.3; env.add(bruno);   // bidello seduto
+      E(.9,.5,.7,0x6a4a2a,-6,.25,-7.9); const bruno=renameCousin(buildCousin('babbo'),'Bruno'); bruno.position.set(-6,.5,-7.9); bruno.userData.legs[0].rotation.x=-1.3; bruno.userData.legs[1].rotation.x=-1.3; env.add(bruno);
+      // armadietti (lockers) lungo la parete destra
+      for(let i=0;i<5;i++){ E(.9,2,.4,0x7a9aaa,8.8,1,-4+i*2); E(.9,.04,.4,0xaacccc,8.8,2,-4+i*2); E(.06,.06,.35,0x888888,9.25,1.2,-4+i*2); }
+      // bacheca/tabellone
+      E(3.5,2,.1,0x5a3a2a,5,2.5,-11.8); E(3.2,1.7,.06,0x2a6b30,5,2.5,-11.72); const blab=labelSprite('📋 Bacheca',2); blab.position.set(5,3.6,-11.5); env.add(blab);
+      // trofei / vetrina premi
+      E(2,.1,1,0xc8a878,7,.05,3); E(2,2.6,.2,0x8a8fa8,7,1.3,4); for(let i=0;i<3;i++){ const tr=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,.5,10),M(0xffd700)); tr.position.set(6.5+i*.5,.55,3.5); env.add(tr); } const vtl=labelSprite('🏆 Trofei',1.8); vtl.position.set(7,2.9,3.5); env.add(vtl);
+      // fontanella acqua
+      const fbase=new THREE.Mesh(new THREE.CylinderGeometry(.3,.35,.7,12),M(0x9fd0e8)); fbase.position.set(-9,.35,4); env.add(fbase); const fspout=new THREE.Mesh(new THREE.BoxGeometry(.08,.3,.3),M(0x778899)); fspout.position.set(-9,.8,4.15); fspout.rotation.x=.4; env.add(fspout); const flab=labelSprite('💧',1); flab.position.set(-9,1.4,4); env.add(flab);
+      // panca/panchina
+      E(3,.4,.5,0xa67850,-4,.2,7); E(3,.1,.5,0xc8964a,-4,.6,7);
+      // pianta in vaso
+      const pvase=new THREE.Mesh(new THREE.CylinderGeometry(.22,.18,.5,10),M(0xb5651d)); pvase.position.set(8.5,.25,7); env.add(pvase); const plant=new THREE.Mesh(new THREE.SphereGeometry(.55,10,8),M(0x2f8f4a)); plant.position.set(8.5,.9,7); env.add(plant);
+      // scale verso aula
       for(let i=0;i<6;i++) E(4.5,.45,.7,0xb4a7b0,0,.22+i*.45,-6-i*0.7);
       const s2=labelSprite('⬆️ Sali in Aula',3.2); s2.position.set(0,3.6,-10); env.add(s2);
+      // porta uscita → esterno
+      { const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(0,0,10.5); env.add(dg); const dl=labelSprite('🚪 Uscita'); dl.position.set(0,2.9,10.5); env.add(dl); }
       player.position.set(0,0,9); player.rotation.y=Math.PI;
-      setInstr('Piano terra · saluta Bruno e sali le scale in fondo');
+      setInstr('Piano terra · saluta Bruno · ⬆️ scala = aula · 🚪 uscita = fuori');
     } else { // aula con tutti i cugini
       const f=new THREE.Mesh(new THREE.PlaneGeometry(18,16),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(18,4,.3,0xeae0c8,0,2,-8); E(.3,4,16,0xeae0c8,-9,2,0); E(.3,4,16,0xeae0c8,9,2,0);
       E(6,2.5,.2,0x224422,0,2,-7.84);
       E(3,1.1,1.2,0x9c6b3f,0,.55,-7); E(.8,.5,.7,0x6a4a2a,0,.25,-7.9);
-      const fem=['letizia','giorgia','eleonora'].find(i=>i!==hero)||otherChar(); const teach=renameCousin(buildCousin(fem),CHARS[fem].name+' (maestra)'); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; env.add(teach);
+      const fem=['letizia','giorgia','eleonora'].find(i=>i!==hero)||otherChar(); const teach=renameCousin(buildCousin(fem),'Maestra'); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; env.add(teach);
       for(let r=0;r<3;r++)for(let cc=0;cc<3;cc++) E(1.6,.9,1,0xa6794a,-4+cc*4,.45,r*3);
       const studs=otherCousins().filter(id=>id!==fem);
       studs.forEach((id,i)=>{ const c=buildCousin(id); if(i<2){ c.position.set(-4+i*4,.5,0); c.userData.legs[0].rotation.x=-1.3; c.userData.legs[1].rotation.x=-1.3; env.add(c); }   // seduti ai banchi
         else { c.position.set(rand(-7,7),0,rand(2,6)); c.userData.h=rand(0,6.28); c.userData.tw=rand(1,3); env.add(c); mover.push(c); } });   // che camminano
       for(let i=0;i<GOAL;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,.45),M(TC[i%TC.length],.5)); b.position.set(rand(-7,7),.2,rand(-5,6)); env.add(b); books.push(b); }
+      // porta uscita aula → piano terra
+      { const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(0,0,7); env.add(dg); const dl=labelSprite('⬇️ Piano terra'); dl.position.set(0,2.9,7); env.add(dl); }
       player.position.set(0,0,6.5); player.rotation.y=Math.PI;
-      setInstr('In aula con tutti i cugini! Raccogli i '+GOAL+' libri 📚');
+      setInstr('In aula! Raccogli i '+GOAL+' libri 📚 · ⬇️ porta = torna al piano terra');
     }
   }
   setStage('ext');
@@ -1464,8 +1492,8 @@ function enterTitle(){ clearWorld(); applyTheme(); addGround2(CITIES.roma.ground
 let activeGame=null, gameOver=false;
 function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); document.getElementById('hud').classList.remove('on'); document.getElementById('pad').classList.remove('on'); if(id) document.getElementById(id).classList.add('on'); }
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
-const DRIVE_PAD=['guida','moto','acquapark','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare'];
-function padFor(gid){ return DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'race':''; }
+const DRIVE_PAD=['guida','acquapark','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare'];
+function padFor(gid){ return gid==='moto'?'race':DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'race':''; }
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad('race'); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
 function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
   try{ activeGame=(GAME_FN[gid]||(()=>walkCollect(THEMES.casa)))(); }catch(e){ console.error(e); activeGame=null; setInstr('Errore in '+gid+': '+(e&&e.message||e)); }
