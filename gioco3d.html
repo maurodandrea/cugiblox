@@ -1232,28 +1232,38 @@ function GameTennis(){
 }
 
 /* ===================== PATTINAGGIO (gara su ghiaccio) ===================== */
+function iceTexture(){ const c=document.createElement('canvas'); c.width=256;c.height=256; const x=c.getContext('2d'); const g=x.createLinearGradient(0,0,256,256); g.addColorStop(0,'#eef9ff'); g.addColorStop(1,'#cfe9ff'); x.fillStyle=g; x.fillRect(0,0,256,256); x.strokeStyle='rgba(255,255,255,.45)'; x.lineWidth=1; for(let i=0;i<70;i++){ const y=Math.random()*256; x.beginPath(); x.moveTo(0,y); x.lineTo(256,y+(Math.random()*16-8)); x.stroke(); } const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,18); return t; }
 function GamePattinaggio(){
   applyTheme(); addSky();
-  const RW=12, Z0=8, Z1=-60, midZ=(Z0+Z1)/2, len=Z0-Z1;
-  addGround2(0xbfd8e6);
-  const ice=new THREE.Mesh(new THREE.PlaneGeometry(RW,len),new THREE.MeshStandardMaterial({color:0xcfeeff,roughness:.12,metalness:.25})); ice.rotation.x=-Math.PI/2; ice.position.set(0,.02,midZ); world.add(ice);
-  [-RW/2,RW/2].forEach(x=>B(.3,.9,len,0xffffff,x,.45,midZ));
-  for(let i=0;i<14;i++) B(RW,.02,.18,0x9fd0e0,0,.03,Z0-i*5);
-  const stL=buildStand(); stL.position.set(-8.5,0,-6); stL.rotation.y=Math.PI/2; world.add(stL); const stR=buildStand(); stR.position.set(8.5,0,-6); stR.rotation.y=-Math.PI/2; world.add(stR);
-  for(let k=-2;k<=2;k++){ const sq=new THREE.Mesh(new THREE.BoxGeometry(1.1,1,.3),M(k%2?0x111111:0xffffff)); sq.position.set(k*1.2,.5,Z1+2); world.add(sq); }   // traguardo
+  const RW=13, Z0=10, Z1=-140, midZ=(Z0+Z1)/2, len=Z0-Z1;
+  addGround2(0x262b36);     // pavimento del palazzetto (scuro) per distinguere il ghiaccio
+  const ice=new THREE.Mesh(new THREE.PlaneGeometry(RW,len),new THREE.MeshStandardMaterial({map:iceTexture(),color:0xffffff,roughness:.1,metalness:.35})); ice.rotation.x=-Math.PI/2; ice.position.set(0,.03,midZ); world.add(ice);
+  // balaustre: board bianco + base blu + cap rosso, su entrambi i lati
+  [-RW/2,RW/2].forEach(x=>{ B(.25,1.0,len,0xffffff,x,.5,midZ); B(.30,.28,len,0x2a6fd0,x,.16,midZ); B(.28,.08,len,0xd11111,x,1.0,midZ); });
+  B(RW+.6,1.0,.25,0xffffff,0,.5,Z0+.1); B(RW+.6,1.0,.25,0xffffff,0,.5,Z1-.1);
+  // pannelli pubblicitari fuori dalle balaustre
+  for(let i=0;i<Math.floor(len/8);i++){ const z=Z0-5-i*8; const col=[0xff6b6b,0x2ecc71,0xffd24a,0x6bd0ff][i%4]; B(.06,.6,5,col,-RW/2-.18,.55,z); B(.06,.6,5,col,RW/2+.18,.55,z); }
+  // righe da hockey
+  B(RW,.04,.45,0xd11111,0,.06,midZ); B(RW,.04,.32,0x2a6fd0,0,.06,midZ+len*0.16); B(RW,.04,.32,0x2a6fd0,0,.06,midZ-len*0.16);
+  const cc=new THREE.Mesh(new THREE.TorusGeometry(1.9,.05,8,40),M(0xd11111)); cc.rotation.x=-Math.PI/2; cc.position.set(0,.06,midZ); world.add(cc);
+  [midZ+len*0.32,midZ-len*0.32].forEach(z=>{ const r=new THREE.Mesh(new THREE.TorusGeometry(1.7,.05,8,36),M(0xd11111)); r.rotation.x=-Math.PI/2; r.position.set(0,.06,z); world.add(r); const dot=new THREE.Mesh(new THREE.CircleGeometry(.25,12),M(0xd11111)); dot.rotation.x=-Math.PI/2; dot.position.set(0,.07,z); world.add(dot); });
+  // tribune lungo i lati
+  for(const z of [-10,-50,-90]){ const sl=buildStand(); sl.position.set(-9.2,0,z); sl.rotation.y=Math.PI/2; world.add(sl); const sr=buildStand(); sr.position.set(9.2,0,z); sr.rotation.y=-Math.PI/2; world.add(sr); }
+  // traguardo a scacchi
+  for(let k=-3;k<=3;k++){ const sq=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.1,.3),M((k+3)%2?0x111111:0xffffff)); sq.position.set(k*1.2,.55,Z1+2.4); world.add(sq); }
   const laneX=[-3,-1.5,0,1.5,3], pIdx=2; const racers=[];
-  for(let i=0;i<laneX.length;i++){ const isP=(i===pIdx); const cid=isP?hero:CHAR_IDS[(CHAR_IDS.indexOf(hero)+i+1)%CHAR_IDS.length]; const c=buildCousin(cid); c.position.set(laneX[i],0,Z0-1); c.rotation.y=Math.PI; world.add(c); racers.push({c,isP,cid,base:rand(6,7.6),phase:rand(0,6),z:Z0-1,fin:false}); }
+  for(let i=0;i<laneX.length;i++){ const isP=(i===pIdx); const cid=isP?hero:CHAR_IDS[(CHAR_IDS.indexOf(hero)+i+1)%CHAR_IDS.length]; const c=buildCousin(cid); c.position.set(laneX[i],0,Z0-1); c.rotation.y=Math.PI; world.add(c); racers.push({c,isP,cid,base:rand(9.5,11.5),phase:rand(0,6),z:Z0-1,fin:false}); }
   const me=racers[pIdx];
   camera.position.set(0,4,Z0+5); camera.lookAt(0,1,-4);
-  let speed=0, lastSide=0, won=false, time=0; const START=Z0-1, END=Z1+2.4, LEN=START-END;
-  setInstr('Alterna ◀ e ▶ (o AZIONE) per pattinare: batti gli altri! ⛸️'); setScore('⛸️ 0%');
+  let speed=0, lastSide=0, won=false, time=0; const START=Z0-1, END=Z1+2.6, LEN=START-END;
+  setInstr('Alterna ◀ e ▶ (o AZIONE) per pattinare veloce: batti gli altri! ⛸️'); setScore('⛸️ 0%');
   function skate(c,ph){ c.rotation.z=Math.sin(ph*6)*0.12; c.userData.legs[0].rotation.x=Math.sin(ph*8)*.5; c.userData.legs[1].rotation.x=-Math.sin(ph*8)*.5; c.userData.arms[0].rotation.x=Math.sin(ph*8)*.6; c.userData.arms[1].rotation.x=-Math.sin(ph*8)*.6; }
   return { update(dt){ if(won)return; time+=dt;
     let stroke=0; if(hit('ArrowLeft'))stroke=-1; else if(hit('ArrowRight'))stroke=1; else if(hit('Space'))stroke=-lastSide||1;
-    if(stroke){ if(stroke!==lastSide){ speed=Math.min(12,speed+1.9); beep(500,.05); } else speed=Math.min(12,speed+.6); lastSide=stroke; }
-    speed*=Math.pow(.55,dt*1.3);
+    if(stroke){ if(stroke!==lastSide){ speed=Math.min(15,speed+2.2); beep(500,.05); } else speed=Math.min(15,speed+.7); lastSide=stroke; }
+    speed*=Math.pow(.6,dt*1.3);
     me.z-=speed*dt; me.c.position.z=me.z; skate(me.c,time); if(!me.fin&&me.z<=END)me.fin=true;
-    racers.forEach((r,i)=>{ if(r.isP)return; if(!r.fin){ const sp=Math.max(2,r.base+1.4*Math.sin(time*0.8+r.phase)+0.5*Math.sin(time*2.5+i)); r.z-=sp*dt; if(r.z<=END)r.fin=true; } r.c.position.z=r.z; skate(r.c,time+i); });
+    racers.forEach((r,i)=>{ if(r.isP)return; if(!r.fin){ const sp=Math.max(3,r.base+1.6*Math.sin(time*0.8+r.phase)+0.6*Math.sin(time*2.5+i)); r.z-=sp*dt; if(r.z<=END)r.fin=true; } r.c.position.z=r.z; skate(r.c,time+i); });
     camera.position.z=THREE.MathUtils.lerp(camera.position.z,me.z+6,.08); camera.position.x=THREE.MathUtils.lerp(camera.position.x,0,.1); camera.lookAt(0,1,me.z-6);
     const pos=1+racers.filter(r=>!r.isP&&r.z<me.z).length;
     setScore('⛸️ '+Math.floor(Math.min(1,(START-me.z)/LEN)*100)+'%  ·  '+pos+'º su '+laneX.length+'  ·  '+time.toFixed(1)+'s');
