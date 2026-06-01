@@ -335,7 +335,7 @@ function Hub(){
   const jamb=x=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(.3,2.6,.3),M(0x9c6b3f)); m.position.set(x,1.3,0); return m; };
   const dtop=new THREE.Mesh(new THREE.BoxGeometry(2.1,.35,.35),M(0x9c6b3f)); dtop.position.set(0,2.6,0);
   const dpanel=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.4),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.4,transparent:true,opacity:.5,side:THREE.DoubleSide})); dpanel.position.set(0,1.3,0);
-  const dlab=labelSprite('🚪 Mappa'); dlab.position.set(0,3.3,0);
+  const dlab=labelSprite('✈️ Viaggia'); dlab.position.set(0,3.3,0);
   door.add(jamb(-.9),jamb(.9),dtop,dpanel); door.position.set(17,0,8); door.rotation.y=-Math.PI/2; door.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(door); world.add(dlab); dlab.position.set(17,3.3,8);
   setInstr('◀▶ gira · ▲/AZIONE cammina · entra in un gioco o nella 🚪 per cambiare città');
   setScore('🗺️ '+CITIES[city].name+'   ·   '+total+'★');
@@ -838,7 +838,7 @@ const THEMES = {
     decor(){ B(18,3.2,.3,0xeae2d0,0,1.6,-8); B(.3,3.2,18,0xeae2d0,-8.6,1.6,0); B(.3,3.2,18,0xeae2d0,8.6,1.6,0); B(6,1.2,1.6,0x33aaaa,-3,.6,-7); for(let i=0;i<6;i++){ const col=cyl(.3,.3,2.6,TC[i]); col.position.set(-7+i*2.8,1.3,-7.5); col.castShadow=true; world.add(col); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.7,.35),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.35; const hd=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,12),M(0x333333)); hd.position.y=.45; b.add(hd); return b; }},
   piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:60,instr:'Raccogli le monete · entra nelle 🚪 o usa altalena/scivoli! ⛲',win:'Piazzetta scintillante! ⛲',
-    gameDoors:[{gid:'bar',x:-7,z:2,label:'🍹 Bar',col:0xff9ec4},{gid:'ristorante',x:7,z:2,label:'🍝 Ristorante',col:0x6bd0ff},{gid:'casa',x:0,z:7,label:'🏠 Casa',col:0xffd24a}],
+    gameDoors:[{gid:'bar',x:-4,z:-7.5,label:'🍹 Bar',col:0xff9ec4},{gid:'ristorante',x:4,z:-7.5,label:'🍝 Ristorante',col:0x6bd0ff},{gid:'casa',x:7,z:0,label:'🏠 Casa',col:0xffd24a}],
     rides(){ const R=[];
       const sx=-4,sz=-1.5; B(.15,2.4,.15,0x6a4a2a,sx-1,1.2,sz); B(.15,2.4,.15,0x6a4a2a,sx+1,1.2,sz); B(2.2,.15,.15,0x6a4a2a,sx,2.4,sz);
       const pivot=new THREE.Group(); pivot.position.set(sx,2.4,sz); world.add(pivot);
@@ -856,7 +856,14 @@ const THEMES = {
       // tavolini con ombrellone
       for(let i=0;i<2;i++){ const x=-4+i*8; const t=cyl(.5,.45,.1,0xffffff); t.position.set(x,.75,4); world.add(t); const leg=cyl(.08,.08,.75,0x999); leg.position.set(x,.38,4); world.add(leg); const pole=cyl(.04,.04,2,0x884); pole.position.set(x,1.3,4); world.add(pole); const um=new THREE.Mesh(new THREE.ConeGeometry(1,.5,10),M([0xff6b6b,0x6bd0ff][i])); um.position.set(x,2.2,4); world.add(um); }
       // vasi di fiori
-      for(let i=0;i<4;i++){ const pot=cyl(.25,.2,.4,0xb5651d); pot.position.set(-6+i*4,.2,-3.5); world.add(pot); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M([0xff5b8a,0xffd24a,0xff6b6b,0xc06bff][i])); fl.position.set(-6+i*4,.5,-3.5); world.add(fl); } },
+      for(let i=0;i<4;i++){ const pot=cyl(.25,.2,.4,0xb5651d); pot.position.set(-6+i*4,.2,-3.5); world.add(pot); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M([0xff5b8a,0xffd24a,0xff6b6b,0xc06bff][i])); fl.position.set(-6+i*4,.5,-3.5); world.add(fl); }
+      // insegne sui palazzi bar (x=-4) e ristorante (x=4)
+      const barSign=new THREE.Mesh(new THREE.BoxGeometry(2.4,.6,.12),new THREE.MeshStandardMaterial({color:0xff6699,emissive:0xcc2255,emissiveIntensity:.5})); barSign.position.set(-4,3.2,-8.65); world.add(barSign);
+      const ristSign=new THREE.Mesh(new THREE.BoxGeometry(2.4,.6,.12),new THREE.MeshStandardMaterial({color:0x2266cc,emissive:0x1144aa,emissiveIntensity:.5})); ristSign.position.set(4,3.2,-8.65); world.add(ristSign);
+      // casa sulla parete destra
+      B(.3,3.5,4,0xf0e0c8,8.1,1.75,0);
+      const roof=new THREE.Mesh(new THREE.CylinderGeometry(0,2.2,1.8,4),M(0xcc4444,.4)); roof.position.set(8.1,4.25,0); roof.rotation.y=Math.PI/4; world.add(roof);
+      [-1,1].forEach(oz=>B(.1,.85,.75,0x88aadd,8.05,2.4,oz)); },
     item(){ const m=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.08,18),M(0xffd700,.3)); m.rotation.x=Math.PI/2; m.position.y=.4; return m; }},
   colosseo:{emoji:'🏆',ground:0xd9c39a,size:20,goal:8,time:55,hazards:3,instr:'Prendi i tesori e schiva i leoni! 🦁',win:'Campione dell\'arena! 🏆',
     decor(){ const N=16; for(let i=0;i<N;i++){ const a=i/N*Math.PI*2,R=9.5; const col=cyl(.5,.55,4,0xe8dcc0); col.position.set(Math.sin(a)*R,2,Math.cos(a)*R); col.castShadow=true; world.add(col); B(1.2,.4,1.2,0xe8dcc0,Math.sin(a)*R,4.1,Math.cos(a)*R); } },
