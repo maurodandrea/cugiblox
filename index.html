@@ -1637,8 +1637,10 @@ function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.r
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
 const DRIVE_PAD=['guida','acquapark_slide','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare','acquapark','giostre','giostre_salt','acquapark_onde'];
 function padFor(gid){ return gid==='moto'?'race':DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'walk':''; }
+const HUB_PARENT={giostre_car:'giostre_hub',giostre_salt:'giostre_hub',giostre_ruota:'giostre_hub',acquapark_slide:'acquapark_hub',acquapark_onde:'acquapark_hub',acquapark_fiume:'acquapark_hub'};
+let currentGid=null;
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad('race'); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
-function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
+function startGame(gid){ currentGid=gid; titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
   try{ activeGame=(GAME_FN[gid]||(()=>walkCollect(THEMES.casa)))(); }catch(e){ console.error(e); activeGame=null; setInstr('Errore in '+gid+': '+(e&&e.message||e)); }
   show(null); hudOn(); }
 function showResults(text,rows,points){ const el=document.getElementById('results'); let html='<h3>'+text+'</h3>';
@@ -1651,8 +1653,8 @@ function finishGame(points,text,rows){ if(gameOver)return; gameOver=true;
   beep(700,.12); setTimeout(()=>beep(1000,.14),120);
   let delay=2200;
   if(rows&&rows.length){ showResults(text,rows,points); delay=4200; } else { showMsg(text+'  +'+points+'★'); }
-  setTimeout(()=>{ activeGame=null; gameOver=false; hideResults(); enterHub(); },delay); }
-document.getElementById('back').addEventListener('click',()=>{ if(mode==='game'){ enterHub(); } else { activeGame=null; clearWorld(); show('s_map'); } });
+  setTimeout(()=>{ activeGame=null; gameOver=false; hideResults(); const ph=HUB_PARENT[currentGid]; if(ph){ startGame(ph); } else { enterHub(); } },delay); }
+document.getElementById('back').addEventListener('click',()=>{ if(mode==='game'){ const ph=HUB_PARENT[currentGid]; if(ph){ startGame(ph); } else { enterHub(); } } else { activeGame=null; clearWorld(); show('s_map'); } });
 
 /* anteprime avatar */
 let thumbR=null,thumbScene=null,thumbCam=null; const thumbCache={};
