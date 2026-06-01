@@ -664,6 +664,8 @@ function walkCollect(th){
   const rides = th.rides ? th.rides() : null; let riding=null, rideT=0;
   let sprayCan=null, hasSpray=false; const splats=[];
   if(th.spray){ sprayCan=new THREE.Group(); const bdy=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.45,10),M(0xff3b6b)); const cp=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.1,8),M(0x333333)); cp.position.y=.27; sprayCan.add(bdy,cp); sprayCan.position.set(rand(-half+1,half-1),.45,rand(0,half-1)); world.add(sprayCan); }
+  const exitDoor=th.exitDoor||null;
+  if(exitDoor){ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(exitDoor[0],0,exitDoor[1]); world.add(dg); const elab=labelSprite('🚪 Esci'); elab.position.set(exitDoor[0],2.9,exitDoor[1]); world.add(elab); }
   if(th.music) startMusic();
   camera.position.set(0,8,10);
   let collected=0, time=th.time||45, t=0, done=false, carried=null;
@@ -682,6 +684,7 @@ function walkCollect(th){
     const moved=thirdPersonWalk(player,dt,5); walkAnim(player,(moved&&!carried)?t*9:0);
     player.position.x=THREE.MathUtils.clamp(player.position.x,-half-1,half+1); player.position.z=THREE.MathUtils.clamp(player.position.z,-half-1,half+1);
     followCam(player,7,5.6,1);
+    if(exitDoor && Math.hypot(player.position.x-exitDoor[0],player.position.z-exitDoor[1])<1.2){ done=true; beep(500,.1); setTimeout(enterHub,160); return; }
     if(th.spray){
       if(!hasSpray && sprayCan && Math.hypot(player.position.x-sprayCan.position.x,player.position.z-sprayCan.position.z)<1){ hasSpray=true; world.remove(sprayCan); const pr=new THREE.Group(); const b2=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.22,8),M(0xff3b6b)); const c2=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.06,8),M(0x222222)); c2.position.y=.14; pr.add(b2,c2); pr.position.set(0,-.3,.06); player.userData.arms[0].add(pr); setInstr('🎨 AZIONE per spruzzare sul muro!'); }
       if(hasSpray && hit('Space')){ const col=TC[Math.floor(Math.random()*TC.length)]; const sp=new THREE.Mesh(new THREE.CircleGeometry(rand(.3,.6),12),new THREE.MeshStandardMaterial({color:col,roughness:.95})); sp.position.set(THREE.MathUtils.clamp(player.position.x,-half+1,half-1),rand(1,2.7),th.spray.wallZ+0.06); world.add(sp); splats.push(sp); if(splats.length>40){ world.remove(splats.shift()); } beep(1200,.05,'sawtooth',.04); }
@@ -703,8 +706,9 @@ function walkCollect(th){
   }};
 }
 const THEMES = {
-  casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[6,5.5],dropLabel:'🧺 Scatolone',instr:'Raccogli un gioco e portalo nello scatolone!',win:'Cameretta in ordine! 🏠',
-    decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(16,.2,16,0xb98a55,0,2.9,0); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5);
+  casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[6,5.5],dropLabel:'🧺 Scatolone',exitDoor:[0,8],instr:'Riordina i giochi · avvicinati alla 🚪 per uscire',win:'Cameretta in ordine! 🏠',
+    decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5);
+      B(2,1.4,.12,0x9fd6ee,-3,2.2,-7.84); B(2,1.4,.12,0x9fd6ee,3,2.2,-7.84); B(.12,1.4,2,0x9fd6ee,-7.84,2.2,-2); B(.12,1.4,2,0x9fd6ee,7.84,2.2,2);   // finestre
       B(2.8,.5,1.1,0x4a6fa5,-3,.4,6.6); B(2.8,.7,.25,0x4a6fa5,-3,.85,7.1);                  // divano
       B(3.4,.06,2.2,0x9c3a3a,-3,.04,5.2);                                                    // tappeto
       B(1.7,1.05,.2,0x111111,3.5,1.35,-7.75); B(1.5,.85,.16,0x2a6fb0,3.5,1.35,-7.62);        // TV a muro
@@ -1231,6 +1235,57 @@ function GameTennis(){
   }};
 }
 
+/* ===================== SCUOLA (esterno → piano terra → scale → aula) ===================== */
+function GameScuola(){
+  applyTheme(); addSky();
+  const env=new THREE.Group(); world.add(env);
+  function clearEnv(){ for(let i=env.children.length-1;i>=0;i--){ const o=env.children[i]; o.traverse(n=>{ if(n.geometry)n.geometry.dispose(); if(n.material){(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map&&!m.map.__keep)m.map.dispose(); m.dispose&&m.dispose(); });} }); env.remove(o); } }
+  function E(w,h,d,c,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); env.add(m); return m; }
+  const player=buildCousin(hero); world.add(player);
+  let stage='', collected=0, t=0, done=false, books=[]; const GOAL=6;
+  function setStage(s){ clearEnv(); books=[]; stage=s;
+    if(s==='ext'){
+      const grd=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); grd.rotation.x=-Math.PI/2; env.add(grd);
+      E(8,7,.5,0xe8c8a0,-6,3.5,-10); E(8,7,.5,0xe8c8a0,6,3.5,-10); E(20,1.4,.5,0xe8c8a0,0,6.4,-10); E(21,.7,3,0xb5651d,0,7.2,-10.4);
+      for(let r=0;r<2;r++)for(let cc=0;cc<5;cc++){ if(cc===2)continue; E(1.3,1.3,.1,0x9fd0e8,-8+cc*4,2.4+r*2.2,-9.72); }   // finestre
+      E(.6,3.6,.6,0xcaa477,-2,1.8,-9.4); E(.6,3.6,.6,0xcaa477,2,1.8,-9.4);                                       // pilastri cancello
+      for(let i=0;i<5;i++){ const bar=cyl(.05,.05,3.2,0x556); bar.position.set(-1.7+i*.85,1.6,-9.5); env.add(bar); }    // cancello (decorativo)
+      const sign=labelSprite('🏫 SCUOLA',4.5); sign.position.set(0,8.3,-10); env.add(sign);
+      player.position.set(0,0,9); player.rotation.y=Math.PI;
+      setInstr('Entra dal cancello della scuola! 🏫');
+    } else if(s==='ground'){
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(20,24),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
+      E(20,5,.3,0xeae0c8,0,2.5,-12); E(.3,5,24,0xeae0c8,-10,2.5,0); E(.3,5,24,0xeae0c8,10,2.5,0);
+      E(4,1.1,1.5,0x9c6b3f,-6,.55,-9); const sb=labelSprite('Reception',2.4); sb.position.set(-6,2,-9); env.add(sb);
+      for(let i=0;i<6;i++) E(4.5,.45,.7,0xb4a7b0,0,.22+i*.45,-9.5+i*.7);                                          // scale verso l'alto
+      const s2=labelSprite('⬆️ Sali in Aula',3.2); s2.position.set(0,3.4,-11.5); env.add(s2);
+      player.position.set(0,0,9); player.rotation.y=Math.PI;
+      setInstr('Sei al piano terra · sali le scale in fondo per andare in aula');
+    } else { // aula
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(18,16),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
+      E(18,4,.3,0xeae0c8,0,2,-8); E(.3,4,16,0xeae0c8,-9,2,0); E(.3,4,16,0xeae0c8,9,2,0);
+      E(6,2.5,.2,0x224422,0,2,-7.84);
+      E(3,1.1,1.2,0x9c6b3f,0,.55,-7); E(.8,.5,.7,0x6a4a2a,0,.25,-7.9);
+      const fem=['letizia','giorgia','eleonora'].find(i=>i!==hero)||otherChar(); const teach=buildCousin(fem); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; env.add(teach);
+      for(let r=0;r<3;r++)for(let cc=0;cc<3;cc++) E(1.6,.9,1,0xa6794a,-4+cc*4,.45,r*3);
+      for(let i=0;i<GOAL;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,.45),M(TC[i%TC.length],.5)); b.position.set(rand(-7,7),.2,rand(-5,6)); env.add(b); books.push(b); }
+      player.position.set(0,0,6); player.rotation.y=Math.PI;
+      setInstr('In aula! Raccogli i '+GOAL+' libri 📚');
+    }
+  }
+  setStage('ext');
+  camera.position.set(0,5,14);
+  return { update(dt){ if(done)return; t+=dt;
+    const moved=thirdPersonWalk(player,dt,5); walkAnim(player,moved?t*9:0);
+    player.position.x=THREE.MathUtils.clamp(player.position.x,-9,9); player.position.z=THREE.MathUtils.clamp(player.position.z,-11,12);
+    followCam(player,7,5.4,1);
+    if(stage==='ext'){ if(player.position.z<-8.5 && Math.abs(player.position.x)<2){ beep(700,.1); setStage('ground'); } }
+    else if(stage==='ground'){ if(player.position.z<-7.5 && Math.abs(player.position.x)<2.6){ beep(800,.1); setTimeout(()=>beep(1000,.1),90); setStage('aula'); } }
+    else { for(let i=books.length-1;i>=0;i--){ const b=books[i]; b.rotation.y+=dt*2; if(Math.hypot(player.position.x-b.position.x,player.position.z-b.position.z)<1){ collected++; beep(700+collected*50,.08); env.remove(b); books.splice(i,1); } }
+      setScore('📚 '+collected+'/'+GOAL); if(collected>=GOAL){ done=true; finishGame(18,'Lezione finita! 📚'); } }
+  }};
+}
+
 /* ===================== PATTINAGGIO (gara su ghiaccio) ===================== */
 function iceTexture(){ const c=document.createElement('canvas'); c.width=256;c.height=256; const x=c.getContext('2d'); const g=x.createLinearGradient(0,0,256,256); g.addColorStop(0,'#eef9ff'); g.addColorStop(1,'#cfe9ff'); x.fillStyle=g; x.fillRect(0,0,256,256); x.strokeStyle='rgba(255,255,255,.45)'; x.lineWidth=1; for(let i=0;i<70;i++){ const y=Math.random()*256; x.beginPath(); x.moveTo(0,y); x.lineTo(256,y+(Math.random()*16-8)); x.stroke(); } const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,18); return t; }
 function GamePattinaggio(){
@@ -1280,7 +1335,7 @@ const GAME_FN={
   parco_avventure:ParcoAvventure,
   cavallo:()=>RunnerGame({mode:'fence'}),
   calcio:GameCalcio, basket:GameBasket, piscina:GamePiscina, danza:GameDanza, pesca:GamePesca, giostre:GameGiostre, gavettoni:GameGavettoni, mare:GameMare, bowling:GameBowling,
-  casa:()=>walkCollect(THEMES.casa), scuola:()=>walkCollect(THEMES.scuola), parco:()=>walkCollect(THEMES.parco),
+  casa:()=>walkCollect(THEMES.casa), scuola:GameScuola, parco:()=>walkCollect(THEMES.parco),
   bar:()=>walkCollect(THEMES.bar), ristorante:()=>walkCollect(THEMES.ristorante), tennis:GameTennis, pattinaggio:GamePattinaggio,
   color_hotel:()=>walkCollect(THEMES.color_hotel), piazzetta:()=>walkCollect(THEMES.piazzetta), colosseo:()=>walkCollect(THEMES.colosseo),
 };
