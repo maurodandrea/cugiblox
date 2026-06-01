@@ -775,7 +775,7 @@ function walkCollect(th){
 }
 const THEMES = {
   casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[6,5.5],dropLabel:'🧺 Scatolone',exitDoor:[0,8],furniture:[{type:'bed',x:-5.5,z:-5},{type:'sofa',x:3.5,z:-5.5}],instr:'Riordina · avvicinati al letto per sdraiarti, al divano per sederti · 🚪 esci',win:'Cameretta in ordine! 🏠',
-    decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5);
+    decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(1.1,.18,.75,0xf5eedd,-6.2,1.04,-6.6); B(1.1,.18,.75,0xf5eedd,-4.8,1.04,-6.6); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5);
       B(2,1.4,.12,0x9fd6ee,-3,2.2,-7.84); B(2,1.4,.12,0x9fd6ee,3,2.2,-7.84); B(.12,1.4,2,0x9fd6ee,-7.84,2.2,-2); B(.12,1.4,2,0x9fd6ee,7.84,2.2,2);   // finestre
       B(2.8,.5,1.1,0x4a6fa5,3.5,.4,-5.5); B(2.8,.7,.25,0x4a6fa5,3.5,.85,-5.1);  // divano vicino TV
       B(3.4,.06,2.2,0x9c3a3a,3.5,.04,-6.5);                                       // tappeto davanti TV
@@ -901,7 +901,19 @@ const THEMES = {
       B(.3,3.5,4,0xf0e0c8,8.1,1.75,0);
       const roof=new THREE.Mesh(new THREE.CylinderGeometry(0,2.2,1.8,4),M(0xcc4444,.4)); roof.position.set(8.1,4.25,0); roof.rotation.y=Math.PI/4; world.add(roof);
       [-1,1].forEach(oz=>B(.1,.85,.75,0x88aadd,8.05,2.4,oz)); },
-    item(){ const m=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.08,18),M(0xffd700,.3)); m.rotation.x=Math.PI/2; m.position.y=.4; return m; }},
+    item(){ const m=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.08,18),M(0xffd700,.3)); m.rotation.x=Math.PI/2; m.position.y=.4; return m; },
+    activities(){ const oc=otherCousins(); const A=[];
+      const cy1=aNPC(oc[0],0,1,Math.PI/2,'bikeX'); cy1.x0=0; cy1.span=16; A.push(cy1);
+      const cy2=aNPC(oc[1%oc.length],0,-3,-Math.PI/2,'bikeX'); cy2.x0=0; cy2.span=14; A.push(cy2);
+      const sc1=aNPC(oc[2%oc.length],0,5,Math.PI/2,'scoot'); sc1.x0=0; sc1.span=15; A.push(sc1);
+      const r1=aNPC(oc[3%oc.length],-4,6,Math.PI,'run'); r1.z0=6; r1.span=11; A.push(r1);
+      const r2=aNPC(oc[4%oc.length],4,4,Math.PI,'run'); r2.z0=4; r2.span=9; A.push(r2);
+      const pb1=aNPC(oc[5%oc.length],-1.5,2,Math.PI/2,'throw'); A.push(pb1);
+      const pb2=aNPC(oc[6%oc.length],1.5,2,-Math.PI/2,'throw'); A.push(pb2);
+      { const ball=new THREE.Mesh(new THREE.SphereGeometry(.18,12,12),M(0xff6b6b,.5)); ball.position.set(0,.5,2); world.add(ball); }
+      A.push(aNPC(oc[7%oc.length],-4,-2,0,'talk',['talk','drink']));
+      A.push(aNPC(oc[0],3.5,6,Math.PI,'drink',['drink','talk']));
+      return A; }},
   colosseo:{emoji:'🏆',ground:0xd9c39a,size:20,goal:8,time:55,hazards:3,instr:'Prendi i tesori e schiva i leoni! 🦁',win:'Campione dell\'arena! 🏆',
     decor(){ const N=16; for(let i=0;i<N;i++){ const a=i/N*Math.PI*2,R=9.5; const col=cyl(.5,.55,4,0xe8dcc0); col.position.set(Math.sin(a)*R,2,Math.cos(a)*R); col.castShadow=true; world.add(col); B(1.2,.4,1.2,0xe8dcc0,Math.sin(a)*R,4.1,Math.cos(a)*R); } },
     item(){ const o=new THREE.Mesh(new THREE.OctahedronGeometry(.34),new THREE.MeshStandardMaterial({color:0xffe14a,emissive:0xffd000,emissiveIntensity:.5})); o.position.y=.5; return o; }},
@@ -946,6 +958,9 @@ function stepActivity(n,t){ const m=n.m, a=m.userData.arms, l=m.userData.legs;
     case 'serve': { const span=n.span||4; const tt=(Math.sin(T*0.6)+1)/2; m.position.z=n.z0 - tt*span; a[0].rotation.x=-1.2; walkAnim(m,T*8); break; }
     case 'swing': { if(n.pivot){ n.pivot.rotation.x=Math.sin(T*1.7)*0.7; } break; }
     case 'slide': { const cyc=(T*0.5)%1; if(cyc<0.6){ m.position.set(n.x0, 2.2-cyc/0.6*2.0, n.z0 - (1-cyc/0.6)*0 + cyc*2.2); } else { m.position.set(n.x0,0,n.z0+1.3); } walkAnim(m,T*6); break; }
+    case 'bikeX': { const span=n.span||14; const tt=(Math.sin(T*0.55)+1)/2; m.position.x=n.x0+(tt-0.5)*span; m.rotation.y=tt<0.5?Math.PI/2:-Math.PI/2; a[0].rotation.x=-0.85; a[1].rotation.x=-0.85; walkAnim(m,T*10); break; }
+    case 'scoot': { const span=n.span||12; const tt=(Math.sin(T*0.7)+1)/2; m.position.x=n.x0+(tt-0.5)*span; m.rotation.y=tt<0.5?Math.PI/2:-Math.PI/2; a[0].rotation.x=-0.5; a[1].rotation.x=-0.5; l[0].rotation.x=-0.28; break; }
+    case 'run': { const span=n.span||10; const tt=(Math.sin(T*1.1)+1)/2; m.position.z=n.z0-tt*span; const rs=T*15; a[0].rotation.x=Math.sin(rs)*1.5; a[1].rotation.x=-Math.sin(rs)*1.5; l[0].rotation.x=Math.sin(rs)*1.0; l[1].rotation.x=-Math.sin(rs)*1.0; break; }
     default: break;
   } }
 function courtTexture(){ const c=document.createElement('canvas'); c.width=512;c.height=512; const x=c.getContext('2d');
