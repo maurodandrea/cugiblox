@@ -56,6 +56,10 @@
   #results .pos{width:36px;font-weight:bold;font-size:20px;text-align:center;}
   #results .nm{flex:1;text-align:left;}
   #results .pts{color:#9fe6c8;font-size:15px;margin-top:14px;}
+  #travel{position:fixed;inset:0;background:linear-gradient(180deg,#04112b 0%,#0c2a5e 55%,#1a4a7a 100%);z-index:30;display:none;align-items:center;justify-content:center;flex-direction:column;}
+  #travel.on{display:flex;}
+  #tv-em{font-size:4.5em;position:absolute;top:42%;left:-15%;transition:none;}
+  #tv-txt{color:#ffd86b;font-size:1.4em;font-weight:bold;text-align:center;margin-top:56%;padding:0 20px;}
 </style>
 </head>
 <body>
@@ -101,6 +105,11 @@
 <div id="err"><h2>3D non disponibile</h2><p style="margin-top:12px;color:#bcd">Non è stato possibile caricare la libreria 3D (Three.js).<br>Serve una connessione internet per la versione 3D.</p></div>
 
 <div id="results"></div>
+
+<div id="travel">
+  <div id="tv-em"></div>
+  <div id="tv-txt"></div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -157,10 +166,15 @@ const isTouch=('ontouchstart'in window)||navigator.maxTouchPoints>0;
 let AC=null;
 function beep(f=440,d=.08,t='square',v=.05){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
   const o=AC.createOscillator(),g=AC.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v; o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d);}catch(e){} }
-let musicTimer=null;
+let musicTimer=null, musicTimer2=null;
 function startMusic(){ stopMusic(); if(!AC)return; const mel=[262,330,392,330,294,247,294,392,262,392,440,392]; let i=0;
   musicTimer=setInterval(()=>{ try{ if(!AC)return; const f=mel[i%mel.length]; i++; const o=AC.createOscillator(),g=AC.createGain(); o.type='triangle'; o.frequency.value=f; g.gain.value=0.0001; o.connect(g); g.connect(AC.destination); const tn=AC.currentTime; g.gain.exponentialRampToValueAtTime(0.05,tn+0.02); g.gain.exponentialRampToValueAtTime(0.0001,tn+0.3); o.start(tn); o.stop(tn+0.32); }catch(e){} },320); }
-function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } }
+function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } if(musicTimer2){ clearTimeout(musicTimer2); musicTimer2=null; } }
+function startAcquaparkMusic(){ stopMusic(); if(!AC)return;
+  const mel=[440,494,523,587,523,494,440,392,440,494,523,440,392,440,494,523,587,659,587,523,494,440,392,330,369,440,494,523,587,659,587,523,494,440,392,440];
+  let i=0;
+  function play(){ if(!musicTimer2)return; try{ const f=mel[i%mel.length]; i++; const o=AC.createOscillator(),g=AC.createGain(); o.type='triangle'; o.frequency.value=f; g.gain.value=0.0001; o.connect(g); g.connect(AC.destination); const tn=AC.currentTime; g.gain.exponentialRampToValueAtTime(0.055,tn+0.02); g.gain.exponentialRampToValueAtTime(0.0001,tn+0.28); o.start(tn); o.stop(tn+0.30); }catch(e){} musicTimer2=setTimeout(play,i%4===0?400:220); }
+  musicTimer2=setTimeout(play,0); }
 function makeTreat(kind){ const g=new THREE.Group();
   if(kind==='gelato'){ const cone=new THREE.Mesh(new THREE.ConeGeometry(.07,.18,8),M(0xd9a05a)); cone.rotation.x=Math.PI; const s1=new THREE.Mesh(new THREE.SphereGeometry(.07,8,8),M(0xff9ec4)); s1.position.y=.12; g.add(cone,s1); }
   else if(kind==='patatine'){ const box=new THREE.Mesh(new THREE.BoxGeometry(.12,.16,.08),M(0xe04030)); for(let i=0;i<4;i++){ const fr=new THREE.Mesh(new THREE.BoxGeometry(.02,.14,.02),M(0xffd24a)); fr.position.set(-.04+i*.025,.12,0); g.add(fr);} g.add(box); }
@@ -690,7 +704,7 @@ function walkCollect(th){
   if(exitDoor){ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(exitDoor[0],0,exitDoor[1]); world.add(dg); const elab=labelSprite('🚪 Esci'); elab.position.set(exitDoor[0],2.9,exitDoor[1]); world.add(elab); }
   const gameDoors=th.gameDoors||null;
   if(gameDoors) gameDoors.forEach(gd=>{ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),M(0x8a5a2b)); j1.position.set(-.95,1.3,0); const j2=j1.clone(); j2.position.x=.95; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2.1,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.6,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.5),new THREE.MeshStandardMaterial({color:gd.col||0xffcf6b,emissive:gd.col||0xffcf6b,emissiveIntensity:.35,transparent:true,opacity:.6,side:THREE.DoubleSide})); pan.position.set(0,1.3,0); dg.add(j1,j2,dtop,pan); dg.position.set(gd.x,0,gd.z); if(gd.rot) dg.rotation.y=gd.rot; world.add(dg); const gl=labelSprite(gd.label,3); gl.position.set(gd.x,3.2,gd.z); world.add(gl); });
-  if(th.music) startMusic();
+  if(th.music) (th.musicFn||startMusic)();
   camera.position.set(0,8,10);
   let collected=0, time=th.time||45, t=0, done=false, carried=null;
   setInstr(th.instr);
@@ -818,6 +832,8 @@ const THEMES = {
     item(){ const c=cyl(.22,.16,.5,TC[Math.floor(Math.random()*TC.length)]); c.position.y=.3; return c; },
     activities(){ const oc=otherCousins(); const A=[]; const treats=['gelato','patatine','caffe','yogurt','cornetto','cocktail']; const pos=[[-4,-3.4],[-2,-2.6],[0,-3.4],[2,-2.6],[4,-3.4],[-3,3]];
       treats.forEach((k,i)=>{ const n=aNPC(oc[i%oc.length],pos[i][0],pos[i][1],Math.PI,'drink',['drink','talk']); const tr=makeTreat(k); n.m.userData.arms[0].add(tr); tr.position.set(0,-.32,.06); A.push(n); });
+      A.push(aNPC(oc[6%oc.length],-2,-7,0,'cash',['cash','talk']));
+      A.push(aNPC(oc[7%oc.length],2,-7,0,'cook',['cook','talk']));
       return A; }},
   ristorante:{emoji:'🍝',ground:0xcaa68a,size:18,goal:8,time:55,deliver:true,drop:[0,-7],dropLabel:'🍝 Cucina',instr:'Prendi un piatto e portalo in cucina! 🎵',win:'Buon appetito! 🍝',music:true,
     decor(){ B(18,3,.3,0xe9d8b8,0,1.5,-9); B(.3,3,18,0xe9d8b8,-9,1.5,0); B(.3,3,18,0xe9d8b8,9,1.5,0);   // pareti
@@ -834,6 +850,8 @@ const THEMES = {
       B(1.4,.9,.8,0x888888,-3,.45,-7); A.push(aNPC(oc[0],-3,-6.1,0,'cook',R));
       B(.9,.9,.7,0x6a4a3a,5.5,.45,-6); A.push(aNPC(oc[1],5.5,-5.2,0,'cash',R));
       const w=aNPC(oc[2],-1,5,Math.PI,'serve'); w.z0=5; w.span=10; A.push(w);
+      const w2=aNPC(oc[4%oc.length],4,2,0,'serve'); w2.z0=2; w2.span=8; A.push(w2);
+      const w3=aNPC(oc[5%oc.length],-4,1,0,'serve'); w3.z0=1; w3.span=9; A.push(w3);
       B(1,2,.2,0x5a3a2a,-7.6,1,-2); A.push(aNPC(oc[3],-6.6,-1,Math.PI/2,'talk',R));
       return A; }},
   cinese:{emoji:'🏮',ground:0xc04040,size:16,goal:7,time:52,deliver:true,drop:[0,-6],dropLabel:'🏮 Scaffale',instr:'Raccogli un pacco e portalo allo scaffale!',win:'Negozio cinese rifornito! 🏮',
@@ -878,11 +896,11 @@ const THEMES = {
     instr:'Cammina verso le porte colorate per scegliere! 🎠🦘🎡 · 🚪 verde dietro di te = esci',win:'',
     decor(){ for(let i=0;i<8;i++){ const fc=[0xff5b5b,0x5bd0ff,0xffe14a,0x6bff8a][i%4]; B(.12,2.8,.12,fc,-7+i*2,1.4,-6); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),M(fc)); fl.position.set(-7+i*2,2.8,-6); world.add(fl); }
       const cols=[0xffcc33,0xff6b6b,0x6bd0ff]; [[-4,0],[0,-3],[4,0]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); }); }},
-  acquapark_hub:{emoji:'💦',ground:0x5ab8d0,size:18,goal:0,time:999,exitDoor:[0,7],
-    gameDoors:[{gid:'acquapark_slide',x:-5,z:0,label:'🌊 Scivolo',col:0x5bd0ff},{gid:'acquapark_onde',x:0,z:-3,label:'🌊 Onde',col:0x2080ff},{gid:'acquapark_fiume',x:5,z:0,label:'🛟 Fiume',col:0x2fa8e0}],
+  acquapark_hub:{emoji:'💦',ground:0x5ab8d0,size:18,goal:0,time:999,exitDoor:[0,7],music:true,musicFn:startAcquaparkMusic,
+    gameDoors:[{gid:'acquapark_slide',x:-5,z:0,label:'🌊 Scivolo',col:0x5bd0ff},{gid:'acquapark_onde',x:0,z:-3,label:'🌊 Onde',col:0x2080ff},{gid:'acquapark_fiume',x:5,z:0,label:'🛟 Fiume',col:0x2fa8e0},{gid:'acquapark_scivolo2',x:3,z:3,label:'🏄 Scivolo Stretto',col:0xffaa00}],
     instr:'Cammina verso le porte colorate per scegliere! 🌊🛟 · 🚪 verde dietro di te = esci',win:'',
     decor(){ const pool=new THREE.Mesh(new THREE.PlaneGeometry(16,8),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.75,roughness:.15})); pool.rotation.x=-Math.PI/2; pool.position.set(0,.05,-5); world.add(pool);
-      const cols=[0x5bd0ff,0x2080ff,0x2fa8e0]; [[-5,0],[0,-3],[5,0]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); });
+      const cols=[0x5bd0ff,0x2080ff,0x2fa8e0,0xffaa00]; [[-5,0],[0,-3],[5,0],[3,3]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); });
       for(let i=0;i<6;i++){ const u=cyl(.15,.18,.38,0xff8c1a); u.position.set(-5+i*2,0,-7); world.add(u); const top=new THREE.Mesh(new THREE.SphereGeometry(.48,8,8),M([0xff5b5b,0xffe14a,0x6bd0ff][i%3])); top.position.set(-5+i*2,.58,-7); world.add(top); }
       for(let i=0;i<8;i++){ const fl=new THREE.Mesh(new THREE.SphereGeometry(.28,8,8),M(TC[i%TC.length],.5)); fl.position.set(-7+i*2,2.2,-8.2); world.add(fl); } }},
 };
@@ -1377,28 +1395,34 @@ function GameRuotaGiostra(){
   }};
 }
 function GamePiscinaOnde(){
-  applyTheme(); addGround2(0x2fa8e0);
-  const pool=new THREE.Mesh(new THREE.PlaneGeometry(18,12),new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.85,roughness:.1,metalness:.2})); pool.rotation.x=-Math.PI/2; pool.position.set(0,.1,0); world.add(pool);
+  applyTheme(); addGround2(0x2fa8e0); startAcquaparkMusic();
+  const WGX=16,WGZ=12; const poolGeo=new THREE.PlaneGeometry(16,10,WGX,WGZ); poolGeo.rotateX(-Math.PI/2);
+  const pool=new THREE.Mesh(poolGeo,new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.88,roughness:.05,metalness:.25,side:THREE.DoubleSide})); pool.position.set(0,.12,0); world.add(pool);
   B(18,.8,.3,0x88c8e0,0,.4,6.3); B(18,.8,.3,0x88c8e0,0,.4,-6.3); B(.3,.8,12,0x88c8e0,-9.3,.4,0); B(.3,.8,12,0x88c8e0,9.3,.4,0);
   B(18,.8,.8,0x778899,0,.4,-6.8); const wlab=labelSprite('🌊 Macchina Onde',2.4); wlab.position.set(0,1.6,-7); world.add(wlab);
+  const foams=[]; for(let i=0;i<5;i++){ const f=new THREE.Mesh(new THREE.BoxGeometry(16,.18,.5),new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.7,roughness:.1})); f.position.set(0,.22,-4+i*2); world.add(f); foams.push({m:f,bz:-4+i*2,ph:i*1.26}); }
   const items=[]; for(let i=0;i<10;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(.4,.13,8,16),M(TC[i%TC.length],.6)); r.rotation.x=Math.PI/2; r.position.set(rand(-7,7),.4,rand(-5,5)); r.userData.ph=rand(0,6.28); world.add(r); items.push(r); }
   const player=buildCousin(hero); player.position.set(0,.2,4); world.add(player);
   camera.position.set(0,8,10); camera.lookAt(0,1,0);
   let t=0, collected=0, done=false; const GOAL=8;
-  setInstr('🌊 Nuota con ◀▶▲▼ · raccogli 8 ciambelle nella piscina onde!');
+  setInstr('🌊 Nuota con ◀▶▲▼ · raccogli 8 ciambelle nelle onde altissime!');
   return { update(dt){ if(done)return; t+=dt;
-    const waveY=Math.sin(t*2.5+player.position.z*.3)*.25;
-    player.position.y=Math.max(0,waveY)+.2;
+    const pos=poolGeo.attributes.position;
+    for(let vi=0;vi<pos.count;vi++){ const x=pos.getX(vi),z=pos.getZ(vi); pos.setY(vi,Math.sin(x*.45+t*3)*Math.cos(z*.4+t*2.2)*1.8); }
+    pos.needsUpdate=true; poolGeo.computeVertexNormals();
+    foams.forEach(f=>{ f.m.position.y=.3+Math.sin(t*3+f.ph)*1.5; f.m.position.z=f.bz+Math.sin(t*2.2+f.ph)*.8; });
+    const waveY=Math.sin(t*2.5+player.position.z*.3)*1.2;
+    player.position.y=Math.max(.1,waveY)+.2;
     const moved=thirdPersonWalk(player,dt,4);
     player.position.x=THREE.MathUtils.clamp(player.position.x,-8.5,8.5); player.position.z=THREE.MathUtils.clamp(player.position.z,-5.5,5.5);
     walkAnim(player,moved?t*9:0); followCam(player,7,5.6,1);
-    items.forEach(it=>{ it.position.y=.4+Math.sin(t*2.5+it.userData.ph)*.3; it.rotation.z+=dt*.5; });
+    items.forEach(it=>{ it.position.y=.4+Math.sin(t*2.5+it.userData.ph)*1.3; it.rotation.z+=dt*.5; });
     for(let i=items.length-1;i>=0;i--){ const it=items[i]; if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1.1){ world.remove(it); items.splice(i,1); collected++; beep(700+collected*45,.08); if(collected>=GOAL){ done=true; finishGame(14+collected,'Bravissimo! 🌊 '+collected+' ciambelle'); } } }
     setScore('🌊 Ciambelle: '+collected+'/'+GOAL);
   }};
 }
 function GameFiumeLento(){
-  applyTheme(); addGround2(0x5ab8d0);
+  applyTheme(); addGround2(0x5ab8d0); startAcquaparkMusic();
   const RW=6,RL=80;
   const river=new THREE.Mesh(new THREE.PlaneGeometry(RW,RL),new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.85,roughness:.1})); river.rotation.x=-Math.PI/2; river.position.set(0,.08,-RL/2+2); world.add(river);
   B(3.5,.7,RL,0xc8b88a,-(RW/2+1.4),.35,-RL/2+2); B(3.5,.7,RL,0xc8b88a,RW/2+1.4,.35,-RL/2+2);
@@ -1415,6 +1439,33 @@ function GameFiumeLento(){
     items.forEach(it=>{ it.position.y=.38+Math.sin(t*1.8+it.userData.ph)*.1; it.rotation.z+=dt*.4; });
     for(let i=items.length-1;i>=0;i--){ const it=items[i]; if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1.1){ collected++; beep(700+collected*45,.08); world.remove(it); items.splice(i,1); if(collected>=GOAL){ done=true; finishGame(14+collected,'Che relax! 🛟 '+collected+' ciambelle'); } } }
     setScore('🛟 Ciambelle: '+collected+'/'+GOAL);
+  }};
+}
+function GameScivoloStretto(){
+  applyTheme(); addGround2(0x5ab8d0); startAcquaparkMusic();
+  const SL=72, SW=2.0;
+  const slide=new THREE.Mesh(new THREE.PlaneGeometry(SW,SL),new THREE.MeshStandardMaterial({color:0x55aadd,roughness:.15,metalness:.1})); slide.rotation.x=-Math.PI/2; slide.position.set(0,.08,-SL/2+2); world.add(slide);
+  B(.15,.6,SL,0x2288bb,-(SW/2+.12),.3,-SL/2+2); B(.15,.6,SL,0x2288bb,SW/2+.12,.3,-SL/2+2);
+  B(4,8,.4,0x88bbdd,0,4,-SL+2); B(4,.3,1.5,0x77aacc,0,8.15,-SL+2.6);
+  const topLabel=labelSprite('🏄 Partenza!',2); topLabel.position.set(0,9.3,-SL+2); world.add(topLabel);
+  const pool=new THREE.Mesh(new THREE.CylinderGeometry(4,4,.25,20),new THREE.MeshStandardMaterial({color:0x1a90d0,transparent:true,opacity:.8})); pool.position.set(0,.14,6); world.add(pool);
+  const plab=labelSprite('💦 Splash!',2.2); plab.position.set(0,1.4,6); world.add(plab);
+  const items=[]; for(let i=0;i<8;i++){ const s=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),M(0xffd700,.3)); s.position.set((i%2?-.5:.5),.6,-3-i*8); s.userData.ph=rand(0,6.28); s.userData.got=false; world.add(s); items.push(s); }
+  const player=buildCousin(hero); player.position.set(0,.3,2); player.rotation.y=Math.PI; world.add(player);
+  camera.position.set(0,4.5,9);
+  let dist=0, t=0, collected=0, done=false, spd=5; const GOAL=8, MAXSPD=24, DIST_END=SL+4;
+  setInstr('◀▶ stai sul bordo · scivola fino in fondo! 🏄');
+  return { update(dt){ if(done)return; t+=dt;
+    spd=Math.min(MAXSPD,spd+4*dt); dist+=spd*dt;
+    if(keys['ArrowLeft'])player.position.x=Math.max(-(SW/2-.25),player.position.x-3*dt);
+    if(keys['ArrowRight'])player.position.x=Math.min(SW/2-.25,player.position.x+3*dt);
+    player.position.z=2-dist;
+    walkAnim(player,t*10);
+    camera.position.set(player.position.x*.3,4.5,player.position.z+8); camera.lookAt(player.position.x*.2,1,player.position.z-5);
+    items.forEach(it=>{ if(it.userData.got)return; it.rotation.y+=dt*2.5; it.position.y=.6+Math.sin(t*3+it.userData.ph)*.15;
+      if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1.0){ it.userData.got=true; it.visible=false; collected++; beep(700+collected*40,.09); } });
+    setScore('🏄 Stelle: '+collected+'/'+GOAL);
+    if(dist>=DIST_END&&!done){ done=true; finishGame(12+collected*2,'Che scivolata! 🏄 '+collected+' stelle'); }
   }};
 }
 function GameGavettoni(){
@@ -1760,7 +1811,7 @@ const GAME_FN={
   calcio:GameCalcio, basket:GameBasket, piscina:GamePiscina, danza:GameDanza, pesca:GamePesca, giostre:GameGiostre, gavettoni:GameGavettoni, mare:GameMare, bowling:GameBowling,
   giostre_car:GameGiostreCarousel, giostre_salt:GameSaltaSalta, giostre_ruota:GameRuotaGiostra,
   acquapark_slide:()=>DriveGame({veh:'tube',terrain:'slide',goal:520,maxspeed:32}),
-  acquapark_onde:GamePiscinaOnde, acquapark_fiume:GameFiumeLento,
+  acquapark_onde:GamePiscinaOnde, acquapark_fiume:GameFiumeLento, acquapark_scivolo2:GameScivoloStretto,
   casa:()=>walkCollect(THEMES.casa), scuola:GameScuola, parco:()=>walkCollect(THEMES.parco),
   bar:()=>walkCollect(THEMES.bar), ristorante:()=>walkCollect(THEMES.ristorante), tennis:GameTennis, pattinaggio:GamePattinaggio,
   color_hotel:()=>walkCollect(THEMES.color_hotel), piazzetta:()=>walkCollect(THEMES.piazzetta), colosseo:()=>walkCollect(THEMES.colosseo),
@@ -1778,7 +1829,7 @@ function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.r
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
 const DRIVE_PAD=['guida','acquapark_slide','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare','acquapark','giostre','giostre_salt','acquapark_onde'];
 function padFor(gid){ return gid==='moto'?'race':DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'walk':''; }
-const HUB_PARENT={giostre_car:'giostre_hub',giostre_salt:'giostre_hub',giostre_ruota:'giostre_hub',acquapark_slide:'acquapark_hub',acquapark_onde:'acquapark_hub',acquapark_fiume:'acquapark_hub'};
+const HUB_PARENT={};
 let currentGid=null;
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad('race'); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
 function startGame(gid){ currentGid=gid; titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
@@ -1815,7 +1866,10 @@ function buildCharGrid(){ const el=document.getElementById('charGrid'); el.inner
 document.getElementById('startBtn').onclick=()=>{ if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}} titleActive=false; buildCharGrid(); show('s_char'); };
 document.getElementById('charNext').onclick=()=>{ document.querySelectorAll('.mkb').forEach(m=>m.classList.toggle('sel',m.dataset.city===city)); show('s_map'); };
 document.getElementById('mapBack').onclick=()=>{ show('s_char'); };
-document.querySelectorAll('.mkb').forEach(m=>{ m.addEventListener('click',()=>{ city=m.dataset.city; enterHub(); }); });
+const TRAVEL_VEHICLES={roma:'✈️',matera:'🚂',rossano:'🚗'};
+const TRAVEL_LABELS={roma:'Roma',matera:'Matera',rossano:'Rossano'};
+function travelTo(c,cb){ const ov=document.getElementById('travel'); const em=document.getElementById('tv-em'); const tx=document.getElementById('tv-txt'); em.textContent=TRAVEL_VEHICLES[c]||'🚗'; tx.textContent='In viaggio verso '+TRAVEL_LABELS[c]+'...'; em.style.left='-15%'; em.style.transition='none'; ov.classList.add('on'); requestAnimationFrame(()=>requestAnimationFrame(()=>{ em.style.transition='left 2s ease-in-out'; em.style.left='115%'; })); setTimeout(()=>{ ov.classList.remove('on'); cb(); },2600); }
+document.querySelectorAll('.mkb').forEach(m=>{ m.addEventListener('click',()=>{ city=m.dataset.city; travelTo(city,enterHub); }); });
 // rendi trasparente lo sfondo bianco della mappa
 (function(){ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.width; c.height=im.height; const x=c.getContext('2d'); x.drawImage(im,0,0); const d=x.getImageData(0,0,c.width,c.height), a=d.data; for(let i=0;i<a.length;i+=4){ if(a[i]>234&&a[i+1]>234&&a[i+2]>234) a[i+3]=0; } x.putImageData(d,0,0); document.getElementById('italyImg').src=c.toDataURL(); }catch(e){} }; im.src='italia.jpg'; })();
 
