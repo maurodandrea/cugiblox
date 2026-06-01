@@ -1503,7 +1503,7 @@ function GameScuola(){
       { const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(0,0,10.5); env.add(dg); const dl=labelSprite('🚪 Uscita'); dl.position.set(0,2.9,10.5); env.add(dl); }
       player.position.set(0,0,9); player.rotation.y=Math.PI;
       setInstr('Piano terra · saluta Bruno · ⬆️ scala = aula · 🚪 uscita = fuori');
-    } else { // aula con tutti i cugini
+    } else if(s==='aula') { // aula con tutti i cugini
       const f=new THREE.Mesh(new THREE.PlaneGeometry(18,16),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(18,4,.3,0xeae0c8,0,2,-8); E(.3,4,16,0xeae0c8,-9,2,0); E(.3,4,16,0xeae0c8,9,2,0);
       E(6,2.5,.2,0x224422,0,2,-7.84);
