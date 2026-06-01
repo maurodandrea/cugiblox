@@ -38,10 +38,10 @@
   #msg{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);font-size:min(7vw,34px);font-weight:bold;color:#ffd86b;text-shadow:0 4px 14px #000;text-align:center;display:none;}
   #back{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:20px;pointer-events:auto;}
   #pad{position:fixed;inset:0;z-index:9;display:none;pointer-events:none;} #pad.on{display:block;}
-  .tbtn{position:absolute;bottom:26px;width:76px;height:76px;border-radius:18px;border:3px solid #000;background:rgba(45,110,200,.92);color:#fff;font-size:30px;font-weight:bold;pointer-events:auto;text-shadow:0 1px 2px #000;box-shadow:0 3px 8px rgba(0,0,0,.45);}
-  .tbtn:active{background:rgba(90,160,255,.98);} #bL{left:24px;} #bR{left:112px;}
-  #bA{right:28px;width:96px;height:96px;border-radius:50%;border:3px solid #000;background:rgba(255,170,40,.95);color:#3a2400;font-weight:bold;font-size:17px;text-shadow:none;}
-  #bU,#bD{right:28px;display:none;font-size:26px;background:rgba(40,180,90,.95);color:#fff;}
+  .tbtn{position:absolute;bottom:26px;width:78px;height:78px;border-radius:18px;border:4px solid #000;background:#2563c8;color:#fff;font-size:30px;font-weight:bold;pointer-events:auto;text-shadow:0 1px 2px #000;box-shadow:0 3px 8px rgba(0,0,0,.5);}
+  .tbtn:active{background:#4f93ff;} #bL{left:24px;} #bR{left:114px;}
+  #bA{right:28px;width:98px;height:98px;border-radius:50%;border:4px solid #000;background:#ffa028;color:#3a2400;font-weight:bold;font-size:17px;text-shadow:none;}
+  #bU,#bD{right:28px;display:none;font-size:26px;background:#22b45a;color:#fff;}
   #bU{bottom:132px;} #bD{bottom:26px;}
   #pad.drive #bA{display:none;} #pad.drive #bU,#pad.drive #bD{display:block;}
   #pad.race #bU{display:block;}
@@ -1279,23 +1279,29 @@ function GameScuola(){
   function clearEnv(){ for(let i=env.children.length-1;i>=0;i--){ const o=env.children[i]; o.traverse(n=>{ if(n.geometry)n.geometry.dispose(); if(n.material){(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map&&!m.map.__keep)m.map.dispose(); m.dispose&&m.dispose(); });} }); env.remove(o); } }
   function E(w,h,d,c,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); env.add(m); return m; }
   const player=buildCousin(hero); world.add(player);
-  let stage='', collected=0, t=0, done=false, books=[]; const GOAL=6;
-  function setStage(s){ clearEnv(); books=[]; stage=s;
+  let stage='', collected=0, t=0, done=false, books=[], mover=[]; const GOAL=6;
+  function setStage(s){ clearEnv(); books=[]; mover=[]; stage=s;
     if(s==='ext'){
       const grd=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); grd.rotation.x=-Math.PI/2; env.add(grd);
+      const road=new THREE.Mesh(new THREE.PlaneGeometry(60,5),M(0x3a3d44,.95)); road.rotation.x=-Math.PI/2; road.position.set(0,.05,5); env.add(road);
+      for(let i=-6;i<=6;i++) E(1.2,.02,.3,0xffd54a,i*4,.07,5);
+      const swk=new THREE.Mesh(new THREE.PlaneGeometry(60,2.2),M(0xcfd2d6,.95)); swk.rotation.x=-Math.PI/2; swk.position.set(0,.06,7.4); env.add(swk);
+      [-13,-8,8,13].forEach((x,k)=>{ const c=makeCar([0x2980b9,0x27ae60,0xe74c3c,0xf1c40f][k]); c.rotation.y=Math.PI/2; c.position.set(x,0,4.2); env.add(c); });
+      const bus=new THREE.Group(); const bb=new THREE.Mesh(new THREE.BoxGeometry(6.5,2.6,2.3),M(0xff8a1a)); bb.position.y=1.5; bus.add(bb); for(let i=0;i<5;i++){ const win=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.06),M(0x9fd0e8)); win.position.set(-2.4+i*1.2,1.9,1.18); bus.add(win); } [[-2.2,.45,1.05],[2.2,.45,1.05],[-2.2,.45,-1.05],[2.2,.45,-1.05]].forEach(p=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.35,12),M(0x111111)); w.rotation.z=Math.PI/2; w.position.set(...p); bus.add(w); }); bus.position.set(-2,0,4.3); bus.rotation.y=Math.PI/2; env.add(bus);
       E(8,7,.5,0xe8c8a0,-6,3.5,-10); E(8,7,.5,0xe8c8a0,6,3.5,-10); E(20,1.4,.5,0xe8c8a0,0,6.4,-10); E(21,.7,3,0xb5651d,0,7.2,-10.4);
-      for(let r=0;r<2;r++)for(let cc=0;cc<5;cc++){ if(cc===2)continue; E(1.3,1.3,.1,0x9fd0e8,-8+cc*4,2.4+r*2.2,-9.72); }   // finestre
-      E(.6,3.6,.6,0xcaa477,-2,1.8,-9.4); E(.6,3.6,.6,0xcaa477,2,1.8,-9.4);                                       // pilastri cancello
-      for(let i=0;i<5;i++){ const bar=cyl(.05,.05,3.2,0x556); bar.position.set(-1.7+i*.85,1.6,-9.5); env.add(bar); }    // cancello (decorativo)
+      for(let r=0;r<2;r++)for(let cc=0;cc<5;cc++){ if(cc===2)continue; E(1.3,1.3,.1,0x9fd0e8,-8+cc*4,2.4+r*2.2,-9.72); }
+      E(.55,3.8,.55,0xcaa477,-2.4,1.9,-9); E(.55,3.8,.55,0xcaa477,2.4,1.9,-9);
+      [-1,1].forEach(side=>{ const g=new THREE.Group(); for(let i=0;i<4;i++){ const bar=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,2.8,6),M(0x556677)); bar.position.set(-0.6+i*0.4,0,0); g.add(bar);} const fr=new THREE.Mesh(new THREE.BoxGeometry(1.4,.08,.08),M(0x556677)); fr.position.y=1.3; const fr2=fr.clone(); fr2.position.y=-1.3; g.add(fr,fr2); g.position.set(side*2.4,1.6,-9); g.rotation.y=side*1.15; env.add(g); });
       const sign=labelSprite('🏫 SCUOLA',4.5); sign.position.set(0,8.3,-10); env.add(sign);
-      player.position.set(0,0,9); player.rotation.y=Math.PI;
-      setInstr('Entra dal cancello della scuola! 🏫');
+      const ocp=otherCousins(); for(let i=0;i<4;i++){ const p=buildCousin(ocp[i%ocp.length]); p.position.set(rand(-12,12),0,7.4); p.userData.dir=Math.random()<.5?1:-1; p.rotation.y=p.userData.dir>0?Math.PI/2:-Math.PI/2; env.add(p); mover.push(p); }
+      player.position.set(0,0,11); player.rotation.y=Math.PI;
+      setInstr('Attraversa il cancello aperto della scuola! 🏫');
     } else if(s==='ground'){
       const f=new THREE.Mesh(new THREE.PlaneGeometry(20,24),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(20,5,.3,0xeae0c8,0,2.5,-12); E(.3,5,24,0xeae0c8,-10,2.5,0); E(.3,5,24,0xeae0c8,10,2.5,0);
       E(4,1.1,1.5,0x9c6b3f,-6,.55,-9); const sb=labelSprite('Reception',2.4); sb.position.set(-6,2,-9); env.add(sb);
-      for(let i=0;i<6;i++) E(4.5,.45,.7,0xb4a7b0,0,.22+i*.45,-9.5+i*.7);                                          // scale verso l'alto
-      const s2=labelSprite('⬆️ Sali in Aula',3.2); s2.position.set(0,3.4,-11.5); env.add(s2);
+      for(let i=0;i<6;i++) E(4.5,.45,.7,0xb4a7b0,0,.22+i*.45,-6-i*0.7);   // scale che salgono verso il fondo (direzione opposta)
+      const s2=labelSprite('⬆️ Sali in Aula',3.2); s2.position.set(0,3.6,-10); env.add(s2);
       player.position.set(0,0,9); player.rotation.y=Math.PI;
       setInstr('Sei al piano terra · sali le scale in fondo per andare in aula');
     } else { // aula
@@ -1316,6 +1322,7 @@ function GameScuola(){
     const moved=thirdPersonWalk(player,dt,5); walkAnim(player,moved?t*9:0);
     player.position.x=THREE.MathUtils.clamp(player.position.x,-9,9); player.position.z=THREE.MathUtils.clamp(player.position.z,-11,12);
     followCam(player,7,5.4,1);
+    if(stage==='ext'){ mover.forEach((p,i)=>{ p.position.x+=p.userData.dir*1.5*dt; if(p.position.x>13){p.userData.dir=-1;p.rotation.y=-Math.PI/2;} else if(p.position.x<-13){p.userData.dir=1;p.rotation.y=Math.PI/2;} walkAnim(p,t*8+i); }); }
     if(stage==='ext'){ if(player.position.z<-8.5 && Math.abs(player.position.x)<2){ beep(700,.1); setStage('ground'); } }
     else if(stage==='ground'){ if(player.position.z<-7.5 && Math.abs(player.position.x)<2.6){ beep(800,.1); setTimeout(()=>beep(1000,.1),90); setStage('aula'); } }
     else { for(let i=books.length-1;i>=0;i--){ const b=books[i]; b.rotation.y+=dt*2; if(Math.hypot(player.position.x-b.position.x,player.position.z-b.position.z)<1){ collected++; beep(700+collected*50,.08); env.remove(b); books.splice(i,1); } }
