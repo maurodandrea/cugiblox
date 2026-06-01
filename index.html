@@ -1130,10 +1130,13 @@ function GameBowling(){
   const player=buildCousin(hero); player.position.set(-1.1,0,2.1); player.rotation.y=Math.PI; world.add(player);
   camera.position.set(0,3.4,5.2); camera.lookAt(0,.2,-9);
 
-  let phase='aim', aimX=0, dir=1, pw=0, pdir=1, rolls=0, vz=0, knocked=0, settleT=0, tRoll=0; const FR=4.5;
-  showPower(true); setScore('Birilli: 0');
-  function reset(){ ball.position.set(0,.34,.5); vz=0; aimX=0; phase='aim'; pw=0; tRoll=0; showPower(true); }
-  function knock(p,from){ if(p.userData.fallen)return; p.userData.fallen=true; p.userData.ftime=tRoll; p.userData.fdir=(p.position.x-from.x)>=0?1:-1; knocked++; beep(440+knocked*30,.06); }
+  const TOTAL_FRAMES=5;
+  let phase='aim', aimX=0, dir=1, pw=0, pdir=1, vz=0, settleT=0, tRoll=0, kc=0; const FR=4.5;
+  let frame=0, rollInFrame=1, frameScores=[], totalScore=0;
+  showPower(true);
+  function resetBall(){ ball.position.set(0,.34,.5); vz=0; aimX=0; phase='aim'; pw=0; tRoll=0; showPower(true); }
+  function resetPins(){ pins.forEach(p=>{ p.userData.fallen=false; p.rotation.z=0; p.position.y=.39; }); kc=0; }
+  function knock(p,from){ if(p.userData.fallen)return; p.userData.fallen=true; p.userData.ftime=tRoll; p.userData.fdir=(p.position.x-from.x)>=0?1:-1; kc++; beep(440+kc*30,.06); }
   return { update(dt){
     if(phase==='aim'){ aimX+=dir*dt*1.5; if(Math.abs(aimX)>1.35)dir*=-1; ball.position.x=aimX;
       setInstr('Mira: '+(aimX<-.3?'◀ sinistra':aimX>.3?'destra ▶':'centro')); if(hit('Space')){ phase='power'; setInstr('Dai la potenza, poi SPAZIO'); } }
@@ -1142,9 +1145,22 @@ function GameBowling(){
       for(const p of pins){ if(!p.userData.fallen && ball.position.distanceTo(p.position)<HITR) knock(p,ball.position); }
       for(const p of pins){ if(!p.userData.fallen||tRoll-p.userData.ftime>.3)continue; for(const q of pins){ if(!q.userData.fallen && p.position.distanceTo(q.position)<CHAINR) knock(q,p.position); } }
       if(ball.position.z<-14||Math.abs(ball.position.x)>1.75||vz>-0.4){ phase='settle'; settleT=.9; } }
-    else if(phase==='settle'){ settleT-=dt; if(settleT<=0){ rolls++; if(rolls>=2||pins.every(p=>p.userData.fallen)){ finishGame(8+knocked*2,'Hai abbattuto '+knocked+' birilli! 🎳'); phase='done'; } else reset(); } }
+    else if(phase==='settle'){ settleT-=dt;
+      if(settleT<=0){
+        const down=pins.filter(p=>p.userData.fallen).length;
+        const strike=down===pins.length;
+        if(rollInFrame>=2||strike){
+          frameScores.push(down); totalScore+=down; frame++;
+          if(frame>=TOTAL_FRAMES){
+            const sc=frameScores.join('-');
+            finishGame(totalScore*2,'Partita finita! 🎳 Punteggio: '+totalScore+'/50  ['+sc+']');
+            phase='done';
+          } else { resetPins(); rollInFrame=1; resetBall(); setInstr('Frame '+(frame+1)+'/'+TOTAL_FRAMES+' — Mira e lancia!'); }
+        } else { rollInFrame=2; resetBall(); setInstr('Tiro 2 — '+down+' birilli abbattuti, ne mancano '+(pins.length-down)); }
+      }
+    }
     pins.forEach(p=>{ if(p.userData.fallen){ p.rotation.z=THREE.MathUtils.lerp(p.rotation.z,Math.PI/2*p.userData.fdir,.25); p.position.y=THREE.MathUtils.lerp(p.position.y,.1,.25); } });
-    setScore('🎳 Birilli: '+knocked+'/10   ·   Tiro '+(rolls+1)+'/2');
+    setScore('🎳 Frame '+(frame+1)+'/'+TOTAL_FRAMES+'  ·  Tiro '+rollInFrame+'/2  ·  Tot: '+totalScore);
   }};
 }
 function GameCalcio(){
