@@ -956,21 +956,150 @@ function GameBasket(){
 function GameBowling(){
   applyTheme();
   addGround2(0x10141c);
-  const lane=new THREE.Mesh(new THREE.BoxGeometry(3.6,.2,18),new THREE.MeshStandardMaterial({color:0xe7b86a,roughness:.35,metalness:.05})); lane.position.set(0,-.1,-7); lane.receiveShadow=true; world.add(lane);
-  // doghe del parquet (linee piu scure lungo la pista)
-  for(const x of [-1.5,-0.9,-0.3,0.3,0.9,1.5]){ B(.05,.01,18,0xb07a35,x,.005,-7); }
-  // freccette di mira
-  for(let i=0;i<5;i++){ const ar=new THREE.Mesh(new THREE.ConeGeometry(.12,.5,3),M(0xa05a1a,.5)); ar.position.set(-1+i*.5,.012,-4.5); ar.rotation.x=-Math.PI/2; world.add(ar); }
-  // canaline laterali scure (contrasto)
-  [[-1.95],[1.95]].forEach(([x])=>{ B(.34,.3,18,0x161c28,x,-.12,-7); });
-  const pins=[]; const pinGeo=new THREE.CylinderGeometry(.1,.19,.78,14);
-  const FRONTZ=-10.5, ROWDZ=.62, COLDX=.66, HITR=.5, CHAINR=.66;
-  for(let r=0;r<4;r++) for(let c=0;c<=r;c++){ const p=new THREE.Mesh(pinGeo,M(0xffffff,.5));
+
+  // side walls
+  [-1,1].forEach(s=>B(.25,6.5,26,0x151825,s*8.1,3.25,-7));
+  // back wall
+  B(16.5,6.5,.3,0x1a1a2e,0,3.25,-15.6);
+  // ceiling
+  B(16.5,.2,26,0x0d1020,0,5.5,-7);
+  // front wall behind seating
+  B(16.5,5,.25,0x161c28,0,2.5,5.9);
+
+  // ceiling light fixtures (housing + glowing tube per lane)
+  const tubeMat=new THREE.MeshStandardMaterial({color:0xffffee,emissive:0xffffdd,emissiveIntensity:2.5});
+  [-4.5,0,4.5].forEach(lx=>{
+    [-3,-7,-11].forEach(lz=>{
+      B(.7,.1,1.6,0x222233,lx,5.3,lz);
+      const t=new THREE.Mesh(new THREE.BoxGeometry(.22,.06,1.1),tubeMat); t.position.set(lx,5.2,lz); world.add(t);
+    });
+  });
+
+  // main scoreboard canvas display above pins
+  const sbC=document.createElement('canvas'); sbC.width=512; sbC.height=192;
+  const sx=sbC.getContext('2d');
+  sx.fillStyle='#00091f'; sx.fillRect(0,0,512,192);
+  sx.shadowBlur=14; sx.shadowColor='#0055ff';
+  sx.strokeStyle='#0088ff'; sx.lineWidth=3; sx.strokeRect(2,2,508,188);
+  sx.shadowBlur=0; sx.strokeStyle='#223355'; sx.lineWidth=1; sx.strokeRect(8,8,496,176);
+  sx.fillStyle='#ffaa00'; sx.font='bold 28px monospace'; sx.textAlign='center';
+  sx.fillText('BOWLING  CENTER', 256,42);
+  ['PISTA 1','PISTA 2','PISTA 3'].forEach((t,i)=>{
+    const cx=90+i*166, pc=['#5599ff','#ffdd00','#5599ff'][i];
+    sx.fillStyle=pc; sx.font='bold 17px monospace'; sx.fillText(t,cx,80);
+    sx.fillStyle=i===1?'#ffcc00':'#556677'; sx.font='13px monospace'; sx.fillText(i===1?'-- TU --':'NPC',cx,104);
+    sx.beginPath(); sx.arc(cx,126,15,0,Math.PI*2);
+    sx.fillStyle=i===1?pc:'#223344'; sx.fill();
+    sx.fillStyle=i===1?'#000':'#889'; sx.font='bold 15px monospace'; sx.fillText(i+1,cx,131);
+  });
+  sx.fillStyle='#001840'; sx.fillRect(0,152,512,40);
+  sx.fillStyle='#4477aa'; sx.font='13px monospace'; sx.textAlign='center';
+  sx.fillText('SPAZIO = mira  |  SPAZIO = potenza  |  SPAZIO = lancia',256,178);
+  const sb=new THREE.Mesh(new THREE.PlaneGeometry(11,4.2),
+    new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(sbC),emissive:0x112255,emissiveIntensity:.45,roughness:.3}));
+  sb.position.set(0,4.3,-15.4); world.add(sb);
+  // LED accent strip below scoreboard
+  const led=new THREE.Mesh(new THREE.BoxGeometry(11,.12,.12),
+    new THREE.MeshStandardMaterial({color:0x0044ff,emissive:0x0033cc,emissiveIntensity:3}));
+  led.position.set(0,2.15,-15.4); world.add(led);
+
+  // three lanes at x = -4.5 (NPC), 0 (player), +4.5 (NPC)
+  const pinGeo=new THREE.CylinderGeometry(.1,.19,.78,14);
+  const FRONTZ=-10.5,ROWDZ=.62,COLDX=.66,HITR=.5,CHAINR=.66;
+  const npcIds=otherCousins(4); let ni=0;
+
+  [-4.5,0,4.5].forEach((lx,li)=>{
+    // lane floor
+    const ln=new THREE.Mesh(new THREE.BoxGeometry(3.6,.22,18),
+      new THREE.MeshStandardMaterial({color:0xe8bc70,roughness:.3,metalness:.06}));
+    ln.position.set(lx,-.09,-7); ln.receiveShadow=true; world.add(ln);
+    // parquet stripes
+    [-1.5,-0.9,-0.3,0.3,0.9,1.5].forEach(ox=>B(.05,.01,18,0xb07a35,lx+ox,.006,-7));
+    // gutters
+    [-1.95,1.95].forEach(ox=>B(.34,.32,18,0x141a26,lx+ox,-.12,-7));
+    // approach zone (slightly different tone)
+    const ap=new THREE.Mesh(new THREE.BoxGeometry(3.6,.18,4.6),
+      new THREE.MeshStandardMaterial({color:0xcca060,roughness:.5}));
+    ap.position.set(lx,-.1,1.9); world.add(ap);
+    // foul line (red glow)
+    const fl=new THREE.Mesh(new THREE.BoxGeometry(3.6,.01,.1),
+      new THREE.MeshStandardMaterial({color:0xff2200,emissive:0xaa1100,emissiveIntensity:.9}));
+    fl.position.set(lx,.012,-.35); world.add(fl);
+    // aiming arrows
+    for(let i=0;i<5;i++){
+      const ar=new THREE.Mesh(new THREE.ConeGeometry(.13,.55,3),
+        new THREE.MeshStandardMaterial({color:0xcc7700,emissive:0x663300,emissiveIntensity:.5}));
+      ar.position.set(lx-1+i*.5,.012,-4.5); ar.rotation.x=-Math.PI/2; world.add(ar);
+    }
+    // pin spot dots
+    for(let r=0;r<4;r++) for(let c=0;c<=r;c++){
+      const d=new THREE.Mesh(new THREE.CircleGeometry(.08,8),
+        new THREE.MeshStandardMaterial({color:0xffaa55,emissive:0x884422,emissiveIntensity:.7}));
+      d.rotation.x=-Math.PI/2; d.position.set(lx+(c-r/2)*COLDX,.012,FRONTZ-r*ROWDZ); world.add(d);
+    }
+    // raised pin deck
+    const dk=new THREE.Mesh(new THREE.BoxGeometry(3.6,.12,3.2),
+      new THREE.MeshStandardMaterial({color:0xd4a85a,roughness:.22,metalness:.12}));
+    dk.position.set(lx,.07,-11.7); world.add(dk);
+    // pin reset curtain at back
+    B(3.6,1.6,.12,0x111822,lx,.8,-14.9);
+    // per-lane mini display
+    const mc=document.createElement('canvas'); mc.width=128; mc.height=56;
+    const mx=mc.getContext('2d');
+    mx.fillStyle=li===1?'#001840':'#0d0d18'; mx.fillRect(0,0,128,56);
+    mx.strokeStyle=li===1?'#4488ff':'#223344'; mx.lineWidth=2; mx.strokeRect(1,1,126,54);
+    mx.fillStyle=li===1?'#88aaff':'#445566'; mx.font='bold 13px monospace'; mx.textAlign='center';
+    mx.fillText('PISTA '+(li+1),64,20);
+    mx.fillStyle=li===1?'#ffdd00':'#667788'; mx.font='11px monospace';
+    mx.fillText(li===1?'-- TU --':'NPC',64,40);
+    const ml=new THREE.Mesh(new THREE.PlaneGeometry(2,.88),
+      new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(mc),emissive:li===1?0x001133:0,emissiveIntensity:li===1?.45:.1}));
+    ml.position.set(lx,1.8,-14.95); world.add(ml);
+    // lane divider rail between lanes
+    if(li<2){
+      B(.28,.45,22,0x0c1018,lx+2.27,.13,-7);
+      const rl=new THREE.Mesh(new THREE.BoxGeometry(.16,.12,18),
+        new THREE.MeshStandardMaterial({color:0x334455,metalness:.6,roughness:.3}));
+      rl.position.set(lx+2.0,.14,-7); world.add(rl);
+    }
+    // NPC lanes: decorative pins + a cousin character
+    if(li!==1){
+      for(let r=0;r<4;r++) for(let c=0;c<=r;c++){
+        const sp=new THREE.Mesh(pinGeo,M(0xffffff,.5)); sp.position.set(lx+(c-r/2)*COLDX,.39,FRONTZ-r*ROWDZ); world.add(sp);
+        const bb=new THREE.Mesh(new THREE.CylinderGeometry(.155,.16,.1,14),M(0xcc3333,.5)); bb.position.y=.16; sp.add(bb);
+      }
+      const npc=buildCousin(npcIds[ni++%npcIds.length]); npc.position.set(lx,0,.8); npc.rotation.y=Math.PI; world.add(npc);
+    }
+  });
+
+  // seating area: counter + stools
+  B(16,.5,.8,0x2a1f0e,0,.5,4.7);
+  B(16,.07,1.0,0x4a2f0e,0,.82,4.7);
+  for(let i=-3;i<=3;i++){
+    const st=cyl(.22,.22,.46,0x222233); st.position.set(i*2.2,.46,4.0); world.add(st);
+    const seat=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.07,12),M(0x881111,.4)); seat.position.set(i*2.2,.72,4.0); world.add(seat);
+  }
+
+  // ball return rack with 3 coloured balls
+  B(.45,.68,2.6,0x1e2235,2.4,.34,1.2);
+  [0x2244cc,0xcc2222,0x228833].forEach((c,i)=>{
+    const rb=new THREE.Mesh(new THREE.SphereGeometry(.27,16,16),M(c,.22)); rb.position.set(2.4,.84,.25+i*.9); world.add(rb);
+  });
+  const rl2=new THREE.Mesh(new THREE.BoxGeometry(.14,.08,2.6),
+    new THREE.MeshStandardMaterial({color:0x445566,metalness:.7,roughness:.2}));
+  rl2.position.set(2.4,.73,1.2); world.add(rl2);
+
+  // player lane: active pins, ball, player character
+  const pins=[];
+  for(let r=0;r<4;r++) for(let c=0;c<=r;c++){
+    const p=new THREE.Mesh(pinGeo,M(0xffffff,.5));
     p.position.set((c-r/2)*COLDX,.39,FRONTZ-r*ROWDZ); p.castShadow=true; p.userData.fallen=false; world.add(p); pins.push(p);
-    const b=new THREE.Mesh(new THREE.CylinderGeometry(.155,.16,.1,14),M(0xd33,.5)); b.position.y=.16; p.add(b); }
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(.155,.16,.1,14),M(0xd33,.5)); b.position.y=.16; p.add(b);
+  }
   const ball=new THREE.Mesh(new THREE.SphereGeometry(.34,24,24),M(0x2244cc,.2)); ball.position.set(0,.34,.5); ball.castShadow=true; world.add(ball);
   const player=buildCousin(hero); player.position.set(-1.1,0,2.1); player.rotation.y=Math.PI; world.add(player);
   camera.position.set(0,3.4,5.2); camera.lookAt(0,.2,-9);
+
   let phase='aim', aimX=0, dir=1, pw=0, pdir=1, rolls=0, vz=0, knocked=0, settleT=0, tRoll=0; const FR=4.5;
   showPower(true); setScore('Birilli: 0');
   function reset(){ ball.position.set(0,.34,.5); vz=0; aimX=0; phase='aim'; pw=0; tRoll=0; showPower(true); }
