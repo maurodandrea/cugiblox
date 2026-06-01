@@ -45,6 +45,7 @@
   #bU{bottom:132px;} #bD{bottom:26px;}
   #pad.drive #bA{display:none;} #pad.drive #bU,#pad.drive #bD{display:block;}
   #pad.race #bU{display:block;}
+  #pad.walk #bU,#pad.walk #bD{display:block;}
   #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#0b1020;z-index:50;text-align:center;padding:30px;}
   #results{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,12,28,.82);pointer-events:none;}
   #results.on{display:flex;}
@@ -1632,8 +1633,8 @@ function enterTitle(){ clearWorld(); applyTheme(); addGround2(CITIES.roma.ground
 let activeGame=null, gameOver=false;
 function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); document.getElementById('hud').classList.remove('on'); document.getElementById('pad').classList.remove('on'); if(id) document.getElementById(id).classList.add('on'); }
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
-const DRIVE_PAD=['guida','acquapark_slide','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare','acquapark','giostre'];
-function padFor(gid){ return gid==='moto'?'race':DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'race':''; }
+const DRIVE_PAD=['guida','acquapark_slide','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare','acquapark','giostre','giostre_salt','acquapark_onde'];
+function padFor(gid){ return gid==='moto'?'race':DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'walk':''; }
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad('race'); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
 function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
   try{ activeGame=(GAME_FN[gid]||(()=>walkCollect(THEMES.casa)))(); }catch(e){ console.error(e); activeGame=null; setInstr('Errore in '+gid+': '+(e&&e.message||e)); }
