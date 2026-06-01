@@ -860,17 +860,18 @@ const THEMES = {
   colosseo:{emoji:'🏆',ground:0xd9c39a,size:20,goal:8,time:55,hazards:3,instr:'Prendi i tesori e schiva i leoni! 🦁',win:'Campione dell\'arena! 🏆',
     decor(){ const N=16; for(let i=0;i<N;i++){ const a=i/N*Math.PI*2,R=9.5; const col=cyl(.5,.55,4,0xe8dcc0); col.position.set(Math.sin(a)*R,2,Math.cos(a)*R); col.castShadow=true; world.add(col); B(1.2,.4,1.2,0xe8dcc0,Math.sin(a)*R,4.1,Math.cos(a)*R); } },
     item(){ const o=new THREE.Mesh(new THREE.OctahedronGeometry(.34),new THREE.MeshStandardMaterial({color:0xffe14a,emissive:0xffd000,emissiveIntensity:.5})); o.position.y=.5; return o; }},
-  giostre_hub:{emoji:'🎡',ground:0xd0a870,size:16,goal:0,time:999,exitDoor:[0,-8],
-    gameDoors:[{gid:'giostre_car',x:-5,z:2,label:'🎠 Giostra',col:0xffcc33},{gid:'giostre_salt',x:0,z:5,label:'🦘 Salta-Salta',col:0xff6b6b},{gid:'giostre_ruota',x:5,z:2,label:'🎡 Ruota Pano.',col:0x6bd0ff}],
-    instr:'Scegli una giostra! 🎠🦘🎡 · 🚪 esci',win:'',
-    decor(){ for(let i=0;i<8;i++){ const fc=[0xff5b5b,0x5bd0ff,0xffe14a,0x6bff8a][i%4]; B(.12,2.8,.12,fc,-7+i*2,1.4,-7); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),M(fc)); fl.position.set(-7+i*2,2.8,-7); world.add(fl); }
-      for(let i=0;i<4;i++){ const cc=new THREE.Mesh(new THREE.CircleGeometry(.8,12),M([0xffcc33,0xff6b6b,0x6bd0ff,0x6bff8a][i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set([-5,0,5,0][i],.01,[2,5,2,-3][i]); world.add(cc); } }},
-  acquapark_hub:{emoji:'💦',ground:0x5ab8d0,size:18,goal:0,time:999,exitDoor:[0,-9],
-    gameDoors:[{gid:'acquapark_slide',x:-6,z:2,label:'🌊 Scivolo',col:0x5bd0ff},{gid:'acquapark_onde',x:0,z:5,label:'🌊 Onde',col:0x2080ff},{gid:'acquapark_fiume',x:6,z:2,label:'🛟 Fiume',col:0x2fa8e0}],
-    instr:'Scegli un\'attrazione! 🌊🛟 · 🚪 esci',win:'',
-    decor(){ const pool=new THREE.Mesh(new THREE.PlaneGeometry(16,8),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.75,roughness:.15})); pool.rotation.x=-Math.PI/2; pool.position.set(0,.05,-2); world.add(pool);
-      for(let i=0;i<6;i++){ const u=cyl(.15,.18,.38,0xff8c1a); u.position.set(-5+i*2,0,-6); world.add(u); const top=new THREE.Mesh(new THREE.SphereGeometry(.48,8,8),M([0xff5b5b,0xffe14a,0x6bd0ff][i%3])); top.position.set(-5+i*2,.58,-6); world.add(top); }
-      for(let i=0;i<8;i++){ const fl=new THREE.Mesh(new THREE.SphereGeometry(.28,8,8),M(TC[i%TC.length],.5)); fl.position.set(-7+i*2,2.2,-8.5); world.add(fl); } }},
+  giostre_hub:{emoji:'🎡',ground:0xd0a870,size:16,goal:0,time:999,exitDoor:[0,6],
+    gameDoors:[{gid:'giostre_car',x:-4,z:0,label:'🎠 Giostra',col:0xffcc33},{gid:'giostre_salt',x:0,z:-3,label:'🦘 Salta-Salta',col:0xff6b6b},{gid:'giostre_ruota',x:4,z:0,label:'🎡 Ruota Pano.',col:0x6bd0ff}],
+    instr:'Cammina verso le porte colorate per scegliere! 🎠🦘🎡 · 🚪 verde dietro di te = esci',win:'',
+    decor(){ for(let i=0;i<8;i++){ const fc=[0xff5b5b,0x5bd0ff,0xffe14a,0x6bff8a][i%4]; B(.12,2.8,.12,fc,-7+i*2,1.4,-6); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),M(fc)); fl.position.set(-7+i*2,2.8,-6); world.add(fl); }
+      const cols=[0xffcc33,0xff6b6b,0x6bd0ff]; [[-4,0],[0,-3],[4,0]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); }); }},
+  acquapark_hub:{emoji:'💦',ground:0x5ab8d0,size:18,goal:0,time:999,exitDoor:[0,7],
+    gameDoors:[{gid:'acquapark_slide',x:-5,z:0,label:'🌊 Scivolo',col:0x5bd0ff},{gid:'acquapark_onde',x:0,z:-3,label:'🌊 Onde',col:0x2080ff},{gid:'acquapark_fiume',x:5,z:0,label:'🛟 Fiume',col:0x2fa8e0}],
+    instr:'Cammina verso le porte colorate per scegliere! 🌊🛟 · 🚪 verde dietro di te = esci',win:'',
+    decor(){ const pool=new THREE.Mesh(new THREE.PlaneGeometry(16,8),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.75,roughness:.15})); pool.rotation.x=-Math.PI/2; pool.position.set(0,.05,-5); world.add(pool);
+      const cols=[0x5bd0ff,0x2080ff,0x2fa8e0]; [[-5,0],[0,-3],[5,0]].forEach(([x,z],i)=>{ const cc=new THREE.Mesh(new THREE.CircleGeometry(1.2,16),M(cols[i],.4)); cc.rotation.x=-Math.PI/2; cc.position.set(x,.01,z); world.add(cc); });
+      for(let i=0;i<6;i++){ const u=cyl(.15,.18,.38,0xff8c1a); u.position.set(-5+i*2,0,-7); world.add(u); const top=new THREE.Mesh(new THREE.SphereGeometry(.48,8,8),M([0xff5b5b,0xffe14a,0x6bd0ff][i%3])); top.position.set(-5+i*2,.58,-7); world.add(top); }
+      for(let i=0;i<8;i++){ const fl=new THREE.Mesh(new THREE.SphereGeometry(.28,8,8),M(TC[i%TC.length],.5)); fl.position.set(-7+i*2,2.2,-8.2); world.add(fl); } }},
 };
 
 /* ===================== ABILITÀ ===================== */
