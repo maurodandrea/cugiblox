@@ -266,7 +266,7 @@ function buildFish(col){ const g=new THREE.Group(); const m=M(col,.5);
   g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); return g; }
 function thirdPersonWalk(player,dt,speed){ let moved=false;
   if(keys['ArrowLeft']) player.rotation.y+=dt*2.6; if(keys['ArrowRight']) player.rotation.y-=dt*2.6;
-  let f=0; if(keys['ArrowUp']||keys['Space'])f=1; if(keys['ArrowDown'])f=-0.6;
+  let f=0; if(keys['ArrowUp'])f=1; else if(keys['ArrowDown'])f=-0.6;
   if(f){ const h=player.rotation.y; player.position.x+=Math.sin(h)*speed*f*dt; player.position.z+=Math.cos(h)*speed*f*dt; moved=true; } return moved; }
 function followCam(player,dist,height,lookY){ const h=player.rotation.y;
   const cx=player.position.x-Math.sin(h)*dist, cz=player.position.z-Math.cos(h)*dist;
@@ -476,7 +476,7 @@ function GameBiciMontagna(){
   const names=['Terra','Fango','Neve'];
   return { update(dt){ if(won)return; t+=dt;
     const slope=hy(dist+3)-hy(dist), ter=terr(dist);
-    let base=12-slope*2.4; if(ter===1)base=Math.min(base,8); if(keys['Space'])base+=4;
+    let base=12-slope*2.4; if(ter===1)base=Math.min(base,8); if(keys['ArrowUp'])base+=4;
     speed+=(base-speed)*Math.min(1,dt*2); speed=Math.max(3,speed); dist+=speed*dt;
     const steerRate=ter===2?3.0:4.6;
     if(keys['ArrowLeft'])bikeX-=steerRate*dt; if(keys['ArrowRight'])bikeX+=steerRate*dt;
@@ -671,6 +671,8 @@ function walkCollect(th){
     for(let i=0;i<8;i++){ const g=new THREE.Group(); const bo=new THREE.Mesh(new THREE.SphereGeometry(.38,12,12),new THREE.MeshStandardMaterial({color:TC[i%TC.length],emissive:0x111111,emissiveIntensity:.1})); bo.scale.y=1.2; const str=cyl(.01,.01,.7,0xffffff); str.position.y=-.6; g.add(bo,str); g.position.set(bp.x+rand(-bp.w/2+.6,bp.w/2-.6),1.4,bp.z+rand(-bp.l/2+.6,bp.l/2-.6)); g.userData.bob=rand(0,6); world.add(g); bpBalloons.push(g); } }
   const exitDoor=th.exitDoor||null;
   if(exitDoor){ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(exitDoor[0],0,exitDoor[1]); world.add(dg); const elab=labelSprite('🚪 Esci'); elab.position.set(exitDoor[0],2.9,exitDoor[1]); world.add(elab); }
+  const gameDoors=th.gameDoors||null;
+  if(gameDoors) gameDoors.forEach(gd=>{ const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.6,.2),M(0x8a5a2b)); j1.position.set(-.95,1.3,0); const j2=j1.clone(); j2.position.x=.95; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2.1,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.6,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.5),new THREE.MeshStandardMaterial({color:gd.col||0xffcf6b,emissive:gd.col||0xffcf6b,emissiveIntensity:.35,transparent:true,opacity:.6,side:THREE.DoubleSide})); pan.position.set(0,1.3,0); dg.add(j1,j2,dtop,pan); dg.position.set(gd.x,0,gd.z); world.add(dg); const gl=labelSprite(gd.label,3); gl.position.set(gd.x,3.2,gd.z); world.add(gl); });
   if(th.music) startMusic();
   camera.position.set(0,8,10);
   let collected=0, time=th.time||45, t=0, done=false, carried=null;
@@ -690,6 +692,7 @@ function walkCollect(th){
     player.position.x=THREE.MathUtils.clamp(player.position.x,-half-1,half+1); player.position.z=THREE.MathUtils.clamp(player.position.z,-half-1,half+1);
     followCam(player,7,5.6,1);
     if(exitDoor && Math.hypot(player.position.x-exitDoor[0],player.position.z-exitDoor[1])<1.2){ done=true; beep(500,.1); setTimeout(enterHub,160); return; }
+    if(gameDoors){ for(const gd of gameDoors){ if(Math.hypot(player.position.x-gd.x,player.position.z-gd.z)<1.3){ done=true; beep(760,.1); setTimeout(()=>startGame(gd.gid),160); return; } } }
     let inPool=false;
     if(bp){ inPool = Math.abs(player.position.x-bp.x)<bp.w/2-.3 && Math.abs(player.position.z-bp.z)<bp.l/2-.3;
       bpBalls.forEach(b=>{ b.userData.vy-=12*dt; b.position.y+=b.userData.vy*dt; const rest=.5+Math.sin(t*2+b.userData.bob)*.05; if(b.position.y<=rest){ b.position.y=rest; b.userData.vy=Math.abs(b.userData.vy)*.35; if(b.userData.vy<.4)b.userData.vy=0; } b.rotation.x+=dt; });
@@ -803,7 +806,15 @@ const THEMES = {
   color_hotel:{emoji:'🧳',ground:0x88c0c0,size:18,goal:8,time:60,spray:{wallZ:-8},ballpit:{x:4.5,z:3,w:7,l:7},instr:'Raccogli le valigie · spray sui muri 🎨 · tuffati nella vasca palline! 🫧',win:'Benvenuti al Color Hotel! 🏨',
     decor(){ B(18,3.2,.3,0xeae2d0,0,1.6,-8); B(.3,3.2,18,0xeae2d0,-8.6,1.6,0); B(.3,3.2,18,0xeae2d0,8.6,1.6,0); B(6,1.2,1.6,0x33aaaa,-3,.6,-7); for(let i=0;i<6;i++){ const col=cyl(.3,.3,2.6,TC[i]); col.position.set(-7+i*2.8,1.3,-7.5); col.castShadow=true; world.add(col); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.7,.35),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.35; const hd=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,12),M(0x333333)); hd.position.y=.45; b.add(hd); return b; }},
-  piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:45,instr:'Raccogli le monete nella piazzetta!',win:'Piazzetta scintillante! ⛲',
+  piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:60,instr:'Raccogli le monete · entra nelle 🚪 o usa altalena/scivoli! ⛲',win:'Piazzetta scintillante! ⛲',
+    gameDoors:[{gid:'bar',x:-7,z:2,label:'🍹 Bar',col:0xff9ec4},{gid:'ristorante',x:7,z:2,label:'🍝 Ristorante',col:0x6bd0ff},{gid:'casa',x:0,z:7,label:'🏠 Casa',col:0xffd24a}],
+    rides(){ const R=[];
+      const sx=-4,sz=-1.5; B(.15,2.4,.15,0x6a4a2a,sx-1,1.2,sz); B(.15,2.4,.15,0x6a4a2a,sx+1,1.2,sz); B(2.2,.15,.15,0x6a4a2a,sx,2.4,sz);
+      const pivot=new THREE.Group(); pivot.position.set(sx,2.4,sz); world.add(pivot);
+      const r1=cyl(.03,.03,1.6,0x444444); r1.position.set(-.3,-.8,0); const r2=r1.clone(); r2.position.x=.3; const seat=new THREE.Mesh(new THREE.BoxGeometry(.7,.1,.4),M(0x8a5a2b)); seat.position.set(0,-1.6,0); pivot.add(r1,r2,seat);
+      R.push({type:'swing',x:sx,z:sz,pivot,dur:6});
+      [[4,-1.5],[7,-5]].forEach(([px,pz])=>{ B(2,.3,1,0x6fc0e0,px,1.4,pz); B(.12,2.6,.12,0x6a4a2a,px-.8,1.3,pz-.5); B(.12,2.6,.12,0x6a4a2a,px+.8,1.3,pz-.5); const ramp=B(1,.12,3.4,0x8fd0e6,px,.9,pz+2); ramp.rotation.x=.5; R.push({type:'slide',x:px,z:pz,dur:2.2}); });
+      return R; },
     decor(){ const base=cyl(2,2.3,.6,0x9fb0c0); base.position.set(0,.3,-5); base.castShadow=true; world.add(base); const w=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,.3,16),M(0x6fc0e0,.3)); w.position.set(0,.7,-5); world.add(w); const sp=cyl(.2,.2,1.6,0x9fb0c0); sp.position.set(0,1.4,-5); world.add(sp); const stat=new THREE.Mesh(new THREE.SphereGeometry(.35,12,12),M(0x9fb0c0)); stat.position.set(0,2.3,-5); world.add(stat);
       B(2,.4,.6,0x8a5a2b,-5,.4,2); B(2,.4,.6,0x8a5a2b,5,.4,2);
       // palazzi intorno alla piazza (facciate)
@@ -1435,8 +1446,10 @@ function enterTitle(){ clearWorld(); applyTheme(); addGround2(CITIES.roma.ground
 let activeGame=null, gameOver=false;
 function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); document.getElementById('hud').classList.remove('on'); document.getElementById('pad').classList.remove('on'); if(id) document.getElementById(id).classList.add('on'); }
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
-function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(false); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
-function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(gid==='guida'||gid==='moto'?'drive':(gid==='cavallo'||gid==='mare')?'race':''); gameOver=false; mode='game';
+const DRIVE_PAD=['guida','moto','acquapark','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare'];
+function padFor(gid){ return DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'race':''; }
+function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad('race'); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
+function startGame(gid){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
   try{ activeGame=(GAME_FN[gid]||(()=>walkCollect(THEMES.casa)))(); }catch(e){ console.error(e); activeGame=null; setInstr('Errore in '+gid+': '+(e&&e.message||e)); }
   show(null); hudOn(); }
 function showResults(text,rows,points){ const el=document.getElementById('results'); let html='<h3>'+text+'</h3>';
