@@ -860,7 +860,7 @@ function walkCollect(th){
       } else for(const r of rides){ if(Math.hypot(player.position.x-r.x,player.position.z-r.z)<1.3){ riding=r; rideT=r.dur; beep(700,.1); setInstr('🛝 AZIONE per scendere'); break; } }
     }
     const moved=thirdPersonWalk(player,dt,5); walkAnim(player,(moved&&!carried)?t*9:0);
-    player.position.x=THREE.MathUtils.clamp(player.position.x,-half-1,half+1); player.position.z=THREE.MathUtils.clamp(player.position.z,-half-1,half+1);
+    const hw=th.maxWalk!==undefined?th.maxWalk:half+1; player.position.x=THREE.MathUtils.clamp(player.position.x,-hw,hw); player.position.z=THREE.MathUtils.clamp(player.position.z,-hw,hw);
     followCam(player,7,5.6,1);
     if(th.tables&&!carried){ let nearTable=false; for(const [tx,tz] of th.tables){ if(Math.hypot(player.position.x-tx,player.position.z-tz)<1.6){ nearTable=true; break; } } if(nearTable&&hit('Space')){ seated=!seated; if(!seated){player.position.y=0;player.userData.legs[0].rotation.x=0;player.userData.legs[1].rotation.x=0;} beep(seated?500:400,.07); } else if(seated&&!nearTable){seated=false;player.position.y=0;player.userData.legs[0].rotation.x=0;player.userData.legs[1].rotation.x=0;} if(seated){player.userData.legs[0].rotation.x=-1.3;player.userData.legs[1].rotation.x=-1.3;player.position.y=THREE.MathUtils.lerp(player.position.y,.55,.2);} }
     if(th.furniture){ let pose=null; for(const fr of th.furniture){ if(Math.hypot(player.position.x-fr.x,player.position.z-fr.z)<1.7){ pose=fr.type; break; } }
@@ -994,12 +994,16 @@ const THEMES = {
       A.push(aNPC(oc[0],-4,.5,0,'write',P)); A.push(aNPC(oc[1],-4,3,0,'jump',P));
       A.push(aNPC(oc[2],0,-8.2,Math.PI,'draw',P)); A.push(aNPC(oc[3],4,3,0,'throw',P));
       return A; }},
-  parco:{emoji:'🎈',ground:0x6fae5a,size:20,goal:10,time:45,exitDoor:[-7.5,8],instr:'Raccogli i palloncini! Avvicinati all\'altalena o allo scivolo per usarli 🛝 · 🚪 esci dal parco',win:'Che festa al parco! 🎈',
+  parco:{emoji:'🎈',ground:0x6fae5a,size:20,goal:10,time:45,maxWalk:8.3,exitDoor:[-7.5,8],instr:'Raccogli i palloncini! Avvicinati all\'altalena o allo scivolo per usarli 🛝 · 🚪 esci dal parco',win:'Che festa al parco! 🎈',
     decor(){ for(let i=0;i<7;i++){ let x,z,tr2=0; do{ x=rand(-8,8); z=rand(-8,8); tr2++; }while(tr2<14 && (Math.hypot(x+6,z-2)<3.8 || Math.hypot(x-6,z+2)<3.8 || Math.hypot(x-5,z+6)<3.2)); const tr=cyl(.2,.26,1.4,0x7a4a28); tr.position.set(x,.7,z); tr.castShadow=true; world.add(tr); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.1,2,9),M(0x2f8f4a)); lv.position.set(x,2.2,z); lv.castShadow=true; world.add(lv); } B(2.5,.4,.6,0x8a5a2b,-4,.4,3); B(2.5,.4,.6,0x8a5a2b,4,.4,-3);
       // laghetto
       const lake=new THREE.Mesh(new THREE.CircleGeometry(2.6,22),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.82,roughness:.2,metalness:.15})); lake.rotation.x=-Math.PI/2; lake.position.set(5,.04,-6); world.add(lake);
       for(let k=0;k<10;k++){ const a=k/10*Math.PI*2, r=2.5+Math.random()*.25; const st=new THREE.Mesh(new THREE.DodecahedronGeometry(.28+Math.random()*.14),M(0x7a8a6a,.9)); st.position.set(5+Math.cos(a)*r,.12,-6+Math.sin(a)*r); world.add(st); }
-      const lly=cyl(.06,.06,.55,0x2f8f4a); lly.position.set(4.4,.28,-5.4); world.add(lly); const llf=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M(0xffe14a,.4)); llf.scale.set(1,.3,1); llf.position.set(4.4,.55,-5.4); world.add(llf); },
+      const lly=cyl(.06,.06,.55,0x2f8f4a); lly.position.set(4.4,.28,-5.4); world.add(lly); const llf=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M(0xffe14a,.4)); llf.scale.set(1,.3,1); llf.position.set(4.4,.55,-5.4); world.add(llf);
+      // siepe perimetrale
+      const hc=0x2a6018;
+      B(20,.95,.6,hc,0,.475,-8.6); B(20,.95,.6,hc,0,.475,8.6);
+      B(.6,.95,20,hc,-8.6,.475,0); B(.6,.95,20,hc,8.6,.475,0); },
     item(){ const g=new THREE.Group(); const ball=new THREE.Mesh(new THREE.SphereGeometry(.32,14,14),new THREE.MeshStandardMaterial({color:TC[Math.floor(Math.random()*TC.length)],emissive:0x222222,emissiveIntensity:.15})); ball.position.y=.7; const str=cyl(.01,.01,.7,0xffffff); str.position.y=.2; g.add(ball,str); return g; },
     activities(){ const oc=otherCousins(); const A=[];
       // ogni cugino compare una sola volta, tutti in movimento
