@@ -539,7 +539,7 @@ function DriveGame(opts){
   const scenery=[]; for(let i=0;i<22;i++){ const t=slide?palmMesh():treeMesh(); t.position.set((i%2?1:-1)*(ROADW/2+2+rand(0,3)),0,-i*5-rand(0,4)); world.add(t); scenery.push(t); }
   if(slide){ for(let i=0;i<4;i++){ const flume=new THREE.Mesh(new THREE.TorusGeometry(4,.6,8,16,Math.PI),M([0x6bd0ff,0xff6b6b,0xffd24a,0x9bff5b][i],.4)); flume.position.set((i%2?1:-1)*13,3.2,-15-i*16); flume.rotation.set(Math.PI/2,0,.35); world.add(flume); const sup=cyl(.2,.2,3.4,0xcfd6da); sup.position.set((i%2?1:-1)*13,1.6,-15-i*16); world.add(sup); } }
   const haz=[], money=[]; const COL=[0x2980b9,0x27ae60,0xf1c40f,0x8e44ad,0xe67e22,0xecf0f1];
-  let dist=0, speed=slide?20:16, spawn=0, cspawn=0, crashT=0, passed=0, won=false, tt=0, kamNext=130, kamT=0;
+  let dist=0, speed=slide?20:16, spawn=0, cspawn=0, crashT=0, passed=0, won=false, tt=0, kamNext=130, kamT=0, wheelieT=0;
   const race=!!opts.race; const opps=race?makeOpponents(3,(rid)=>makeVehicle(opts.veh,rid),MAXS*0.90,8):[]; opps.forEach(o=>o.lane=[-LANEX,LANEX,0][o.idx%3]);
   setInstr(bike?'◀ ▶ pedala ed evita alberi, sassi e ostacoli! 🚲':slide?'◀ ▶ guida sullo scivolo, prendi le ciambelle 🛟':race?'◀▶ sterza · ▲ accelera · ▼ frena · AZIONE = impenna! 🏍️':'◀ ▶ sterza · supera/schiva · 🪙 = punti');
   camera.position.set(0,4.2,12); camera.lookAt(0,1,0);
@@ -561,7 +561,7 @@ function DriveGame(opts){
     const tx=veh.position.x+((keys['ArrowLeft']?-1:0)+(keys['ArrowRight']?1:0))*lv*dt;
     veh.position.x=THREE.MathUtils.clamp(tx,-LANEX,LANEX);
     veh.rotation.z=THREE.MathUtils.lerp(veh.rotation.z,(keys['ArrowLeft']?0.12:0)+(keys['ArrowRight']?-0.12:0),0.2);
-    if(opts.veh==='moto'){ veh.rotation.x=THREE.MathUtils.lerp(veh.rotation.x,keys['Space']?-0.5:0,0.1); }
+    if(opts.veh==='moto'){ if(hit('Space')&&wheelieT<=0.1){ wheelieT=1.0; beep(740,.12,'sawtooth',.06); } if(wheelieT>0){ wheelieT-=dt; speed=Math.min(MAXS*1.35,speed+28*dt); } veh.rotation.x=THREE.MathUtils.lerp(veh.rotation.x,wheelieT>0.05?0.52:0,0.14); }
     wheels.forEach(w=>w.rotation.x-=speed*dt);
     stripes.forEach(s=>{ s.position.z+=speed*dt; if(s.position.z>14)s.position.z-=120; });
     scenery.forEach(t=>{ t.position.z+=speed*dt; if(t.position.z>14){ t.position.z-=120; t.position.x=(Math.random()<.5?-1:1)*(ROADW/2+2+rand(0,3)); } });
