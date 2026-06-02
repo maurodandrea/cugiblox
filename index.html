@@ -1168,27 +1168,27 @@ function laneTexture(){
   g.fillStyle=hl; g.fillRect(0,0,256,512);
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,3); return t; }
 function gymCourtTexture(){
-  const c=document.createElement('canvas'); c.width=512; c.height=400;
+  const c=document.createElement('canvas'); c.width=280; c.height=512;
   const g=c.getContext('2d');
   // warm parquet base
-  const bg=g.createLinearGradient(0,0,512,0);
+  const bg=g.createLinearGradient(0,0,280,0);
   bg.addColorStop(0,'#b07228'); bg.addColorStop(.4,'#cc8c3c'); bg.addColorStop(.6,'#cc8c3c'); bg.addColorStop(1,'#b07228');
-  g.fillStyle=bg; g.fillRect(0,0,512,400);
+  g.fillStyle=bg; g.fillRect(0,0,280,512);
   // plank lines
   g.strokeStyle='rgba(90,44,6,.28)'; g.lineWidth=1.5;
-  for(let i=0;i<=512;i+=18){ g.beginPath(); g.moveTo(i,0); g.lineTo(i,400); g.stroke(); }
+  for(let i=0;i<=280;i+=18){ g.beginPath(); g.moveTo(i,0); g.lineTo(i,512); g.stroke(); }
   // grain
   g.strokeStyle='rgba(120,56,6,.1)'; g.lineWidth=1;
-  for(let n=0;n<40;n++){ const sx=Math.random()*512; g.beginPath(); g.moveTo(sx,0); let cx=sx; for(let y=0;y<=400;y+=40){ cx+=Math.sin(y*.07+n*1.4)*3; g.lineTo(cx,y); } g.stroke(); }
-  // volleyball court lines (18x9m court mapped: width=X axis 512px, length=Z axis 400px)
+  for(let n=0;n<40;n++){ const sx=Math.random()*280; g.beginPath(); g.moveTo(sx,0); let cx=sx; for(let y=0;y<=512;y+=40){ cx+=Math.sin(y*.07+n*1.4)*3; g.lineTo(cx,y); } g.stroke(); }
+  // volleyball court lines (12x22m court: width=X 280px, length=Z 512px)
   g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=4;
-  g.strokeRect(16,16,480,368);           // boundary
-  g.beginPath(); g.moveTo(16,200); g.lineTo(496,200); g.stroke();   // center line
-  // attack lines (3m from center = 3/9 of half length)
-  [200-137,200+137].forEach(y=>{ g.beginPath(); g.moveTo(16,y); g.lineTo(496,y); g.stroke(); });
+  g.strokeRect(14,14,252,484);           // boundary
+  g.beginPath(); g.moveTo(14,256); g.lineTo(266,256); g.stroke();   // center line
+  // attack lines (3m from center in 11m half = 3/11*256 ≈ 70px from center)
+  [256-70,256+70].forEach(y=>{ g.beginPath(); g.moveTo(14,y); g.lineTo(266,y); g.stroke(); });
   // service zones
   g.strokeStyle='rgba(255,255,255,.4)'; g.lineWidth=2;
-  [200-368/2+45,200+368/2-45].forEach(y=>{ g.beginPath(); g.moveTo(16+60,y-12); g.lineTo(16+60,y+12); g.moveTo(496-60,y-12); g.lineTo(496-60,y+12); g.stroke(); });
+  [256-484/2+45,256+484/2-45].forEach(y=>{ g.beginPath(); g.moveTo(14+50,y-12); g.lineTo(14+50,y+12); g.moveTo(266-50,y-12); g.lineTo(266-50,y+12); g.stroke(); });
   return new THREE.CanvasTexture(c); }
 function volleyballTexture(){
   const c=document.createElement('canvas'); c.width=128; c.height=128; const g=c.getContext('2d');
@@ -2147,24 +2147,24 @@ function GameScuola(){
       player.position.set(0,0,6.5); player.rotation.y=Math.PI;
       setInstr('In aula! Raccogli i '+GOAL+' libri 📚 · ⬇️ porta = torna al piano terra');
     } else if(s==='gym'){
-      const f=new THREE.Mesh(new THREE.PlaneGeometry(18,14),new THREE.MeshStandardMaterial({map:gymCourtTexture(),roughness:.6})); f.rotation.x=-Math.PI/2; env.add(f);
-      E(18,5,.3,0xeae0c8,0,2.5,-7); E(.3,5,14,0xeae0c8,-9,2.5,0); E(.3,5,14,0xeae0c8,9,2.5,0);
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(12,22),new THREE.MeshStandardMaterial({map:gymCourtTexture(),roughness:.6})); f.rotation.x=-Math.PI/2; env.add(f);
+      E(12,5,.3,0xeae0c8,0,2.5,-11); E(.3,5,22,0xeae0c8,-6,2.5,0); E(.3,5,22,0xeae0c8,6,2.5,0);
       // rete da pallavolo con pali
-      E(18,.14,.08,0xffffff,0,2.5,0); for(let i=0;i<7;i++) E(.06,2.52,.06,0xdddddd,-7.5+i*2.5,1.26,0);
-      const np1=cyl(.06,.06,3.6,0x888888); np1.position.set(-9,1.8,0); env.add(np1);
-      const np2=np1.clone(); np2.position.set(9,1.8,0); env.add(np2);
+      E(12,.14,.08,0xffffff,0,2.5,0); for(let i=0;i<5;i++) E(.06,2.52,.06,0xdddddd,-5+i*2.5,1.26,0);
+      const np1=cyl(.06,.06,3.6,0x888888); np1.position.set(-6,1.8,0); env.add(np1);
+      const np2=np1.clone(); np2.position.set(6,1.8,0); env.add(np2);
       // linee laterali e attak sul campo
-      E(18,.01,.04,0xffffff,0,.005,-3.3); E(18,.01,.04,0xffffff,0,.005,3.3);  // attack lines
+      E(12,.01,.04,0xffffff,0,.005,-3.3); E(12,.01,.04,0xffffff,0,.005,3.3);  // attack lines
       // porta uscita palestra
-      { const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(9,0,0); dg.rotation.y=Math.PI/2; env.add(dg); const dl=labelSprite('🚪 Esci palestra'); dl.position.set(9,3,0); env.add(dl); }
+      { const dg=new THREE.Group(); const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(6,0,0); dg.rotation.y=Math.PI/2; env.add(dg); const dl=labelSprite('🚪 Esci palestra'); dl.position.set(6,3,0); env.add(dl); }
       // avversario NPC dall'altro lato della rete
-      const npcId=otherCousins()[0]; const npc=buildCousin(npcId); npc.position.set(0,0,-3); npc.rotation.y=0; env.add(npc); mover.push(npc);
+      const npcId=otherCousins()[0]; const npc=buildCousin(npcId); npc.position.set(0,0,-5); npc.rotation.y=0; env.add(npc); mover.push(npc);
       // pallone da pallavolo con texture realistica
-      gymBall=new THREE.Mesh(new THREE.SphereGeometry(.26,16,16),new THREE.MeshStandardMaterial({map:volleyballTexture(),roughness:.45})); gymBall.position.set(0,.26,3.5); env.add(gymBall);
+      gymBall=new THREE.Mesh(new THREE.SphereGeometry(.26,16,16),new THREE.MeshStandardMaterial({map:volleyballTexture(),roughness:.45})); gymBall.position.set(0,.26,5); env.add(gymBall);
       // ombra pallone sul pavimento
       const bShadow=new THREE.Mesh(new THREE.CircleGeometry(.3,12),new THREE.MeshStandardMaterial({color:0x000000,transparent:true,opacity:.22,roughness:1})); bShadow.rotation.x=-Math.PI/2; bShadow.position.y=.005; env.add(bShadow);
       gymState={phase:'idle',pt:0,pscore:0,bsx:0,btx:0,bpeak:4.2,bsx2:0,btx2:0,dur:.9,dur2:.9,shadow:bShadow};
-      player.position.set(0,0,4.5); player.rotation.y=Math.PI;
+      player.position.set(0,0,6); player.rotation.y=Math.PI;
       setInstr('💪 Pallavolo! ◀▶ per muoverti · AZIONE per battere · 🚪 porta = esci');
     } else if(s==='mensa'){
       const f=new THREE.Mesh(new THREE.PlaneGeometry(14,10),M(0xe0d0b0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
@@ -2209,13 +2209,13 @@ function GameScuola(){
     else if(stage==='bus'){ if(player.position.z>5.4 && Math.abs(player.position.x)<1.4){ beep(600,.1); done=true; setTimeout(()=>startGame('casa'),200); } }
     else if(stage==='ground'){ if(player.position.z<-7.5 && Math.abs(player.position.x)<2.6){ beep(800,.1); setTimeout(()=>beep(1000,.1),90); setStage('aula'); } else if(player.position.z>10 && Math.abs(player.position.x)<2.5){ beep(500,.1); setStage('ext'); } else if(player.position.x<-8.3 && Math.abs(player.position.z)<2){ beep(760,.1); setTimeout(()=>beep(1000,.1),90); setStage('gym'); } else if(player.position.x>8.3 && Math.abs(player.position.z-3)<2){ beep(760,.1); setStage('mensa'); } }
     else if(stage==='gym'){ const gv=gymState; gv.pt+=dt; const npc=mover[0];
-      if(keys['ArrowLeft'])player.position.x=Math.max(-7.5,player.position.x-4*dt); if(keys['ArrowRight'])player.position.x=Math.min(7.5,player.position.x+4*dt);
-      if(player.position.x>8.2 && Math.abs(player.position.z)<2.5){ beep(600,.1); setStage('ground'); return; }
-      if(gv.phase==='idle'){ gymBall.position.set(player.position.x,.5,3.5); if(hit('Space')){ gv.phase='out'; gv.pt=0; gv.bsx=player.position.x; gv.btx=rand(-3,3); gv.dur=.85+rand(0,.25); beep(880,.1); walkAnim(player,t*9+5); } }
-      else if(gv.phase==='out'){ const p=Math.min(1,gv.pt/gv.dur); gymBall.position.set(gv.bsx+(gv.btx-gv.bsx)*p,.5+Math.sin(p*Math.PI)*gv.bpeak,-3.5+(3.5-(-3.5))*(1-p)); gymBall.rotation.x-=9*dt; gymBall.rotation.z+=6*dt; if(p>=1){ gv.phase='npc'; gv.pt=0; beep(660,.08); npc.position.x=THREE.MathUtils.lerp(npc.position.x,gv.btx,.9); } }
-      else if(gv.phase==='npc'){ gymBall.position.set(gv.btx,.5,-3.5); npc.position.x=THREE.MathUtils.lerp(npc.position.x,gv.btx,.1); if(gv.pt>.4){ gv.phase='in'; gv.pt=0; gv.bsx2=gv.btx; gv.btx2=rand(-3.5,3.5); gv.dur2=.85+rand(0,.35); beep(740,.08); walkAnim(npc,t*9); } }
-      else if(gv.phase==='in'){ const p=Math.min(1,gv.pt/gv.dur2); gymBall.position.set(gv.bsx2+(gv.btx2-gv.bsx2)*p,.5+Math.sin(p*Math.PI)*gv.bpeak,-3.5+(3.5-(-3.5))*p); gymBall.rotation.x+=9*dt; gymBall.rotation.z-=6*dt; npc.position.x=THREE.MathUtils.lerp(npc.position.x,0,dt); if(p>=1){ gv.phase='player'; gv.pt=0; } }
-      else if(gv.phase==='player'){ gymBall.position.set(gv.btx2,.5,3.5); player.position.x=THREE.MathUtils.lerp(player.position.x,gv.btx2,1.2*dt);
+      if(keys['ArrowLeft'])player.position.x=Math.max(-5,player.position.x-4*dt); if(keys['ArrowRight'])player.position.x=Math.min(5,player.position.x+4*dt);
+      if(player.position.x>5.3 && Math.abs(player.position.z)<2.5){ beep(600,.1); setStage('ground'); return; }
+      if(gv.phase==='idle'){ gymBall.position.set(player.position.x,.5,5); if(hit('Space')){ gv.phase='out'; gv.pt=0; gv.bsx=player.position.x; gv.btx=rand(-3,3); gv.dur=.85+rand(0,.25); beep(880,.1); walkAnim(player,t*9+5); } }
+      else if(gv.phase==='out'){ const p=Math.min(1,gv.pt/gv.dur); gymBall.position.set(gv.bsx+(gv.btx-gv.bsx)*p,.5+Math.sin(p*Math.PI)*gv.bpeak,-5+(5-(-5))*(1-p)); gymBall.rotation.x-=9*dt; gymBall.rotation.z+=6*dt; if(p>=1){ gv.phase='npc'; gv.pt=0; beep(660,.08); npc.position.x=THREE.MathUtils.lerp(npc.position.x,gv.btx,.9); } }
+      else if(gv.phase==='npc'){ gymBall.position.set(gv.btx,.5,-5); npc.position.x=THREE.MathUtils.lerp(npc.position.x,gv.btx,.1); if(gv.pt>.4){ gv.phase='in'; gv.pt=0; gv.bsx2=gv.btx; gv.btx2=rand(-3.5,3.5); gv.dur2=.85+rand(0,.35); beep(740,.08); walkAnim(npc,t*9); } }
+      else if(gv.phase==='in'){ const p=Math.min(1,gv.pt/gv.dur2); gymBall.position.set(gv.bsx2+(gv.btx2-gv.bsx2)*p,.5+Math.sin(p*Math.PI)*gv.bpeak,-5+(5-(-5))*p); gymBall.rotation.x+=9*dt; gymBall.rotation.z-=6*dt; npc.position.x=THREE.MathUtils.lerp(npc.position.x,0,dt); if(p>=1){ gv.phase='player'; gv.pt=0; } }
+      else if(gv.phase==='player'){ gymBall.position.set(gv.btx2,.5,5); player.position.x=THREE.MathUtils.lerp(player.position.x,gv.btx2,1.2*dt);
         if(hit('Space')&&Math.abs(player.position.x-gv.btx2)<2.4){ gv.pscore++; gv.phase='out'; gv.pt=0; gv.bsx=gv.btx2; gv.btx=rand(-3,3); gv.dur=.8+rand(0,.3); beep(920,.1); if(gv.pscore>=5){ done=true; finishGame(20,'Campione di pallavolo! 💪 '+gv.pscore+' punti'); return; } setInstr('💪 Punto! '+gv.pscore+'/5 · AZIONE per battere'); }
         else if(gv.pt>1.5){ gv.phase='idle'; gv.pt=0; beep(220,.15,'sawtooth',.06); setInstr('💪 Mancato! '+gv.pscore+'/5 · ◀▶ muoviti · AZIONE per battere'); } }
       if(gv.shadow){ gv.shadow.position.x=gymBall.position.x; gv.shadow.position.z=gymBall.position.z; gv.shadow.material.opacity=Math.max(0,.28-gymBall.position.y*.04); }
