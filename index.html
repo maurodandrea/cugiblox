@@ -61,6 +61,18 @@
   #tv-em{font-size:4.5em;position:absolute;top:42%;left:-15%;transition:none;}
   #tv-txt{color:#ffd86b;font-size:1.4em;font-weight:bold;text-align:center;margin-top:56%;padding:0 20px;}
   #tv-dest{position:absolute;right:6%;top:50%;transform:translateY(-50%);width:min(180px,28vw);height:min(180px,28vw);border-radius:14px;box-shadow:0 0 24px rgba(0,100,255,.3);}
+  #s_nick input{font-size:22px;padding:12px 20px;border-radius:14px;border:2px solid #ffd86b;background:rgba(255,255,255,.1);color:#fff;text-align:center;width:min(80vw,320px);outline:none;margin-bottom:16px;}
+  #s_nick input::placeholder{color:rgba(255,255,255,.4);}
+  #leaderboard-modal{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,12,28,.95);padding:24px;overflow-y:auto;}
+  #leaderboard-modal.on{display:flex;}
+  #leaderboard-modal h2{margin-bottom:16px;}
+  .lb-row{display:flex;align-items:center;gap:10px;width:min(82vw,360px);padding:9px 14px;margin:3px 0;border-radius:12px;background:rgba(255,255,255,.08);font-size:17px;}
+  .lb-row.me{background:rgba(255,216,107,.25);border:2px solid #ffd86b;}
+  .lb-pos{width:32px;font-weight:bold;text-align:center;}
+  .lb-name{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lb-score{color:#9fe6c8;white-space:nowrap;}
+  #lb-btn{background:rgba(255,216,107,.15);border:2px solid #ffd86b;color:#ffd86b;border-radius:20px;padding:6px 16px;font-size:14px;font-weight:bold;cursor:pointer;margin-bottom:10px;align-self:flex-end;}
+  #lb-btn:hover{background:rgba(255,216,107,.35);}
 </style>
 </head>
 <body>
@@ -69,6 +81,16 @@
 <div id="s_title" class="screen on">
   <h1>CUGIBLOX</h1>
   <button class="go" id="startBtn">▶ GIOCA</button>
+</div>
+
+<div id="s_nick" class="screen">
+  <h2>Accedi o Registrati</h2>
+  <div class="sub">Inserisci username e password</div>
+  <input id="nickInput" type="text" maxlength="20" placeholder="Username" autocomplete="username" style="margin-bottom:10px">
+  <input id="passInput" type="password" maxlength="50" placeholder="Password" autocomplete="current-password">
+  <div id="nickErr" style="color:#ff6b6b;font-size:14px;min-height:20px;margin-top:6px"></div>
+  <button class="go" id="nickNext" style="margin-top:8px">Entra ▶</button>
+  <div class="small">Nuovo? L'account viene creato in automatico</div>
 </div>
 
 <div id="s_char" class="screen">
@@ -80,6 +102,7 @@
 <div id="s_map" class="screen">
   <h2>Scegli la città</h2>
   <div class="sub">Tocca una città sulla cartina</div>
+  <button id="lb-btn">🏆 Classifica</button>
   <div id="mapWrap">
     <img id="italyImg" src="italia.jpg" alt="Italia">
     <button class="mkb" data-city="roma"    style="left:54%;top:50%">Roma</button>
@@ -115,6 +138,13 @@
   <canvas id="tv-dest" width="200" height="200"></canvas>
 </div>
 
+<div id="leaderboard-modal">
+  <h2>🏆 Classifica Globale</h2>
+  <div id="lb-list"></div>
+  <button class="go" id="lb-close" style="margin-top:18px">Chiudi</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 "use strict";
@@ -163,6 +193,44 @@ const META = {
 let hero='giorgia', city='roma', mode='hub';
 let danzaOv=null;
 let total = parseInt(localStorage.getItem('cugini3d_total')||'0',10);
+let nickname = localStorage.getItem('cugini3d_nick')||'';
+let _savedHash = localStorage.getItem('cugini3d_hash')||'';
+
+const _sb = window.supabase.createClient(
+  'https://dppugotdorntundojuir.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcHVnb3Rkb3JudHVuZG9qdWlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MjE0ODQsImV4cCI6MjA5NTk5NzQ4NH0.bWdq7w7qThIYnLOkGPUw2sf5V8dEM7AwbMSXRXv6gII'
+);
+
+async function pushScore(){
+  if(!nickname) return;
+  try {
+    await _sb.from('leaderboard').upsert(
+      {nickname, score: total, updated_at: new Date().toISOString()},
+      {onConflict:'nickname'}
+    );
+  } catch(e) {}
+}
+
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function openLeaderboard(){
+  const modal = document.getElementById('leaderboard-modal');
+  const list  = document.getElementById('lb-list');
+  list.innerHTML = '<div style="color:#aaa;padding:20px">Caricamento...</div>';
+  modal.classList.add('on');
+  try {
+    const {data, error} = await _sb.from('leaderboard').select('nickname,score').order('score',{ascending:false}).limit(20);
+    if(error||!data||!data.length){ list.innerHTML='<div style="color:#aaa;padding:20px">Nessun punteggio ancora.</div>'; return; }
+    list.innerHTML = data.map((r,i)=>
+      `<div class="lb-row${r.nickname===nickname?' me':''}"><span class="lb-pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1+'.'}</span><span class="lb-name">${r.nickname}</span><span class="lb-score">${r.score}★</span></div>`
+    ).join('');
+  } catch(e) {
+    list.innerHTML='<div style="color:#f88;padding:20px">Errore di connessione.</div>';
+  }
+}
 function otherChar(){ return CHAR_IDS.find(i=>i!==hero)||CHAR_IDS[0]; }
 
 /* ===================== INPUT ===================== */
@@ -3394,7 +3462,7 @@ function showResults(text,rows,points){ const el=document.getElementById('result
 function hideResults(){ document.getElementById('results').classList.remove('on'); }
 function finishGame(points,text,rows){ if(gameOver)return; gameOver=true;
   points=Math.round(Number(points)); if(!Number.isFinite(points))points=0; if(!Number.isFinite(total))total=0;
-  total+=points; localStorage.setItem('cugini3d_total',String(total));
+  total+=points; localStorage.setItem('cugini3d_total',String(total)); pushScore();
   beep(700,.12); setTimeout(()=>beep(1000,.14),120);
   let delay=2200;
   if(rows&&rows.length){ showResults(text,rows,points); delay=4200; } else { showMsg(text+'  +'+points+'★'); }
@@ -3436,7 +3504,57 @@ function buildCharGrid(){ const el=document.getElementById('charGrid'); el.inner
     el.appendChild(d); }); }
 
 /* wiring */
-document.getElementById('startBtn').onclick=()=>{ if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}} titleActive=false; buildCharGrid(); show('s_char'); };
+document.getElementById('startBtn').onclick=()=>{
+  if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+  titleActive=false;
+  if(nickname&&_savedHash){ buildCharGrid(); show('s_char'); return; }
+  document.getElementById('nickInput').value=nickname;
+  document.getElementById('passInput').value='';
+  document.getElementById('nickErr').textContent='';
+  show('s_nick');
+};
+
+document.getElementById('nickNext').onclick=async()=>{
+  const u=document.getElementById('nickInput').value.trim();
+  const p=document.getElementById('passInput').value;
+  const errEl=document.getElementById('nickErr');
+  if(!u){document.getElementById('nickInput').focus(); errEl.textContent='Inserisci un username.'; return;}
+  if(!p){document.getElementById('passInput').focus(); errEl.textContent='Inserisci una password.'; return;}
+  errEl.textContent='Verifica in corso…';
+  document.getElementById('nickNext').disabled=true;
+  try{
+    const h=await sha256(p);
+    const {data,error}=await _sb.from('leaderboard').select('nickname,score,password_hash').eq('nickname',u).maybeSingle();
+    if(error) throw error;
+    if(!data){
+      const {error:e2}=await _sb.from('leaderboard').insert({nickname:u,score:0,password_hash:h,updated_at:new Date().toISOString()});
+      if(e2) throw e2;
+      nickname=u; _savedHash=h; total=0;
+      localStorage.setItem('cugini3d_nick',u); localStorage.setItem('cugini3d_hash',h); localStorage.setItem('cugini3d_total','0');
+    } else if(!data.password_hash){
+      await _sb.from('leaderboard').update({password_hash:h}).eq('nickname',u);
+      nickname=u; _savedHash=h; total=data.score||0;
+      localStorage.setItem('cugini3d_nick',u); localStorage.setItem('cugini3d_hash',h); localStorage.setItem('cugini3d_total',String(total));
+    } else if(data.password_hash===h){
+      nickname=u; _savedHash=h; total=data.score||0;
+      localStorage.setItem('cugini3d_nick',u); localStorage.setItem('cugini3d_hash',h); localStorage.setItem('cugini3d_total',String(total));
+    } else {
+      errEl.textContent='Password errata.';
+      document.getElementById('nickNext').disabled=false;
+      return;
+    }
+    errEl.textContent='';
+    buildCharGrid(); show('s_char');
+  } catch(e){
+    errEl.textContent='Errore di connessione.';
+  }
+  document.getElementById('nickNext').disabled=false;
+};
+
+document.getElementById('nickInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('passInput').focus();});
+document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('nickNext').click();});
+document.getElementById('lb-btn').onclick=openLeaderboard;
+document.getElementById('lb-close').onclick=()=>document.getElementById('leaderboard-modal').classList.remove('on');
 document.getElementById('charNext').onclick=()=>{ if(hero==='random'&&!CHARS.random.name)generateRandomHero(); document.querySelectorAll('.mkb').forEach(m=>m.classList.toggle('sel',m.dataset.city===city)); show('s_map'); };
 document.getElementById('mapBack').onclick=()=>{ show('s_char'); };
 const TRAVEL_VEHICLES={roma:'✈️',matera:'🚂',rossano:'🚗',napoli:'🚢',bari:'✈️'};
