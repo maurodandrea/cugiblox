@@ -990,22 +990,16 @@ const THEMES = {
       const lly=cyl(.06,.06,.55,0x2f8f4a); lly.position.set(4.4,.28,-5.4); world.add(lly); const llf=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M(0xffe14a,.4)); llf.scale.set(1,.3,1); llf.position.set(4.4,.55,-5.4); world.add(llf); },
     item(){ const g=new THREE.Group(); const ball=new THREE.Mesh(new THREE.SphereGeometry(.32,14,14),new THREE.MeshStandardMaterial({color:TC[Math.floor(Math.random()*TC.length)],emissive:0x222222,emissiveIntensity:.15})); ball.position.y=.7; const str=cyl(.01,.01,.7,0xffffff); str.position.y=.2; g.add(ball,str); return g; },
     activities(){ const oc=otherCousins(); const A=[];
-      // altalena
-      A.push(aNPC(oc[0],-5.8,2.8,0,'jump',['jump','talk']));
+      A.push(aNPC(oc[0%oc.length],-5.8,2.8,0,'jump',['jump','talk']));
       A.push(aNPC(oc[1%oc.length],-6.4,1.2,Math.PI,'jump',['jump','talk']));
-      // scivolo - uno in fila in cima, uno in attesa sotto
-      A.push(aNPC(oc[2%oc.length],5.6,-2.8,0,'jump',['jump']));
+      A.push(aNPC(oc[2%oc.length],6,-1.5,0,'slide'));                               // scivolo animato
       A.push(aNPC(oc[3%oc.length],6.5,.5,Math.PI,'jump',['jump','throw']));
-      // ruota panoramica
       A.push(aNPC(oc[4%oc.length],1.2,-7.2,Math.PI/2,'talk',['talk','jump']));
       A.push(aNPC(oc[5%oc.length],3.0,-6.8,-Math.PI/2,'talk',['talk','drink']));
-      // laghetto / panchine
       A.push(aNPC(oc[6%oc.length],4.5,-4.5,Math.PI/4,'draw',['draw','talk']));
       A.push(aNPC(oc[7%oc.length],-2,3.5,Math.PI,'drink',['drink','talk']));
-      // centro parco - corrono/giocano
-      A.push(aNPC(oc[8%oc.length],-1,-2,1.2,'throw',['throw','jump']));
+      const runner=aNPC(oc[8%oc.length],-1,-2,1.2,'run'); runner.span=12; A.push(runner);
       A.push(aNPC(oc[9%oc.length],1.5,-3.5,-0.8,'throw',['throw','jump']));
-      // panchine
       A.push(aNPC(oc[10%oc.length],-4,3.2,0,'talk',['talk','drink']));
       A.push(aNPC(oc[11%oc.length],4.2,3.0,Math.PI,'jump',['jump','talk']));
       return A; },
@@ -2595,91 +2589,99 @@ function GameAereo(){
 /* ===================== TIRO CON ARCO ===================== */
 function GameArco(){
   applyTheme(); addGroundTex(city); addSky();
-  // Sfondo paesaggio (pini, siepi)
   for(let i=0;i<6;i++){ const tr=new THREE.Mesh(new THREE.CylinderGeometry(.25,.32,3.2,8),M(0x7a4a28)); tr.position.set(-22+i*9,1.6,-24); world.add(tr); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.6,3,9),M(0x2f8f4a)); lv.position.set(-22+i*9,3.8,-24); world.add(lv); }
-  // Pedana arciere (legno)
+  // Pedana
   const platform=new THREE.Mesh(new THREE.BoxGeometry(5,.18,3),M(0x9a7a3a,.9)); platform.position.set(0,.09,5.5); world.add(platform);
-  // Ballone di paglia su cui è fissato il bersaglio
-  const bale=new THREE.Mesh(new THREE.BoxGeometry(7.5,7.5,1.8),M(0xd4b044,.9)); bale.position.set(0,3.75,-17); world.add(bale);
-  const bale2=new THREE.Mesh(new THREE.BoxGeometry(7.4,7.4,.35),M(0xc8a438,.9)); bale2.position.set(0,3.75,-16.15); world.add(bale2);
-  // Pali di supporto
-  [-3.4,3.4].forEach(x=>{ const p=cyl(.1,.1,7.6,0x7a5a22); p.position.set(x,3.8,-17.6); world.add(p); });
-  const bar=new THREE.Mesh(new THREE.BoxGeometry(7.2,.18,.18),M(0x7a5a22)); bar.position.set(0,7.55,-17.6); world.add(bar);
-  const rope1=cyl(.025,.025,1.7,0xb8a060); rope1.rotation.x=Math.PI/6; rope1.position.set(-3.2,7.0,-17.2); world.add(rope1);
-  const rope2=rope1.clone(); rope2.position.x=3.2; world.add(rope2);
+  // Balle di paglia
+  const bale=new THREE.Mesh(new THREE.BoxGeometry(6,6,1.8),M(0xd4b044,.9)); bale.position.set(0,3,-17); world.add(bale);
+  const bale2=new THREE.Mesh(new THREE.BoxGeometry(5.9,5.9,.32),M(0xc8a438,.9)); bale2.position.set(0,3,-16.15); world.add(bale2);
+  [-2.8,2.8].forEach(x=>{ const p=cyl(.1,.1,6.2,0x7a5a22); p.position.set(x,3.1,-17.6); world.add(p); });
+  const crossbar=new THREE.Mesh(new THREE.BoxGeometry(6.2,.18,.18),M(0x7a5a22)); crossbar.position.set(0,6.1,-17.6); world.add(crossbar);
+  [[-2.6,5.6],[2.6,5.6]].forEach(([x,y])=>{ const r=cyl(.022,.022,1.4,0xb8a060); r.rotation.x=Math.PI/6; r.position.set(x,y,-17.2); world.add(r); });
 
-  // ===== BERSAGLIO GRANDE (r=3.0) =====
-  const TG=new THREE.Group(); TG.position.set(0,3.75,-16.1);
-  // anelli: esterno → interno  (disegnati dal più grande)
+  // ===== BERSAGLIO REALISTICO (r=2.2) =====
+  const TARGET_R=2.2;
+  const TG=new THREE.Group(); TG.position.set(0,3,-16.1);
+  // Anelli dall'esterno: bianco/bianco/nero/nero/blu/blu/rosso/rosso/oro/oro (bullseye)
   const ringDef=[
-    {r:3.0,c:0xffffff},{r:2.6,c:0xeeeeee},{r:2.2,c:0x111111},{r:1.8,c:0x111111},
-    {r:1.4,c:0x2244cc},{r:1.0,c:0x2244cc},{r:0.68,c:0xdd1111},{r:0.42,c:0xdd1111},
-    {r:0.22,c:0xffdd00},{r:0.10,c:0xffcc00}
+    {r:2.20,c:0xffffff},{r:1.95,c:0xdddddd},
+    {r:1.65,c:0x222222},{r:1.35,c:0x333333},
+    {r:1.08,c:0x1a44dd},{r:0.82,c:0x2255ee},
+    {r:0.58,c:0xcc1111},{r:0.38,c:0xdd2222},
+    {r:0.20,c:0xffcc00},{r:0.08,c:0xffee00}
   ];
-  ringDef.forEach((rd,k)=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(rd.r,48),new THREE.MeshStandardMaterial({color:rd.c,roughness:.7,side:THREE.DoubleSide})); m.position.z=k*.004; TG.add(m); });
-  // X centrale (mirino bersaglio)
-  [0,Math.PI/2].forEach(a=>{ const bar2=new THREE.Mesh(new THREE.BoxGeometry(.025,.22,0),new THREE.MeshStandardMaterial({color:0x111111,side:THREE.DoubleSide})); bar2.rotation.z=a; bar2.position.z=.05; TG.add(bar2); });
+  ringDef.forEach((rd,k)=>{
+    const m=new THREE.Mesh(new THREE.CircleGeometry(rd.r,56),new THREE.MeshStandardMaterial({color:rd.c,roughness:.65,side:THREE.DoubleSide})); m.position.z=k*.003; TG.add(m);
+    // linee divisorie nere tra le zone
+    if(k%2===0 && k>0){ const line=new THREE.Mesh(new THREE.RingGeometry(rd.r-.012,rd.r+.012,56),new THREE.MeshBasicMaterial({color:0x000000,side:THREE.DoubleSide})); line.position.z=k*.003+.001; TG.add(line); }
+  });
+  // Croce centrale sul bullseye
+  [0,Math.PI/2].forEach(a=>{ const bar2=new THREE.Mesh(new THREE.BoxGeometry(.018,.18,0),new THREE.MeshBasicMaterial({color:0x111111,side:THREE.DoubleSide})); bar2.rotation.z=a; bar2.position.z=.05; TG.add(bar2); });
+  // Numeri zone (sprite piccoli)
+  [[2.08,.4],[1.5,.4],[.95,.4],[.48,.4],[.14,.4]].forEach(([r,sz],i)=>{
+    const lbl=labelSprite([1,2,3,4,5,6,7,8,9,10][i*2+1]+'',sz); lbl.position.set(r,.15,.08); TG.add(lbl); });
   TG.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(TG);
 
-  // Frecce conficcate (tracker)
+  // Frecce conficcate
   const stuckArrows=[];
   function stickArrow(hitX,hitY){
     const ag=new THREE.Group();
-    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.028,.028,.55,8),M(0x9a7a3a));
-    shaft.rotation.x=Math.PI/2; shaft.position.z=.28;
-    const tip=new THREE.Mesh(new THREE.ConeGeometry(.055,.11,8),M(0x888888));
-    tip.rotation.x=Math.PI/2; tip.position.z=.055;
-    const feath=new THREE.Mesh(new THREE.BoxGeometry(.22,.055,.04),M(0xdd4444)); feath.position.z=.5;
-    ag.add(shaft,tip,feath); ag.position.set(hitX,hitY+3.75,-16.06); ag.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(ag); stuckArrows.push(ag); }
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.5,8),M(0x9a7a3a)); shaft.rotation.x=Math.PI/2; shaft.position.z=.25;
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.048,.09,8),M(0x888888)); tip.rotation.x=Math.PI/2; tip.position.z=.055;
+    const feath=new THREE.Mesh(new THREE.BoxGeometry(.2,.05,.035),M(0x44aadd)); feath.position.z=.47;
+    ag.add(shaft,tip,feath); ag.position.set(hitX,hitY+3,-16.06); ag.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(ag); stuckArrows.push(ag); }
 
   // Arciere
   const player=buildCousin(hero); player.position.set(0,0,5.5); player.rotation.y=Math.PI; world.add(player);
-  // Arco (semplice)
   const bowG=new THREE.Group();
   const bowArc=new THREE.Mesh(new THREE.TorusGeometry(.55,.045,8,24,.75*Math.PI),M(0x7a5a22,.8)); bowArc.rotation.z=-Math.PI*.375; bowG.add(bowArc);
-  const bowString=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.85,4),M(0xffffff)); bowString.rotation.z=Math.PI/2-.18; bowG.add(bowString);
+  const bowStr=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.85,4),M(0xffffff)); bowStr.rotation.z=Math.PI/2-.18; bowG.add(bowStr);
   bowG.position.set(.22,.88,5.26); bowG.rotation.y=Math.PI; world.add(bowG);
 
-  // ===== MIRINO 3D (anello rosso + croce) oscillante =====
+  // ===== MIRINO (frecce direzionali) =====
   const sightG=new THREE.Group();
-  const sightRing=new THREE.Mesh(new THREE.TorusGeometry(.22,.032,10,28),new THREE.MeshBasicMaterial({color:0xff1111,depthTest:false})); sightRing.renderOrder=999;
-  const sh1=new THREE.Mesh(new THREE.BoxGeometry(.55,.022,.022),new THREE.MeshBasicMaterial({color:0xff1111,depthTest:false})); sh1.renderOrder=999;
-  const sh2=new THREE.Mesh(new THREE.BoxGeometry(.022,.55,.022),new THREE.MeshBasicMaterial({color:0xff1111,depthTest:false})); sh2.renderOrder=999;
-  const dot=new THREE.Mesh(new THREE.SphereGeometry(.04,8,8),new THREE.MeshBasicMaterial({color:0xffff00,depthTest:false})); dot.renderOrder=999;
-  sightG.add(sightRing,sh1,sh2,dot); world.add(sightG);
+  const sRing=new THREE.Mesh(new THREE.TorusGeometry(.18,.028,10,28),new THREE.MeshBasicMaterial({color:0xff1111,depthTest:false})); sRing.renderOrder=999;
+  const sH=new THREE.Mesh(new THREE.BoxGeometry(.48,.018,.018),new THREE.MeshBasicMaterial({color:0xff1111,depthTest:false})); sH.renderOrder=999;
+  const sV=new THREE.Mesh(new THREE.BoxGeometry(.018,.48,.018),new THREE.MeshBasicMaterial({color:0xff1111,depthTest:false})); sV.renderOrder=999;
+  const sDot=new THREE.Mesh(new THREE.SphereGeometry(.035,8,8),new THREE.MeshBasicMaterial({color:0xffff00,depthTest:false})); sDot.renderOrder=999;
+  sightG.add(sRing,sH,sV,sDot); world.add(sightG);
 
-  function scoreAt(dx,dy){ const d=Math.sqrt(dx*dx+dy*dy)/3.0;
-    if(d<.033)return 10; if(d<.073)return 9; if(d<.14)return 8; if(d<.227)return 7;
-    if(d<.333)return 6; if(d<.467)return 5; if(d<.6)return 4; if(d<.733)return 3;
-    if(d<.867)return 2; if(d<=1.0)return 1; return 0; }
+  function scoreAt(dx,dy){ const d=Math.sqrt(dx*dx+dy*dy);
+    if(d<.08)return 10; if(d<.20)return 9; if(d<.38)return 8; if(d<.58)return 7;
+    if(d<.82)return 6; if(d<1.08)return 5; if(d<1.35)return 4; if(d<1.65)return 3;
+    if(d<1.95)return 2; if(d<=2.20)return 1; return 0; }
 
-  camera.position.set(1.5,2.2,9.5); camera.lookAt(0,3.75,-16);
-  let arrowsLeft=5, total=0, phase='aim', pauseT=0, sightT=rand(0,6.28), t=0, won=false;
-  // velocità oscillazione (cambia ogni colpo per imprevedibilità)
-  let fx1=rand(.9,1.4),fy1=rand(.7,1.1),fx2=rand(1.6,2.4),fy2=rand(1.3,1.9),fx3=rand(.3,.55),fy3=rand(.25,.45);
-  const A=2.2; // ampiezza oscillazione (grande = difficile)
-  setInstr('🏹 Mira con il mirino rosso · AZIONE / Spazio per scoccare! ('+arrowsLeft+' frecce)');
+  camera.position.set(1.2,2.2,9.5); camera.lookAt(0,3,-16);
+  let arrowsLeft=5, total=0, phase='aim', pauseT=0, t=0, won=false;
+  // posizione mirino (coordinate rispetto al centro bersaglio)
+  let sightX=(Math.random()-.5)*4, sightY=(Math.random()-.5)*4;
+  let wT=0, wfx=rand(.8,1.3), wfy=rand(.7,1.1), wfx2=rand(1.8,2.4), wfy2=rand(1.5,2.0);
+  const SPEED=3.2, WOBBLE=0.32;
+  setInstr('🏹 ◀▶▲▼ per mirare · AZIONE per scoccare! ('+arrowsLeft+' frecce)');
   setScore('🏹 Punteggio: 0  ·  Frecce: '+arrowsLeft+'/5');
 
   return { update(dt){ if(won)return; t+=dt;
     if(phase==='aim'){
-      sightT+=dt;
-      // Oscillazione multi-frequenza → difficile da fermare sul centro
-      const sx=Math.sin(sightT*fx1)*A*.55 + Math.sin(sightT*fx2+1.2)*A*.3 + Math.sin(sightT*fx3+2.5)*A*.2;
-      const sy=Math.cos(sightT*fy1+.4)*A*.5 + Math.cos(sightT*fy2+2.1)*A*.3 + Math.cos(sightT*fy3+.8)*A*.25;
-      sightG.position.set(sx,3.75+sy,-15.85);
-      const pulse=1+Math.sin(t*10)*.07; sightG.scale.setScalar(pulse);
+      // Mira manuale con frecce direzionali
+      if(keys['ArrowLeft'])  sightX-=SPEED*dt;
+      if(keys['ArrowRight']) sightX+=SPEED*dt;
+      if(keys['ArrowUp'])    sightY+=SPEED*dt;
+      if(keys['ArrowDown'])  sightY-=SPEED*dt;
+      sightX=THREE.MathUtils.clamp(sightX,-3.6,3.6);
+      sightY=THREE.MathUtils.clamp(sightY,-3.6,3.6);
+      // Leggero tremore della mano
+      wT+=dt;
+      const wx=Math.sin(wT*wfx)*WOBBLE+Math.sin(wT*wfx2)*(WOBBLE*.35);
+      const wy=Math.cos(wT*wfy)*WOBBLE+Math.cos(wT*wfy2)*(WOBBLE*.35);
+      const finalX=sightX+wx, finalY=sightY+wy;
+      sightG.position.set(finalX,3+finalY,-15.85);
       sightG.visible=true;
-      // Posa arciere: braccio che tende l'arco
-      player.userData.arms[0].rotation.x=-.55+Math.sin(t*1.8)*.08;
-      player.userData.arms[1].rotation.x=-.35+Math.sin(t*1.8+.5)*.06;
-      bowG.position.set(.22+Math.sin(t*1.8)*.015,.88+Math.cos(t*1.4)*.01,5.26);
+      // Posa arciere tende l'arco
+      player.userData.arms[0].rotation.x=-.55+Math.sin(t*1.8)*.06;
+      player.userData.arms[1].rotation.x=-.35+Math.sin(t*1.8+.5)*.05;
       if(hit('Space')){
-        const hitX=sx, hitY=sy; const pts=scoreAt(hitX,hitY);
-        total+=pts; arrowsLeft--;
-        stickArrow(hitX,hitY);
-        sightG.visible=false;
-        // Suono
+        const pts=scoreAt(finalX,finalY); total+=pts; arrowsLeft--;
+        stickArrow(finalX,finalY); sightG.visible=false;
         if(pts>=9){ beep(1100,.12,'sine',.07); setTimeout(()=>beep(1400,.15,'sine',.07),110); }
         else if(pts>=6) beep(760,.1,'sine',.06);
         else if(pts>0) beep(440,.09,'sawtooth',.05);
@@ -2687,11 +2689,11 @@ function GameArco(){
         const label=pts===10?'🎯 BULLSEYE! +10':pts>=8?'⭐ Eccellente! +'+pts:pts>=6?'👍 Bravo! +'+pts:pts>0?'+'+pts+' punti':'❌ Mancato!';
         showMsg(label);
         setScore('🏹 Punteggio: '+total+'  ·  Frecce rimaste: '+arrowsLeft+'/5');
-        setInstr(arrowsLeft>0?'🏹 Prossimo tiro! ('+arrowsLeft+' frecce rimaste)':'🏹 Ultime frecce esaurite!');
-        phase='pause'; pauseT=arrowsLeft>0?1.6:2.5;
-        // Nuovi parametri oscillazione per il prossimo colpo
-        fx1=rand(.85,1.5); fy1=rand(.7,1.1); fx2=rand(1.5,2.5); fy2=rand(1.2,2.0); fx3=rand(.28,.58); fy3=rand(.22,.48);
-        sightT=rand(0,6.28);
+        setInstr(arrowsLeft>0?'🏹 ◀▶▲▼ mira · AZIONE scocca ('+arrowsLeft+' rimaste)':'🏹 Frecce esaurite!');
+        phase='pause'; pauseT=arrowsLeft>0?1.5:2.4;
+        // Resetta mirino al prossimo colpo (posizione casuale bordo)
+        sightX=(Math.random()-.5)*5; sightY=(Math.random()-.5)*5;
+        wfx=rand(.8,1.3); wfy=rand(.7,1.1); wfx2=rand(1.8,2.4); wfy2=rand(1.5,2.0); wT=rand(0,6.28);
       }
     } else {
       pauseT-=dt;
@@ -2701,7 +2703,7 @@ function GameArco(){
           finishGame(8+total*2,msg); }
         else phase='aim'; }
     }
-    camera.position.y=2.2+Math.sin(t*.4)*.012; camera.lookAt(0,3.75,-16);
+    camera.position.y=2.2+Math.sin(t*.4)*.012; camera.lookAt(0,3,-16);
   }};
 }
 
