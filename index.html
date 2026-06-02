@@ -1863,7 +1863,7 @@ function GameMare(){
     let boardedNow=false; if(!onSailboat && nearBoat && hit('Space')){ onSailboat=true; boardedNow=true; beep(700,.12,'sine',.1); }
     if(onSailboat){
       if(keys['ArrowLeft'])boat.rotation.y+=dt*1.4; if(keys['ArrowRight'])boat.rotation.y-=dt*1.4;
-      let bf=0; if(keys['ArrowUp'])bf=1; else if(keys['ArrowDown'])bf=-.5;
+      let bf=0; if(keys['ArrowUp'])bf=-1; else if(keys['ArrowDown'])bf=.5;
       if(bf){ boat.position.x+=Math.sin(boat.rotation.y)*7*bf*dt; boat.position.z+=Math.cos(boat.rotation.y)*7*bf*dt; }
       boat.position.x=THREE.MathUtils.clamp(boat.position.x,-22,22); boat.position.z=THREE.MathUtils.clamp(boat.position.z,-26,-2);
       const bry=boat.rotation.y; player.position.set(boat.position.x-Math.sin(bry)*.3,boat.position.y+1.1,boat.position.z-Math.cos(bry)*.3); player.rotation.y=bry+Math.PI;
