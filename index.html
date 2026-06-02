@@ -2005,7 +2005,7 @@ function GameMare(){
   applyTheme();
   const sand=new THREE.Mesh(new THREE.PlaneGeometry(60,60),M(0xead7a0,.95)); sand.rotation.x=-Math.PI/2; sand.receiveShadow=true; world.add(sand);
   const SEAEDGE=-1;
-  const sea=new THREE.Mesh(new THREE.PlaneGeometry(700,900),new THREE.MeshStandardMaterial({color:0x1a90cc,transparent:true,opacity:.85,roughness:.25})); sea.rotation.x=-Math.PI/2; sea.position.set(0,.12,-250); world.add(sea);
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(700,500),new THREE.MeshStandardMaterial({color:0x1a90cc,transparent:true,opacity:.85,roughness:.25})); sea.rotation.x=-Math.PI/2; sea.position.set(0,.12,-250); world.add(sea);
   for(let i=0;i<4;i++){ const pole=cyl(.06,.06,2,0xffffff); pole.position.set(-9+i*6,1,7); pole.castShadow=true; world.add(pole); const top=new THREE.Mesh(new THREE.ConeGeometry(1.4,.7,12),M(TC[i],.5)); top.position.set(-9+i*6,2.1,7); top.castShadow=true; world.add(top); }
   const canotto=new THREE.Group(); const hull=new THREE.Mesh(new THREE.TorusGeometry(.9,.32,10,18),M(0xff6b3b,.5)); hull.rotation.x=Math.PI/2; hull.position.y=.3; const fl=new THREE.Mesh(new THREE.CircleGeometry(.78,18),M(0xffd24a,.5)); fl.rotation.x=-Math.PI/2; fl.position.y=.22; canotto.add(hull,fl); canotto.position.set(3,0,-5); canotto.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(canotto);
   // Canotto a remi
