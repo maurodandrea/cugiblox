@@ -2634,18 +2634,162 @@ function GameCrociera(){
   function buildStop(idx){
     const g=new THREE.Group();
     const Bg=(w,h,d,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);g.add(m);};
-    const Cg=(rt,rb,h,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,12),M(c));m.position.set(x,y,z);g.add(m);};
-    const Kg=(r,h,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,10),M(c));m.position.set(x,y,z);g.add(m);};
-    const Sg=(r,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),M(c));m.position.set(x,y,z);g.add(m);};
-    if(idx===0){ Bg(55,5,22,0x9a7040,0,2.5,0); Kg(14,10,0x8a5c28,-8,10,0); Kg(9,7,0x7a5020,10,7.5,0); Kg(6,5,0x9a6830,3,6.5,0); Cg(.7,.9,10,0xffffff,18,5,0); Kg(1.1,2.5,0xcc2222,18,10.5,0); for(let ci=0;ci<7;ci++) Kg(.5,4,0x5a3a10,-16+ci*5,5,0); }
-    else if(idx===1){ Bg(5,1,65,0x7a8060,0,.5,0); [8,12,6,10,7,9,11,5,8,6,10,7].forEach((h,i)=>Bg(3.5,h,4,0xd0c090,-27+i*5,h/2,0)); Bg(.5,14,.5,0x555555,8,7,2); Bg(14,.5,.5,0x555555,1,14,2); Bg(.5,8,.5,0x555555,8,10,2); Cg(.7,.9,10,0xffffff,22,5,0); Kg(1,2.5,0xcc2222,22,11,0); }
-    else if(idx===2){ Bg(5,1,65,0x8a8070,0,.5,0); [6,9,5,8,4,7,6,10,5,7].forEach((h,i)=>Bg(3,h,3.5,0xc8b090,-22+i*5,h/2,0)); Kg(12,10,0x6a7a6a,-18,15,0); Bg(4,8,3,0xf5f0e0,-18,19,0); Cg(.8,.8,10,0xf5f0e0,-18,27,0); Kg(.9,2.5,0xffd700,-18,32.5,0); }
-    else if(idx===3){ Bg(5,1,65,0x8a9070,0,.5,0); [[6,3],[4,4],[7,3.5],[5,4],[8,3],[4,4]].forEach(([h,w],i)=>Bg(w,h,3,0xc0b090,-12+i*5,h/2,0)); [[-5,0],[5,0],[-5,6],[5,6],[0,-2.5],[0,8.5]].forEach(([sx,sz])=>{ Cg(.6,.25,18,0xc8b870,sx,9,sz); Kg(.82,4.5,0xb0a060,sx,19,sz); Sg(.38,0xffd700,sx,22,sz); }); Cg(1,.4,28,0xc8b870,0,14,3); Kg(1.3,6,0xb0a060,0,29,3); Sg(.62,0xffd700,0,33,3); Bg(12,8,12,0xd0c090,0,4,3); }
-    else if(idx===4){ Bg(38,3,18,0x9a7040,0,1.5,0); Bg(6,9,4,0xd0c0a0,10,4.5,0); Cg(1.2,1.2,12,0xd8c8a8,10,15,0); Kg(1.5,4,0xc8b890,10,22,0); Kg(9,7,0x8a5c28,-10,7,0); Kg(5,4,0x7a5020,2,5,0); Cg(.4,.5,6,0xffffff,15,3,0); Kg(.6,1.5,0xcc2222,15,6.5,0); }
-    else if(idx===5){ Bg(5,1,65,0xc8a870,0,.5,0); [[4,3.5],[3,3],[5,4],[4,3.5],[3,3],[5,4],[4,3],[3,3.5],[5,4],[4,3]].forEach(([h,w],i)=>Bg(w,h,3.5,[0xd4b07a,0xc8a060,0xdcc080,0xe0c890,0xc4a050][i%5],-22+i*5,h/2,0)); Bg(32,.6,2,0xc8a060,0,5,2); Bg(6,3.5,6,0xf0e8c0,-8,1.75,0); const dm=new THREE.Mesh(new THREE.SphereGeometry(3.5,14,10),M(0xf8f0d0)); dm.position.set(-8,7,0); g.add(dm); Cg(.8,.8,13,0xf0e8c0,-2,6.5,0); Kg(.9,2,0x22aa44,-2,13.5,0); }
-    else if(idx===6){ Bg(65,4,28,0x5a9040,0,2,0); Kg(20,24,0x5a5a4a,-22,14,0); Kg(6,8,0x3a3a3a,-22,24,0); const lv=new THREE.Mesh(new THREE.SphereGeometry(4,8,6),new THREE.MeshStandardMaterial({color:0xff4400,emissive:0xff2200,emissiveIntensity:.6,transparent:true,opacity:.7})); lv.position.set(-22,27,0); g.add(lv); [[5,3.5],[8,4],[4,3],[7,4],[6,3.5],[5,3]].forEach(([h,w],i)=>Bg(w,h,3,0xd0c0a0,5+i*4.5,h/2,0)); for(let ci=0;ci<5;ci++) Cg(.3,.3,5.5,0xf0e8d0,10+ci*1.5,2.75,-4); Bg(8,.5,4,0xf0e8d0,13.5,5.5,-4); }
-    else{ Bg(5,1,65,0x5a8060,0,.5,0); Kg(22,28,0x5a6a55,-25,16,0); Kg(7,9,0x3a3a3a,-25,30,0); for(let si=0;si<3;si++){ const sm=new THREE.Mesh(new THREE.SphereGeometry(3+si,8,6),new THREE.MeshStandardMaterial({color:0xaaaaaa,transparent:true,opacity:.28-si*.08})); sm.position.set(-25,36+si*4,0); g.add(sm); } [[8,3],[12,4],[6,3.5],[10,4],[7,3],[9,3.5],[11,4],[5,3],[8,3.5],[6,3]].forEach(([h,w],i)=>Bg(w,h,3.5,[0xd0b890,0xc8a878,0xe0c890][i%3],-12+i*4.5,h/2,0)); Bg(8,5,5,0xc8a870,16,2.5,2); Bg(6,2,4,0xd0b880,16,6,2); for(let ti=0;ti<4;ti++) Cg(.5,.5,3,0xc0a070,13+ti*2,7.5,2); }
-    const lbl=labelSprite(ROUTE_NAMES[idx],6); lbl.position.set(0,36,0); g.add(lbl);
+    const Cg=(rt,rb,h,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,14),M(c));m.position.set(x,y,z);g.add(m);};
+    const Kg=(r,h,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,12),M(c));m.position.set(x,y,z);g.add(m);};
+    const Sg=(r,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,12,8),M(c));m.position.set(x,y,z);g.add(m);};
+    const ScM=(r,sx,sy,sz,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,24,14),M(c));m.scale.set(sx,sy,sz);m.position.set(x,y,z);g.add(m);};
+    const boat=(bx,bz,bc)=>{Cg(.55,.8,2.2,bc,bx,.8,bz);Cg(.06,.06,5.2,0x7a5a28,bx,3.8,bz);const sl=new THREE.Mesh(new THREE.BoxGeometry(.08,3.2,2),M(0xfafae8));sl.position.set(bx+.06,4.2,bz);g.add(sl);};
+    if(idx===0){ // 🏝️ Sardegna – isola arrotondata rocciosa
+      ScM(20,.6,.16,1.48,0x9a7040,0,3,0); ScM(21,.62,.06,1.5,0xd4b87a,0,.8,0); // isola + spiaggia
+      ScM(9,.5,.55,.45,0x8a5c28,-4,6.5,-9); ScM(7,.48,.5,.4,0x7a4c22,2,5.5,2); ScM(6,.5,.45,.4,0x9a6830,-1,5,10); // colline interne
+      for(let r=0;r<9;r++){const rr=.45+r*.12;Sg(rr,0x7a6050,(-2+r%3)*6,.4+rr*.3,-18+r*4.5);} // scogli costieri
+      for(let t=0;t<18;t++){const tx=-15+t*1.85,tz=(t%3-1)*5;Cg(.14,.2,2.8,0x5a3a10,tx,1.4,tz);Kg(.7,2.2,0x2a5a20,tx,3.6,tz);} // pinete
+      // Faro con dettagli
+      Cg(.75,1.0,11,0xffffff,18,5.5,0); Bg(2.2,1,2.2,0xf8f0e0,18,12,0); Cg(.55,.55,1.6,0xee2222,18,12.8,0); Sg(.4,0xff8800,18,13.8,0);
+      // Villaggio costa
+      [2.5,2.8,2,3,2.2].forEach((h,i)=>Bg(1.4,h,1.4,0xf5f0e8,-7.5+i*2.8,h/2,-16));
+      ['.1,.8,.15,0x8ecae6',' .08,.9,.14,0x8ecae6'].forEach((p,i)=>Bg(...p.split(',').map(Number),-6.5+i*3,2.4,-16.05));
+    }
+    else if(idx===1){ // ⚓ Genova – città portuale su colline
+      Bg(5,.8,72,0x7a8060,0,.4,0); // costa
+      Bg(24,.45,12,0x9a9088,-4,.22,-22); Bg(18,.45,8,0x9a9088,4,.22,20); // moli
+      // Skyline variegato con colori liguri
+      const gC=[0xe8d090,0xd0c080,0xe0b070,0xc8b870,0xd4a860,0xe8c888,0xb8a870,0xdcc080,0xc0b060,0xd8b878,0xe4c890,0xc8a870,0xd0b880];
+      [8,13,6,11,7,10,14,9,6,12,7,11,5].forEach((h,i)=>Bg(3.8,h,3.8,gC[i],-26+i*4.4,h/2,0));
+      // Colline verdi che salgono dietro la città
+      ScM(20,.75,.55,.38,0x5a7050,-10,12,-4); ScM(15,.65,.45,.32,0x4a6040,6,10,-7);
+      // Gru portuale a torre
+      Bg(.65,18,.65,0x445566,10,9,5); Bg(18,.65,.65,0x445566,1,18,5); Bg(.65,12,.65,0x445566,10,12,5); Bg(.5,1.8,.5,0x668877,19,18.8,5);
+      // Faro del porto
+      Cg(.65,.85,14,0xffffff,23,7,0); Bg(2,1.2,2,0xf8f0e0,23,14.6,0); Cg(.55,.55,1.5,0xee2222,23,15.8,0); Sg(.42,0xff8800,23,16.8,0);
+      // Barche a vela
+      boat(2,-20,0x3a6ab0); boat(5,22,0xcc4030); boat(-3,15,0xfafafa);
+      // Palazzo Ducale
+      Bg(7,9,4.5,0xf0e0c0,-21,4.5,0); Bg(7,.7,4.5,0xe0d0b0,-21,9,0); for(let w=0;w<4;w++)Bg(.65,.9,.2,0x88aacc,-22.5+w*2.2,6.5,2.2);
+      // Campanile
+      Cg(.7,.7,12,0xf0ece0,-28,6,0); Kg(1,3,0xcc4444,-28,13,0);
+    }
+    else if(idx===2){ // 🌊 Marsiglia – Vieux-Port + Notre-Dame
+      Bg(5,.8,72,0x8a8070,0,.4,0);
+      Bg(24,.4,10,0x909098,-5,.2,-22); Bg(20,.4,8,0x909098,5,.2,18); // moli Vieux-Port
+      // Palazzi marsigliesi colorati (stile provenzale)
+      const mC=[0xf4d090,0xe8b880,0xf0c890,0xd8a870,0xebc080,0xf0d0a0,0xd4b060,0xe0c888,0xf4d8a0,0xddb870,0xf2c878,0xe6b060];
+      [6,9,5,8,4,7,6,11,5,7,8,5].forEach((h,i)=>Bg(3.4,h,3.2,mC[i],-25+i*4.5,h/2,0));
+      // Collina con Notre-Dame de la Garde
+      ScM(13,.68,.55,.38,0x6a7a6a,-20,13,0);
+      Bg(5.5,10,4,0xf5f0e0,-20,20,0); // corpo chiesa
+      Bg(3,5,3.5,0xf0ece0,-20,30.5,0); // cleristorio
+      Cg(.9,.85,13,0xf0ece0,-20,33,0); // torre campanaria
+      Cg(.55,.5,2.8,0xffd700,-20,40,0); // cupola dorata
+      Kg(1.2,3.5,0xffd700,-20,42.8,0); // guglia
+      Sg(1.4,0xffd700,-20,45.8,0); // Madonna d'Oro
+      // Finestre archi romanici
+      for(let w=0;w<3;w++){Bg(.5,1.6,.18,0x88aacc,-22+w*2.2,22,2.1);Kg(.4,1,0xf0ece0,-22+w*2.2,23.3,2.1);}
+      // Barche à voile nel Vieux-Port
+      boat(2,-18,0xfafafa); boat(6,16,0xffcc44); boat(-2,-22,0xcc3333); boat(10,20,0x3a5a8a);
+    }
+    else if(idx===3){ // 🌹 Barcellona – Sagrada Família + skyline
+      Bg(5,.8,72,0x8a9070,0,.4,0);
+      const bC=[0xc0b0a0,0xd0c090,0xb8a888,0xc8b898,0xb0a878,0xd4c0a0,0xc0b090,0xbaa880];
+      [6,4,8,5,7,4,6,9].forEach((h,i)=>Bg(3.8+.5*(i%2),h,3.5,bC[i%8],-17+i*5,h/2,0));
+      // Sagrada Família – corpo principale e navata
+      Bg(15,10,14,0xd0c090,0,5,3); Bg(11,7,10,0xc8b880,0,14,3); // navata + cleristorio
+      // 8 guglie laterali
+      [[-6.5,0],[6.5,0],[-6.5,7],[6.5,7],[-3,-.5],[3,-.5],[-3,7.5],[3,7.5]].forEach(([sx,sz],si)=>{
+        const h=si<4?22:16,r=si<4?.7:.52;
+        Cg(r,.18,h,0xc8b870,sx,5+h/2,sz+3); Kg(r*1.1,4.5+si*.15,0xb0a060,sx,5+h+1.8,sz+3); Sg(.38+si*.02,0xffd700,sx,5+h+4.5,sz+3);
+      });
+      // Torre centrale della Gloria (altissima)
+      Cg(1.25,.3,34,0xc8b870,0,17,3); Kg(1.6,7,0xb0a060,0,35,3); Sg(.72,0xffd700,0,39.5,3);
+      // Rosoni e finestre colorate
+      for(let w=0;w<5;w++){const wc=[0xff6644,0x44aaff,0xffcc00,0x44dd88,0xcc44ff][w];Bg(.15,.15,1.8,wc,-3.5+w*1.8,18,10.1);}
+      // Park Güell accennato
+      ScM(10,.65,.4,.3,0x7a7858,16,9,-6); Bg(5,3,3.5,0xa888cc,16,11.5,-6); for(let t=0;t<5;t++)Cg(.4,.4,4.5,0x4a3a28,13.5+t*1.8,12.5,-4.5);
+      // Torre Agbar (grattacielo ellittico)
+      Cg(1.6,.2,22,0x3a88bb,-14,11,4); Kg(1.7,4,0x2a77aa,-14,23,4);
+    }
+    else if(idx===4){ // 🏝️ Palma de Maiorca – isola più piccola, La Seu
+      ScM(16,.68,.14,.95,0x9a7040,0,2.3,0); ScM(17,.70,.055,.97,0xd4b87a,0,.75,0); // isola arrotondata + spiaggia
+      ScM(8,.5,.52,.44,0x8a5c28,-8,5.5,2); ScM(6,.48,.42,.4,0x7a4c22,4,4.5,-4); // colline brune
+      for(let r=0;r<7;r++)Sg(.4+r*.1,0x7a6050,(-2+r%3)*5,.5,(-2+r%3)*4+r); // scogli
+      for(let t=0;t<10;t++){const tx=-10+t*2.2,tz=(t%3-1)*4;Cg(.15,.2,2.5,0x5a3a10,tx,1.2,tz);Kg(.65,2,0x3a6a28,tx,3,tz);}
+      // La Seu – Cattedrale Gotica sul porto
+      Bg(9,11,5.5,0xd0c0a0,10,5.5,0); // navata
+      Bg(5,7,4.5,0xc8b898,10,17.5,0); // cleristorio
+      Cg(1.3,1.3,15,0xd8c8a8,10,19,0); // torre campanaria
+      Kg(1.7,4.5,0xc8b890,10,27,0); // pinnacolo
+      // Archi rampanti
+      for(let a=0;a<4;a++){Bg(.28,3.5,.28,0xc8b898,6.5+a*1.2,10,-2.4);Bg(2.2,.28,.28,0xc8b898,7.2+a*1.2,12,-2.4);}
+      // Rosone gotico
+      Sg(.9,0x88aacc,10,22,2.9);
+      // Porto + barche
+      Bg(18,.35,8,0x9a9088,13,.18,18); boat(10,20,0x3a5a8a); boat(14,22,0xcc4030); boat(8,24,0xfafafa);
+      // Faro
+      Cg(.5,.62,9,0xffffff,18,4.5,0); Cg(.45,.45,1.5,0xee2222,18,9.8,0);
+    }
+    else if(idx===5){ // 🏺 Tunisia – Cartagine, Medina, Moschea
+      Bg(5,.8,72,0xc8a870,0,.4,0);
+      // Palazzi della medina – colori sabbia e ocra
+      [[4,3.5,0xd4b07a],[3.5,3,0xc8a060],[5.5,4,0xdcc080],[4,3.5,0xe0c890],[3,3,0xc4a050],[5,4,0xd8b870],[4,3,0xcc9850],[3.5,3.5,0xe0c070],[5,4,0xd4a860],[4,3,0xc8a450]].forEach(([h,w,c],i)=>Bg(w,h,3.5,c,-24+i*5,h/2,0));
+      // Mura Medina con torri e merlatura
+      Bg(36,.8,2.2,0xc8a060,0,6.2,9); [-17,-9,0,9,17].forEach(mx=>{Bg(.85,5.5,.85,0xb89858,mx,2.75,9);});
+      for(let m=0;m<6;m++)Bg(.7,1.8,.7,0xb89858,-14+m*5.8,7.6,9);
+      // Grande Moschea di Cartagine
+      Bg(9,5,9,0xf0e8c0,-10,2.5,0); // corpo moschea
+      Bg(3,1.5,3,0xf0e8c0,-10,5.75,0); // tamburo
+      const dM=new THREE.Mesh(new THREE.SphereGeometry(4,20,12),M(0xf8f0d0)); dM.scale.set(1,.75,1); dM.position.set(-10,8.5,0); g.add(dM);
+      // Minareto ottagonale con dettagli
+      Bg(2.2,15,2.2,0xf0e8c0,-2,7.5,0); Bg(3,.8,3,0xf0e8c0,-2,15.4,0); Bg(1.7,4.5,1.7,0xf0e8c0,-2,18,0);
+      Kg(1.1,3,0x22aa44,-2,21,0); Sg(.55,0xffd700,-2,22.5,0);
+      // Palme
+      [-18,-13,-8,-3,2,7,12,17,22].forEach((px,i)=>{const pz=(i%3-1)*3;Cg(.25,.38,6,0x5a3a10,px,3,pz);Kg(1.6,3,0x2a6a20,px,7.5,pz);[-1,1].forEach(s=>{Bg(.12,.08,2.5,0x2a6a20,px+s*.8,7,pz);});});
+      // Acquedotto romano (archi)
+      for(let a=0;a<5;a++){Bg(.65,7,.65,0xd4b090,13+a*3.8,3.5,2);if(a<4)Bg(3.8,.6,.6,0xd4b090,14.9+a*3.8,7.2,2);}
+    }
+    else if(idx===6){ // 🌋 Sicilia – isola grande + Etna + templi
+      ScM(26,.7,.13,1.68,0x5a9040,0,3,0); ScM(27,.72,.05,1.7,0xd4b87a,0,.8,0); // grande isola + spiaggia
+      ScM(16,.6,.4,.5,0x4a8035,-18,7,6); ScM(12,.55,.35,.45,0x3a7025,-5,6,9); // zone verdi
+      // Etna – sistema vulcanico multi-cono
+      ScM(23,.52,.5,.38,0x5a5a4a,-23,13,0); // base massiccia
+      Kg(19,23,0x4a4a3a,-23,24,0); Kg(9,11,0x3a3a2a,-23,34,0); Kg(5,6,0x2a2a18,-23,40,0); // coni sovrapposti
+      // Lava incandescente
+      const lv=new THREE.Mesh(new THREE.SphereGeometry(5,10,8),new THREE.MeshStandardMaterial({color:0xff4400,emissive:0xff2200,emissiveIntensity:.7,transparent:true,opacity:.75}));
+      lv.scale.set(.8,.38,.9); lv.position.set(-23,43.5,0); g.add(lv);
+      // Colata di lava che scende
+      [[.9,2,1,.65],[1.2,2.8,.9,.55],[1.5,3.5,.8,.42],[1.8,4,.7,.3]].forEach(([bw,bh,op],i)=>{const lf=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,1.2),new THREE.MeshStandardMaterial({color:0xff3300,emissive:0xcc2200,emissiveIntensity:.5,transparent:true,opacity:op||.3}));lf.position.set(-23+i*.5,41-i*3.5+1,-i*.6);g.add(lf);});
+      // Fumata cratere
+      [3.5,5,7].forEach((r,i)=>{const sm=new THREE.Mesh(new THREE.SphereGeometry(r,8,6),new THREE.MeshStandardMaterial({color:0x888888,transparent:true,opacity:.3-i*.08}));sm.position.set(-23+i*.4,47+i*5,.5*i);g.add(sm);});
+      // Taormina sulla collina
+      ScM(10,.58,.35,.34,0x5a7a40,6,8,-10);
+      [[5,3.5,0xd0c0a0],[7,4,0xc8b898],[5,3,0xd8c8a8],[8,4,0xc0b088],[6,3.5,0xd4c0a0],[5,3,0xc8b880]].forEach(([h,w,c],i)=>Bg(w,h,3.2,c,4+i*4.5,h/2,-8));
+      // Valle dei Templi – colonne greche
+      for(let col=0;col<7;col++)Cg(.36,.36,6,0xf0e8d0,9+col*1.65,3,-4);
+      Bg(11.5,.65,5,0xf0e8d0,14.5,6.2,-4); Kg(3.2,2.2,0xf0e8d0,14.5,7.5,-4); // trabeazione + frontone
+    }
+    else{ // 🌋 Bentornati a Napoli
+      Bg(5,.8,72,0x5a8060,0,.4,0);
+      // Lungomare di Napoli – skyline denso
+      const nC=[0xd0b890,0xc8a878,0xe0c890,0xd8c080,0xc4a870,0xdcb880,0xc8b090,0xe4c890,0xd0a870,0xccb080,0xd8b888,0xc4a068];
+      [8,13,6,11,7,10,15,9,6,12,8,11,5,10,7].forEach((h,i)=>Bg(3.8,h,3.5,nC[i%12],-16+i*4.4,h/2,0));
+      // Vesuvio imponente con base larga
+      ScM(24,.68,.52,.38,0x5a6a55,-27,13,0); // base vulcanica
+      Kg(21,27,0x5a6a55,-27,17,0); Kg(8,10,0x3a3a3a,-27,31,0); // coni
+      // Fumata Vesuvio
+      [3.5,5,6.5,8].forEach((r,i)=>{const sm=new THREE.Mesh(new THREE.SphereGeometry(r,8,6),new THREE.MeshStandardMaterial({color:0xaaaaaa,transparent:true,opacity:.28-i*.06}));sm.position.set(-27+i*.4,40+i*5,.5*i);g.add(sm);});
+      // Castel dell'Ovo su promontorio
+      ScM(4.5,.8,.35,.6,0x9a8060,17,2.5,2); // lingua di terra
+      Bg(9,7,6.5,0xc8a870,17,3.5,2); Bg(7,3,5.5,0xd0b080,17,8,2); // castello
+      for(let t=0;t<4;t++)Cg(.65,.65,3.5,0xc0a070,14.2+t*2.2,9.5,2); // torrioni
+      // Campanili e guglie caratteristici
+      Cg(.8,.8,14,0xf8f0e0,4,7,0); Kg(1.2,3.5,0xcc3333,4,15,0); // San Francesco
+      Cg(.75,.75,11,0xe8e0d0,-4,5.5,0); Kg(1,3,0x228833,-4,12,0); // San Domenico
+      Cg(.7,.7,16,0xf0ece0,13,8,0); Kg(1,4,0xcc4444,13,17,0); // Cattedrale
+      // Barche nel Golfo
+      boat(3,-20,0x3a5a8a); boat(8,24,0xcc4030); boat(-4,-16,0xfafafa); boat(12,18,0x225599);
+      // Colline di Posillipo
+      ScM(16,.62,.45,.38,0x5a7040,-13,10,-7); ScM(12,.58,.38,.32,0x486038,-24,8,-4);
+    }
+    const lbl=labelSprite(ROUTE_NAMES[idx],6); lbl.position.set(0,46,0); g.add(lbl);
     g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
     g.position.set(55,0,-95); g.visible=false; world.add(g); return g;
   }
