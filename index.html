@@ -495,7 +495,7 @@ function makeVehicle(veh,rid){ const g=new THREE.Group(); g.userData.wheels=[]; 
   } else if(veh==='bici'){
     const fc=0x1e1e2a,ac=0xf05a0a,sk=0xb8b8c8;
     const tube=(r,A,B,col)=>{const d=new THREE.Vector3(...B).sub(new THREE.Vector3(...A));const L=d.length();const c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,L,8),M(col,.9));c.position.copy(new THREE.Vector3(...A).addScaledVector(d.clone().normalize(),L/2));c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());g.add(c);return c;};
-    [[0,.42,.70],[0,.42,-.68]].forEach(p=>{const tire=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.12,20),M(0x111,.9));tire.rotation.z=Math.PI/2;tire.position.set(...p);g.add(tire);g.userData.wheels.push(tire);const rim=new THREE.Mesh(new THREE.TorusGeometry(.33,.025,8,22),M(sk,.7));rim.rotation.z=Math.PI/2;rim.position.set(...p);g.add(rim);});
+    [[0,.42,.70],[0,.42,-.68]].forEach(p=>{const tire=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.12,20),M(0x111,.9));tire.rotation.z=Math.PI/2;tire.position.set(...p);g.add(tire);g.userData.wheels.push(tire);});
     tube(.048,[0,.75,.60],[0,.42,.0],fc); tube(.042,[0,.80,.59],[0,.93,-.18],fc); tube(.042,[0,.43,-.05],[0,.93,-.18],fc); tube(.030,[0,.42,.0],[0,.42,-.68],fc); tube(.032,[0,.93,-.18],[0,.42,-.68],fc);
     tube(.036,[.06,.74,.62],[.06,.56,.70],sk); tube(.036,[-.06,.74,.62],[-.06,.56,.70],sk); tube(.036,[.06,.56,.70],[.06,.42,.70],ac); tube(.036,[-.06,.56,.70],[-.06,.42,.70],ac);
     tube(.025,[0,.80,.60],[0,.92,.52],fc); tube(.022,[-.32,.92,.52],[.32,.92,.52],fc);
@@ -2088,8 +2088,14 @@ function GameScuola(){
       E(22.5,7,.5,0xd4b880,0,3.5,-18);
       // tetto piatto
       E(22.8,.5,8.5,0xb5651d,0,7.4,-14.2);
-      // finestre facciata
-      for(let r=0;r<2;r++)for(let cc=0;cc<3;cc++){ E(1.4,1.2,.1,0x9fd0e8,-8+cc*4,2.2+r*2.2,-9.72); E(1.4,1.2,.1,0x9fd0e8,5+cc*1.8,2.2+r*2.2,-9.72); }
+      // portone grande ingresso (parete sinistra)
+      E(.28,4.3,.35,0x9a7238,-9.68,2.15,-9.72); E(.28,4.3,.35,0x9a7238,-5.32,2.15,-9.72); // stipiti
+      E(4.65,.32,.35,0x9a7238,-7.5,4.48,-9.72); // architrave
+      E(2.05,4.3,.16,0x5a3010,-8.46,2.15,-9.67); E(2.05,4.3,.16,0x5a3010,-6.54,2.15,-9.67); // ante sinistra/destra
+      { const pA=new THREE.Mesh(new THREE.TorusGeometry(2.32,.2,8,18,Math.PI),M(0x9a7238)); pA.position.set(-7.5,4.48,-9.72); env.add(pA); } // arco
+      E(.14,.14,.22,0xd4aa20,-6.62,2.3,-9.59); E(.14,.14,.22,0xd4aa20,-8.38,2.3,-9.59); // maniglie
+      // finestre decorative parete destra
+      [5.5,7.8,10.1].forEach((x,ri)=>{ E(1.4,1.6,.1,0x9fd0e8,x,3.0,-9.72); });
       // finestre pareti laterali
       for(let k=0;k<2;k++){ E(.1,1.2,1.4,0x9fd0e8,-11,2.5,-12-k*3); E(.1,1.2,1.4,0x9fd0e8,11,2.5,-12-k*3); }
       // pilastri cancello
