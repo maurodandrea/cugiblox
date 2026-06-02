@@ -2002,9 +2002,19 @@ function GameMare(){
   applyTheme();
   const sand=new THREE.Mesh(new THREE.PlaneGeometry(60,60),M(0xead7a0,.95)); sand.rotation.x=-Math.PI/2; sand.receiveShadow=true; world.add(sand);
   const SEAEDGE=-1;
-  const sea=new THREE.Mesh(new THREE.PlaneGeometry(300,400),new THREE.MeshStandardMaterial({color:0x1a90cc,transparent:true,opacity:.85,roughness:.25})); sea.rotation.x=-Math.PI/2; sea.position.set(0,.12,-100); world.add(sea);
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:0x1a90cc,transparent:true,opacity:.85,roughness:.25})); sea.rotation.x=-Math.PI/2; sea.position.set(0,.12,-150); world.add(sea);
   for(let i=0;i<4;i++){ const pole=cyl(.06,.06,2,0xffffff); pole.position.set(-9+i*6,1,7); pole.castShadow=true; world.add(pole); const top=new THREE.Mesh(new THREE.ConeGeometry(1.4,.7,12),M(TC[i],.5)); top.position.set(-9+i*6,2.1,7); top.castShadow=true; world.add(top); }
   const canotto=new THREE.Group(); const hull=new THREE.Mesh(new THREE.TorusGeometry(.9,.32,10,18),M(0xff6b3b,.5)); hull.rotation.x=Math.PI/2; hull.position.y=.3; const fl=new THREE.Mesh(new THREE.CircleGeometry(.78,18),M(0xffd24a,.5)); fl.rotation.x=-Math.PI/2; fl.position.y=.22; canotto.add(hull,fl); canotto.position.set(3,0,-5); canotto.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(canotto);
+  // Canotto a remi
+  const rowboat=new THREE.Group();
+  const rbHull=new THREE.Mesh(new THREE.BoxGeometry(1.0,.36,2.8),M(0x7a3b10,.95)); rbHull.position.y=.18; rowboat.add(rbHull);
+  const rbInner=new THREE.Mesh(new THREE.BoxGeometry(.7,.12,2.2),M(0xb8864e,.9)); rbInner.position.y=.42; rowboat.add(rbInner);
+  const rbSeat=new THREE.Mesh(new THREE.BoxGeometry(.82,.08,.38),M(0x9a7040,.9)); rbSeat.position.set(0,.5,0); rowboat.add(rbSeat);
+  const rbBow=new THREE.Mesh(new THREE.ConeGeometry(.5,.55,4),M(0x7a3b10,.95)); rbBow.rotation.x=-Math.PI/2; rbBow.position.set(0,.18,1.67); rowboat.add(rbBow);
+  const mkOar=(side)=>{ const og=new THREE.Group(); const sh=cyl(.03,.03,1.7,0xc8a060); sh.rotation.z=Math.PI/2; og.add(sh); const bl=new THREE.Mesh(new THREE.BoxGeometry(.28,.05,.52),M(0x9a7040,.9)); bl.position.set(side*.88,0,-.05); og.add(bl); og.position.set(side*.52,.52,-.05); return og; };
+  const oarL=mkOar(-1), oarR=mkOar(1); rowboat.add(oarL,oarR);
+  rowboat.position.set(6,.08,-2); rowboat.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(rowboat);
+  const rbLabel=labelSprite('🚣 Canotto',1.1); rbLabel.position.set(6,2.2,-2); world.add(rbLabel);
   const items=[];
   for(let i=0;i<6;i++){ const s=new THREE.Mesh(new THREE.ConeGeometry(.28,.3,9),M([0xffd9b3,0xffb6c1,0xfff0c0][i%3],.5)); s.rotation.x=Math.PI/2; s.position.set(rand(-12,12),.2,rand(2,12)); world.add(s); items.push(s); }
   for(let i=0;i<6;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(.4,.13,8,16),M([0xff6b6b,0x6bd0ff,0xffe14a][i%3],.4)); r.position.set(rand(-16,16),.35,rand(-22,-4)); world.add(r); items.push(r); }
@@ -2091,7 +2101,7 @@ function GameMare(){
   const player=buildCousin(hero); player.position.set(0,0,9); world.add(player);
   const crowd=otherCousins(5).map((id,i)=>{ const c=buildCousin(id); c.position.set(rand(-14,14),0,rand(2,13)); c.userData.h=rand(0,6.28); c.userData.tw=rand(1,3.5); world.add(c); return c; });
   camera.position.set(0,9,17);
-  let collected=0, time=80, t=0, done=false, onBoat=false, onSailboat=false, wasDiving=false; const GOAL=items.length;
+  let collected=0, time=80, t=0, done=false, onBoat=false, onSailboat=false, onRowboat=false, wasDiving=false; const GOAL=items.length;
   setInstr('▲ avanti · AZIONE per IMMERGERTI sott\'acqua e prendere i tesori! 🤿');
   return { update(dt){ if(done)return; t+=dt; time-=dt;
     stepCrowd(crowd,dt,t,15); crowd.forEach(c=>{ if(c.position.z<1.5){ c.position.z=1.5; c.userData.h=Math.PI-c.userData.h; } });
@@ -2112,27 +2122,34 @@ function GameMare(){
     } else {
       if(keys['ArrowLeft'])player.rotation.y+=dt*2.6; if(keys['ArrowRight'])player.rotation.y-=dt*2.6;
       let fv=0; if(keys['ArrowUp'])fv=1; else if(keys['ArrowDown'])fv=-.6;
-      const spd=onBoat?9:inWater?3.4:5.2; let moved=false;
+      const spd=onRowboat?4.5:onBoat?9:inWater?3.4:5.2; let moved=false;
       if(fv){ const h=player.rotation.y; player.position.x+=Math.sin(h)*spd*fv*dt; player.position.z+=Math.cos(h)*spd*fv*dt; moved=true; }
-      if(!onBoat && inWater && Math.hypot(player.position.x-canotto.position.x,player.position.z-canotto.position.z)<1.4){ onBoat=true; beep(600,.1); }
+      if(!onBoat && !onRowboat && inWater && Math.hypot(player.position.x-canotto.position.x,player.position.z-canotto.position.z)<1.4){ onBoat=true; beep(600,.1); }
       let dismounted=false; if(onBoat && hit('Space')){ onBoat=false; dismounted=true; beep(400,.08); }
-      diving = inWater && !onBoat && !dismounted && keys['Space'];
+      const nearRowboat=!onRowboat&&!onBoat&&Math.hypot(player.position.x-rowboat.position.x,player.position.z-rowboat.position.z)<1.8;
+      let boardedRB=false; if(nearRowboat&&hit('Space')){ onRowboat=true; boardedRB=true; beep(650,.1,'sine',.1); }
+      let dismountedRB=false; if(onRowboat&&!boardedRB&&hit('Space')){ onRowboat=false; dismountedRB=true; beep(400,.08); }
+      diving = inWater && !onBoat && !onRowboat && !dismounted && !dismountedRB && !boardedRB && keys['Space'];
       if(onBoat){ canotto.position.set(player.position.x,0,player.position.z); canotto.rotation.y=player.rotation.y; if(!inWater)onBoat=false; }
-      const ty=onBoat?.55:inWater?(diving?-1.3:.3):0; player.position.y=THREE.MathUtils.lerp(player.position.y,ty,.15);
-      if(inWater && !onBoat){ player.userData.arms[0].rotation.x+=dt*5; player.userData.arms[1].rotation.x-=dt*5; } else walkAnim(player,moved?t*9:0);
-      player.position.x=THREE.MathUtils.clamp(player.position.x,-40,18); player.position.z=THREE.MathUtils.clamp(player.position.z,-95,16);
+      if(onRowboat){ rowboat.position.set(player.position.x,.08,player.position.z); rowboat.rotation.y=player.rotation.y; rbLabel.position.set(player.position.x,2.2,player.position.z); const rowing=keys['ArrowUp']||keys['ArrowDown']; oarL.rotation.x=rowing?Math.sin(t*4.5)*.55:THREE.MathUtils.lerp(oarL.rotation.x,0,.12); oarR.rotation.x=rowing?Math.sin(t*4.5)*.55:THREE.MathUtils.lerp(oarR.rotation.x,0,.12); if(!inWater)onRowboat=false; player.position.x=THREE.MathUtils.clamp(player.position.x,-40,40); player.position.z=THREE.MathUtils.clamp(player.position.z,-90,-.5); }
+      const ty=onBoat?.55:onRowboat?.55:inWater?(diving?-1.3:.3):0; player.position.y=THREE.MathUtils.lerp(player.position.y,ty,.15);
+      if(inWater && !onBoat && !onRowboat){ player.userData.arms[0].rotation.x+=dt*5; player.userData.arms[1].rotation.x-=dt*5; } else walkAnim(player,moved?t*9:0);
+      if(!onRowboat){ player.position.x=THREE.MathUtils.clamp(player.position.x,-40,18); player.position.z=THREE.MathUtils.clamp(player.position.z,-95,16); }
       if(diving) followCam(player,6,player.position.y+1.0,player.position.y); else followCam(player,9,7,.8);
       if(nearBoat) setInstr('AZIONE per salire sulla barca ⛵');
+      else if(nearRowboat&&!onRowboat) setInstr('AZIONE per salire sul canotto 🚣');
+      else if(onRowboat) setInstr('◀▶ sterza · ▲▼ rema · AZIONE per scendere 🚣');
       else if(onBoat) setInstr('AZIONE per scendere dal ciambellone 🛶');
       else setInstr('▲ avanti · AZIONE immergerti 🤿 · avvicinati alla barca per salire ⛵');
     }
     boat.position.y=onSailboat?.05:Math.sin(t)*.12; boat.rotation.z=onSailboat?0:Math.sin(t*.7)*.05;
+    if(!onRowboat){ rowboat.position.y=.08+Math.sin(t*1.4+2)*.06; rowboat.rotation.z=Math.sin(t*1.4+2)*.06; }
     if(diving&&!wasDiving){ scene.background=new THREE.Color(0x0a3550); scene.fog=new THREE.Fog(0x0a3550,3,22); } else if(!diving&&wasDiving){ scene.background=new THREE.Color(CITIES[city].sky); scene.fog=new THREE.Fog(CITIES[city].sky,80,400); } wasDiving=diving;
     uw.forEach(g=>g.rotation.z=Math.sin(t*1.5+g.userData.sway)*0.15);
     ufish.forEach(ff=>{ ff.position.x+=ff.userData.s*dt; if(ff.position.x>15||ff.position.x<-15)ff.userData.s*=-1; ff.rotation.y=ff.userData.s>0?Math.PI/2:-Math.PI/2; });
     swimmers.forEach(sw=>{ sw.position.x+=sw.userData.sx*dt; if(sw.position.x>14||sw.position.x<-14)sw.userData.sx*=-1; sw.rotation.y=sw.userData.sx>0?Math.PI/2:-Math.PI/2; const aa=Math.sin(t*3.5+sw.userData.ph)*.85; sw.userData.la.rotation.z=aa; sw.userData.ra.rotation.z=-aa; });
     for(let i=items.length-1;i>=0;i--){ const it=items[i]; it.rotation.y+=dt*2; if(it.userData.deep&&!diving)continue; if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1.3){ collected++; beep(760+collected*40,.08); world.remove(it); items.splice(i,1); } }
-    setScore('🏖️ '+collected+'/'+GOAL+(onSailboat?'  ⛵':onBoat?'  🛶':diving?'  🤿':inWater?'  🏊':'  👣')+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s');
+    setScore('🏖️ '+collected+'/'+GOAL+(onSailboat?'  ⛵':onRowboat?'  🚣':onBoat?'  🛶':diving?'  🤿':inWater?'  🏊':'  👣')+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s');
     if(collected>=GOAL){ done=true; finishGame(15+Math.ceil(Math.max(0,time)),'Giornata al mare super! 🏖️'); }
     else if(time<=0){ done=true; finishGame(5+collected,'Tempo scaduto — '+collected+' raccolti'); }
   }};
