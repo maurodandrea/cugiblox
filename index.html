@@ -1098,8 +1098,9 @@ const THEMES = {
       for(let i=0;i<5;i++){ const h=4+Math.random()*3; const bx=-8+i*4; B(3.6,h,.6,pc[i],bx,h/2,-9); for(let r=0;r<2;r++)for(let cc=0;cc<2;cc++) B(.7,.9,.1,0x6a7a9a,bx-.8+cc*1.6,1.4+r*1.6,-8.65); }   // finestre
       // lampioni
       [-6,6].forEach(x=>{ const p=cyl(.08,.1,2.6,0x333); p.position.set(x,1.3,-2); world.add(p); const lm=new THREE.Mesh(new THREE.SphereGeometry(.22,10,10),new THREE.MeshStandardMaterial({color:0xffe9a0,emissive:0xffd24a,emissiveIntensity:.6})); lm.position.set(x,2.7,-2); world.add(lm); });
-      // tavolini con ombrellone
-      for(let i=0;i<2;i++){ const x=-4+i*8; const t=cyl(.5,.45,.1,0xffffff); t.position.set(x,.75,4); world.add(t); const leg=cyl(.08,.08,.75,0x999); leg.position.set(x,.38,4); world.add(leg); const pole=cyl(.04,.04,2,0x884); pole.position.set(x,1.3,4); world.add(pole); const um=new THREE.Mesh(new THREE.ConeGeometry(1,.5,10),M([0xff6b6b,0x6bd0ff][i])); um.position.set(x,2.2,4); world.add(um); }
+      // tavolini con albero
+      for(let i=0;i<2;i++){ const x=-4+i*8; const t=cyl(.5,.45,.1,0xffffff); t.position.set(x,.75,4); world.add(t); const leg=cyl(.08,.08,.75,0x999); leg.position.set(x,.38,4); world.add(leg); }
+      [-4,4].forEach(ax=>{ const tr=cyl(.18,.25,3.0,0x7a4a22); tr.position.set(ax,1.5,4); world.add(tr); const cn1=new THREE.Mesh(new THREE.ConeGeometry(1.5,2.0,10),M(0x2a7c3a)); cn1.position.set(ax,3.6,4); world.add(cn1); const cn2=new THREE.Mesh(new THREE.ConeGeometry(1.1,1.5,10),M(0x349948)); cn2.position.set(ax,4.7,4); world.add(cn2); });
       // vasi di fiori
       for(let i=0;i<4;i++){ const pot=cyl(.25,.2,.4,0xb5651d); pot.position.set(-6+i*4,.2,-3.5); world.add(pot); const fl=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M([0xff5b8a,0xffd24a,0xff6b6b,0xc06bff][i])); fl.position.set(-6+i*4,.5,-3.5); world.add(fl); }
       // insegne sui palazzi bar (x=-4) e ristorante (x=4)
@@ -1872,7 +1873,7 @@ function GameMare(){
   applyTheme();
   const sand=new THREE.Mesh(new THREE.PlaneGeometry(60,60),M(0xead7a0,.95)); sand.rotation.x=-Math.PI/2; sand.receiveShadow=true; world.add(sand);
   const SEAEDGE=-1;
-  const sea=new THREE.Mesh(new THREE.PlaneGeometry(60,46),new THREE.MeshStandardMaterial({color:0x2fa8e0,transparent:true,opacity:.8,roughness:.3})); sea.rotation.x=-Math.PI/2; sea.position.set(0,.12,-24); world.add(sea);
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(300,400),new THREE.MeshStandardMaterial({color:0x1a90cc,transparent:true,opacity:.85,roughness:.25})); sea.rotation.x=-Math.PI/2; sea.position.set(0,.12,-100); world.add(sea);
   for(let i=0;i<4;i++){ const pole=cyl(.06,.06,2,0xffffff); pole.position.set(-9+i*6,1,7); pole.castShadow=true; world.add(pole); const top=new THREE.Mesh(new THREE.ConeGeometry(1.4,.7,12),M(TC[i],.5)); top.position.set(-9+i*6,2.1,7); top.castShadow=true; world.add(top); }
   const canotto=new THREE.Group(); const hull=new THREE.Mesh(new THREE.TorusGeometry(.9,.32,10,18),M(0xff6b3b,.5)); hull.rotation.x=Math.PI/2; hull.position.y=.3; const fl=new THREE.Mesh(new THREE.CircleGeometry(.78,18),M(0xffd24a,.5)); fl.rotation.x=-Math.PI/2; fl.position.y=.22; canotto.add(hull,fl); canotto.position.set(3,0,-5); canotto.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(canotto);
   const items=[];
@@ -1928,14 +1929,24 @@ function GameMare(){
   // Bagnante sdraiato factory (persone random non-cugini)
   const mkBgn=(bx,bz,bry,skin,suit)=>{
     const g=new THREE.Group();
-    const hd=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),M(skin,.7)); hd.position.set(-0.74,.31,0); g.add(hd);
-    const bo=new THREE.Mesh(new THREE.BoxGeometry(1.1,.19,.38),M(skin,.7)); bo.position.set(.08,.28,0); g.add(bo);
-    const cs=new THREE.Mesh(new THREE.BoxGeometry(.9,.21,.41),M(suit,.55)); cs.position.set(.08,.28,0); g.add(cs);
-    const lg=new THREE.Mesh(new THREE.BoxGeometry(.65,.17,.34),M(skin,.7)); lg.position.set(.82,.24,0); g.add(lg);
+    const Y=0.14; // corpo appoggiato sul materassino
+    // Testa appoggiata al poggiatesta (x=-0.68, vicino all'estremità del lettino)
+    const hd=new THREE.Mesh(new THREE.SphereGeometry(.145,10,8),M(skin,.7)); hd.position.set(-0.68,Y+.09,0); g.add(hd);
+    // Torso
+    const bo=new THREE.Mesh(new THREE.BoxGeometry(.82,.13,.30),M(skin,.7)); bo.position.set(-0.10,Y,0); g.add(bo);
+    // Costume
+    const su=new THREE.Mesh(new THREE.BoxGeometry(.82,.14,.31),M(suit,.55)); su.position.set(-0.10,Y,0); g.add(su);
+    // Braccia lungo i fianchi
+    [-0.17,0.17].forEach(z=>{ const arm=new THREE.Mesh(new THREE.BoxGeometry(.72,.10,.09),M(skin,.7)); arm.position.set(-0.06,Y,z); g.add(arm); });
+    // Cosce
+    const thi=new THREE.Mesh(new THREE.BoxGeometry(.55,.12,.27),M(skin,.7)); thi.position.set(0.58,Y,0); g.add(thi);
+    // Polpacci
+    const cal=new THREE.Mesh(new THREE.BoxGeometry(.44,.10,.23),M(skin,.7)); cal.position.set(1.02,Y,0); g.add(cal);
     g.position.set(bx,.0,bz); g.rotation.y=bry; world.add(g);
   };
   const BPOS=[[-10.5,3.5],[-6.5,5.5],[-2.5,4],[1.5,4.5],[5,6.5],[8.5,3],[-9,9.5],[11,7],[0,11],[-5,11.5],[3,9],[7.5,10]];
-  BPOS.forEach(([px,pz])=>{ const ry=(Math.random()-.5)*1.2; mkLett(px,pz,ry); mkBgn(px,pz,ry,rsk(),rst()); });
+  const SKIP_BGN=new Set([2,5,9]); // lettini vuoti
+  BPOS.forEach(([px,pz],i)=>{ const ry=(Math.random()-.5)*1.2; mkLett(px,pz,ry); if(!SKIP_BGN.has(i)) mkBgn(px,pz,ry,rsk(),rst()); });
   // Nuotatori in mare
   const swimmers=[];
   for(let si=0;si<6;si++){
@@ -1963,7 +1974,7 @@ function GameMare(){
       if(keys['ArrowLeft'])boat.rotation.y+=dt*1.4; if(keys['ArrowRight'])boat.rotation.y-=dt*1.4;
       let bf=0; if(keys['ArrowUp'])bf=-1; else if(keys['ArrowDown'])bf=.5;
       if(bf){ boat.position.x+=Math.sin(boat.rotation.y)*7*bf*dt; boat.position.z+=Math.cos(boat.rotation.y)*7*bf*dt; }
-      boat.position.x=THREE.MathUtils.clamp(boat.position.x,-22,22); boat.position.z=THREE.MathUtils.clamp(boat.position.z,-26,-2);
+      boat.position.x=THREE.MathUtils.clamp(boat.position.x,-40,40); boat.position.z=THREE.MathUtils.clamp(boat.position.z,-90,-2);
       const bry=boat.rotation.y; player.position.set(boat.position.x-Math.sin(bry)*.3,boat.position.y+1.1,boat.position.z-Math.cos(bry)*.3); player.rotation.y=bry+Math.PI;
       walkAnim(player,(keys['ArrowUp']||keys['ArrowDown'])?t*8:0);
       if(!boardedNow && hit('Space')){ onSailboat=false; beep(400,.08); }
@@ -1980,14 +1991,14 @@ function GameMare(){
       if(onBoat){ canotto.position.set(player.position.x,0,player.position.z); canotto.rotation.y=player.rotation.y; if(!inWater)onBoat=false; }
       const ty=onBoat?.55:inWater?(diving?-1.3:.3):0; player.position.y=THREE.MathUtils.lerp(player.position.y,ty,.15);
       if(inWater && !onBoat){ player.userData.arms[0].rotation.x+=dt*5; player.userData.arms[1].rotation.x-=dt*5; } else walkAnim(player,moved?t*9:0);
-      player.position.x=THREE.MathUtils.clamp(player.position.x,-18,18); player.position.z=THREE.MathUtils.clamp(player.position.z,-26,16);
+      player.position.x=THREE.MathUtils.clamp(player.position.x,-40,18); player.position.z=THREE.MathUtils.clamp(player.position.z,-95,16);
       if(diving) followCam(player,6,player.position.y+1.0,player.position.y); else followCam(player,9,7,.8);
       if(nearBoat) setInstr('AZIONE per salire sulla barca ⛵');
       else if(onBoat) setInstr('AZIONE per scendere dal ciambellone 🛶');
       else setInstr('▲ avanti · AZIONE immergerti 🤿 · avvicinati alla barca per salire ⛵');
     }
     boat.position.y=onSailboat?.05:Math.sin(t)*.12; boat.rotation.z=onSailboat?0:Math.sin(t*.7)*.05;
-    if(diving&&!wasDiving){ scene.background=new THREE.Color(0x0a3550); scene.fog=new THREE.Fog(0x0a3550,3,22); } else if(!diving&&wasDiving){ scene.background=new THREE.Color(CITIES[city].sky); scene.fog=new THREE.Fog(CITIES[city].sky,55,180); } wasDiving=diving;
+    if(diving&&!wasDiving){ scene.background=new THREE.Color(0x0a3550); scene.fog=new THREE.Fog(0x0a3550,3,22); } else if(!diving&&wasDiving){ scene.background=new THREE.Color(CITIES[city].sky); scene.fog=new THREE.Fog(CITIES[city].sky,80,400); } wasDiving=diving;
     uw.forEach(g=>g.rotation.z=Math.sin(t*1.5+g.userData.sway)*0.15);
     ufish.forEach(ff=>{ ff.position.x+=ff.userData.s*dt; if(ff.position.x>15||ff.position.x<-15)ff.userData.s*=-1; ff.rotation.y=ff.userData.s>0?Math.PI/2:-Math.PI/2; });
     swimmers.forEach(sw=>{ sw.position.x+=sw.userData.sx*dt; if(sw.position.x>14||sw.position.x<-14)sw.userData.sx*=-1; sw.rotation.y=sw.userData.sx>0?Math.PI/2:-Math.PI/2; const aa=Math.sin(t*3.5+sw.userData.ph)*.85; sw.userData.la.rotation.z=aa; sw.userData.ra.rotation.z=-aa; });
@@ -2594,16 +2605,15 @@ function GameArco(){
   for(let i=0;i<6;i++){ const tr=new THREE.Mesh(new THREE.CylinderGeometry(.25,.32,3.2,8),M(0x7a4a28)); tr.position.set(-22+i*9,1.6,-24); world.add(tr); const lv=new THREE.Mesh(new THREE.ConeGeometry(1.6,3,9),M(0x2f8f4a)); lv.position.set(-22+i*9,3.8,-24); world.add(lv); }
   // Pedana
   const platform=new THREE.Mesh(new THREE.BoxGeometry(5,.18,3),M(0x9a7a3a,.9)); platform.position.set(0,.09,5.5); world.add(platform);
-  // Balle di paglia
-  const bale=new THREE.Mesh(new THREE.BoxGeometry(6,6,1.8),M(0xd4b044,.9)); bale.position.set(0,3,-17); world.add(bale);
-  const bale2=new THREE.Mesh(new THREE.BoxGeometry(5.9,5.9,.32),M(0xc8a438,.9)); bale2.position.set(0,3,-16.15); world.add(bale2);
-  [-2.8,2.8].forEach(x=>{ const p=cyl(.1,.1,6.2,0x7a5a22); p.position.set(x,3.1,-17.6); world.add(p); });
-  const crossbar=new THREE.Mesh(new THREE.BoxGeometry(6.2,.18,.18),M(0x7a5a22)); crossbar.position.set(0,6.1,-17.6); world.add(crossbar);
-  [[-2.6,5.6],[2.6,5.6]].forEach(([x,y])=>{ const r=cyl(.022,.022,1.4,0xb8a060); r.rotation.x=Math.PI/6; r.position.set(x,y,-17.2); world.add(r); });
+  // Balla di paglia rotonda per bersaglio
+  const bale=new THREE.Mesh(new THREE.CylinderGeometry(2.45,2.45,1.8,28),M(0xd4b044,.9)); bale.rotation.x=Math.PI/2; bale.position.set(0,3,-17.3); world.add(bale);
+  [-3.0,3.0].forEach(x=>{ const p=cyl(.1,.1,6.4,0x7a5a22); p.position.set(x,3.2,-18.2); world.add(p); });
+  const crossbar=new THREE.Mesh(new THREE.BoxGeometry(6.6,.18,.18),M(0x7a5a22)); crossbar.position.set(0,6.3,-18.2); world.add(crossbar);
+  [[-2.6,5.6],[2.6,5.6]].forEach(([x,y])=>{ const r=cyl(.022,.022,1.4,0xb8a060); r.rotation.x=Math.PI/6; r.position.set(x,y,-17.8); world.add(r); });
 
   // ===== BERSAGLIO REALISTICO (r=2.2) =====
   const TARGET_R=2.2;
-  const TG=new THREE.Group(); TG.position.set(0,3,-16.1);
+  const TG=new THREE.Group(); TG.position.set(0,3,-16.35);
   // Anelli dall'esterno: bianco/bianco/nero/nero/blu/blu/rosso/rosso/oro/oro (bullseye)
   const ringDef=[
     {r:2.20,c:0xffffff},{r:1.95,c:0xdddddd},
