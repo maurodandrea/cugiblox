@@ -361,9 +361,9 @@ function cityLandmark(){
   else if(city==='napoli'){
     // Mare e banchina
     const sea=new THREE.Mesh(new THREE.PlaneGeometry(340,160),M(0x1a85c0,.25)); sea.rotation.x=-Math.PI/2; sea.position.set(10,.04,-5); world.add(sea);
-    B(60,.5,12,0x9a9080,0,.25,-2);
+    B(60,.06,12,0x9a9080,0,.03,-2);
     // Pontile verso il portale (0,0,10)
-    B(2.8,.4,13,0x7a6850,0,.2,7.5);
+    B(2.8,.06,13,0x7a6850,0,.03,7.5);
     for(let z=1;z<=14;z+=2.5){ [-1.4,1.4].forEach(px=>{ const post=cyl(.06,.06,1.2,0x5a4830); post.position.set(px,.6,z); post.castShadow=true; world.add(post); }); }
     [-1.4,1.4].forEach(px=>{ const r1=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,14),M(0x5a4830)); r1.position.set(px,1.2,7); world.add(r1); const r2=r1.clone(); r2.position.y=.75; world.add(r2); });
     // Passerella dal pontile alla nave
@@ -484,6 +484,12 @@ function Hub(){
     const ddx=player.position.x-door.position.x, ddz=player.position.z-door.position.z;
     if(ddx*ddx+ddz*ddz<2.0 && !launched){ launched=true; beep(500,.1); setTimeout(()=>{ activeGame=null; clearWorld(); show('s_map'); },180); }
     const d=Math.hypot(player.position.x,player.position.z); if(d>30) player.position.multiplyScalar(30/d);
+    if(city==='napoli'){
+      // Solo su banchina o pontile, non in acqua
+      if(player.position.z>4 && Math.abs(player.position.x)>1.35) player.position.z=4;
+      player.position.x=THREE.MathUtils.clamp(player.position.x,-28,28);
+      player.position.z=THREE.MathUtils.clamp(player.position.z,-7,14.5);
+    }
   }};
 }
 
