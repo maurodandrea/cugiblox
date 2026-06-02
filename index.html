@@ -2965,14 +2965,23 @@ function GameAereo(){
   // ── buildDest ──
   function buildDest(d){
     const g=new THREE.Group();
-    // ── Tarmac / Pista d'atterraggio universale ──
-    const gy=new THREE.Mesh(new THREE.PlaneGeometry(250,200),new THREE.MeshStandardMaterial({color:0x5a5a68,roughness:.92})); gy.rotation.x=-Math.PI/2; gy.position.set(0,0,0); g.add(gy);
+    // ── Terreno attorno alla pista (colore per città) ──
+    const terrainColors={
+      parigi:0x7ab870, londra:0x6db060, newyork:0x555566, sydney:0x5ab060,
+      tokyo:0x6a9060, cina:0x8a9060, caraibi:0xf0d888, mosca:0xdde8e8,
+      barcellona:0x9ab888, grecia:0xd0c890, dubai:0xd4a848, rio:0x5ab870,
+      cairo:0xd4b060, amsterdam:0x78b868
+    };
+    const tc=terrainColors[d]||0x6a8860;
+    const terrain=new THREE.Mesh(new THREE.PlaneGeometry(250,300),new THREE.MeshStandardMaterial({color:tc,roughness:.95})); terrain.rotation.x=-Math.PI/2; terrain.position.set(0,0,0); g.add(terrain);
+    // ── Striscia asfaltata della pista (larga 30) ──
+    const asf=new THREE.Mesh(new THREE.BoxGeometry(30,.015,220),new THREE.MeshStandardMaterial({color:0x4e4e5c,roughness:.93})); asf.position.set(0,.005,0); g.add(asf);
     // Striscia centrale bianca
-    const rwC=new THREE.Mesh(new THREE.BoxGeometry(.25,.01,120),M(0xffffff)); rwC.position.set(0,.01,0); g.add(rwC);
+    const rwC=new THREE.Mesh(new THREE.BoxGeometry(.25,.01,120),M(0xffffff)); rwC.position.set(0,.02,0); g.add(rwC);
     // Tacche di soglia pista
-    for(let ri=-5;ri<=5;ri++){ const rm=new THREE.Mesh(new THREE.BoxGeometry(2.2,.01,5),M(0xffffff,.8)); rm.position.set(ri*4.5,.01,-45); g.add(rm); }
+    for(let ri=-5;ri<=5;ri++){ const rm=new THREE.Mesh(new THREE.BoxGeometry(2.2,.01,5),M(0xffffff,.8)); rm.position.set(ri*4.5,.02,-45); g.add(rm); }
     // Strisce laterali
-    [-14,14].forEach(lx=>{ const ln=new THREE.Mesh(new THREE.BoxGeometry(.15,.01,80),M(0xffee44,.7)); ln.position.set(lx,.01,0); g.add(ln); });
+    [-14,14].forEach(lx=>{ const ln=new THREE.Mesh(new THREE.BoxGeometry(.15,.01,80),M(0xffee44,.7)); ln.position.set(lx,.02,0); g.add(ln); });
     if(d==='parigi'){
       const ef=new THREE.Group(); const base=new THREE.Mesh(new THREE.BoxGeometry(9,.55,9),M(0x777777)); base.position.y=.28; ef.add(base);
       [[-3.5,0,-3.5],[-3.5,0,3.5],[3.5,0,-3.5],[3.5,0,3.5]].forEach(([lx,,lz])=>{ const leg=cyl(.28,.65,13,0x777777); leg.position.set(lx,6.5,lz); leg.rotation.z=Math.atan2(Math.abs(lx),6.5)*(lx<0?1:-1); leg.rotation.x=Math.atan2(Math.abs(lz),6.5)*(lz<0?1:-1); ef.add(leg); });
@@ -3199,7 +3208,7 @@ function GameAereo(){
       for(let i=starObjs.length-1;i>=0;i--){ const s=starObjs[i]; s.position.z+=planeSpeed*dt; s.rotation.y+=dt*3;
         if(s.position.z>8){ world.remove(s); starObjs.splice(i,1); spawnStar(); continue; }
         if(Math.abs(s.position.x-plane.position.x)<3.5&&Math.abs(s.position.y-plane.position.y)<3&&Math.abs(s.position.z)<2.5){ stars++; beep(880,.09); world.remove(s); starObjs.splice(i,1); spawnStar(); } }
-      camera.position.x=THREE.MathUtils.lerp(camera.position.x,plane.position.x*.25,.09); camera.position.y=THREE.MathUtils.lerp(camera.position.y,plane.position.y*.3+14,.07); camera.position.z=THREE.MathUtils.lerp(camera.position.z,10,.06); camera.lookAt(plane.position.x*.2,plane.position.y*.15,-8);
+      camera.position.x=THREE.MathUtils.lerp(camera.position.x,plane.position.x*.25,.09); camera.position.y=THREE.MathUtils.lerp(camera.position.y,plane.position.y*.3+8,.07); camera.position.z=THREE.MathUtils.lerp(camera.position.z,14,.06); camera.lookAt(plane.position.x*.2,plane.position.y*.2,-6);
       setScore('✈️ → '+destLabel+'  ·  ⭐ '+stars);
       if(stageT>18){ stage='landing'; stageT=0; starObjs.forEach(s=>world.remove(s)); starObjs.length=0;
         if(plane.userData.tail)plane.userData.tail.visible=true;
