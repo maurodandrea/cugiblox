@@ -874,7 +874,7 @@ const THEMES = {
       B(.75,.55,.1,0x111111,-3,1.12,5.45); B(.6,.42,.06,0x1a2a8a,-3,1.12,5.39);   // monitor + schermo
       B(.7,.4,.6,0xc8a45a,-3,.2,7); B(.7,.7,.1,0xb89048,-3,.7,7.35);              // sedia
       B(1.7,1.05,.2,0x111111,3.5,1.35,-7.75);                                       // TV scocca
-      { const tvC=document.createElement('canvas'); tvC.width=256; tvC.height=160; const tvg=tvC.getContext('2d'); tvg.fillStyle='#000'; tvg.fillRect(0,0,256,160); const tvTex=new THREE.CanvasTexture(tvC); const tvMat=new THREE.MeshStandardMaterial({map:tvTex,emissive:new THREE.Color(0),emissiveIntensity:0}); const tvScr=new THREE.Mesh(new THREE.PlaneGeometry(1.42,.88),tvMat); tvScr.position.set(3.5,1.35,-7.69); world.add(tvScr); this._tvTex=tvTex; this._tvMat=tvMat; this._tvC=tvC; }
+      { const tvC=document.createElement('canvas'); tvC.width=256; tvC.height=160; const tvg=tvC.getContext('2d'); tvg.fillStyle='#000'; tvg.fillRect(0,0,256,160); const tvTex=new THREE.CanvasTexture(tvC); const tvMat=new THREE.MeshBasicMaterial({map:tvTex}); const tvScr=new THREE.Mesh(new THREE.PlaneGeometry(1.38,.84),tvMat); tvScr.position.set(3.5,1.35,-7.63); world.add(tvScr); this._tvTex=tvTex; this._tvMat=tvMat; this._tvC=tvC; }
       B(.4,2,1.4,0x7a4a28,7.4,1,2); for(let i=0;i<3;i++)B(.5,.1,1.3,0xffd24a,7.4,.6+i*.6,2);  // libreria
       const lamp=cyl(.05,.05,1.8,0xcccccc); lamp.position.set(6.8,.9,-6); world.add(lamp); B(.6,.4,.6,0xffe9a0,6.8,1.9,-6);
       const pot=cyl(.3,.25,.5,0xb5651d); pot.position.set(-7,.25,6.5); world.add(pot); const pl=new THREE.Mesh(new THREE.ConeGeometry(.6,1.1,8),M(0x2f8f4a)); pl.position.set(-7,1.1,6.5); world.add(pl);
@@ -912,7 +912,7 @@ const THEMES = {
     onUpdate(player,t,dt,sp){
       // TV
       if(this._tvMat){ const dTV=Math.hypot(player.position.x-3.5,player.position.z+7.75);
-        if(dTV<2.4 && sp){ this._tvOn=!this._tvOn; const g2=this._tvC.getContext('2d'); if(this._tvOn){ g2.fillStyle='#05111f'; g2.fillRect(0,0,256,160); g2.fillStyle='#1a3a6a'; g2.fillRect(0,30,256,90); g2.fillStyle='rgba(255,235,100,.9)'; g2.beginPath(); g2.arc(128,75,18,0,Math.PI*2); g2.fill(); g2.fillStyle='rgba(255,255,255,.85)'; g2.font='bold 14px sans-serif'; g2.textAlign='center'; g2.fillText('★ LE AVVENTURE ★',128,16); g2.font='11px sans-serif'; g2.fillText('🎬 Film in corso',128,150); this._tvMat.emissive.set(0x223366); this._tvMat.emissiveIntensity=0.7; } else { g2.fillStyle='#000'; g2.fillRect(0,0,256,160); this._tvMat.emissive.set(0); this._tvMat.emissiveIntensity=0; } this._tvTex.needsUpdate=true; beep(this._tvOn?440:220,.1); }
+        if(dTV<2.4 && sp){ this._tvOn=!this._tvOn; const g2=this._tvC.getContext('2d'); if(this._tvOn){ g2.fillStyle='#05111f'; g2.fillRect(0,0,256,160); g2.fillStyle='#0a2a5a'; g2.fillRect(0,28,256,95); g2.fillStyle='#3a1405'; g2.fillRect(0,123,256,37); g2.fillStyle='rgba(255,230,80,.95)'; g2.beginPath(); g2.arc(128,72,20,0,Math.PI*2); g2.fill(); g2.fillStyle='#ffffff'; g2.font='bold 16px sans-serif'; g2.textAlign='center'; g2.fillText('LE AVVENTURE',128,16); g2.font='12px sans-serif'; g2.fillStyle='#aaddff'; g2.fillText('🎬 Film in corso...',128,152); } else { g2.fillStyle='#000'; g2.fillRect(0,0,256,160); } this._tvTex.needsUpdate=true; beep(this._tvOn?440:220,.1); }
         if(dTV<2.4) setInstr('📺 AZIONE: '+(this._tvOn?'spegni TV':'accendi TV')); }
       // Doccia
       if(this._shW){ const dSh=Math.hypot(player.position.x-7.42,player.position.z-5.0);
