@@ -2036,9 +2036,13 @@ function GameMare(){
   const boat=new THREE.Group();
   const bHullM=M(0x9c6b3a,.95),bDeckM=M(0xd4a55a,.95),bCabM=M(0xe8c870,.9),bKeelM=M(0x5a3010,.95);
   const sailTri=(pts,col)=>{const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));geo.setIndex([0,1,2,0,2,1]);geo.computeVertexNormals();const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:col,side:THREE.DoubleSide,roughness:.55}));boat.add(m);return m;};
-  const bHullBox=new THREE.Mesh(new THREE.BoxGeometry(2.6,.9,6.0),bHullM); bHullBox.position.y=.45; boat.add(bHullBox);
-  const bBow=new THREE.Mesh(new THREE.CylinderGeometry(.04,1.3,.85,4),bHullM); bBow.rotation.y=Math.PI/4; bBow.position.set(0,.45,3.25); boat.add(bBow);
-  const bKeel=new THREE.Mesh(new THREE.BoxGeometry(.3,1.1,5.2),bKeelM); bKeel.position.y=-.2; boat.add(bKeel);
+  // Corpo principale dello scafo (leggermente accorciato per lasciare spazio alla prua arrotondata)
+  const bHullBox=new THREE.Mesh(new THREE.BoxGeometry(2.6,.9,4.8),bHullM); bHullBox.position.set(0,.45,-.4); boat.add(bHullBox);
+  // Prua arrotondata: cono a 16 lati schiacciato verticalmente
+  const bBow=new THREE.Mesh(new THREE.CylinderGeometry(.04,1.3,2.2,16),bHullM); bBow.rotation.x=Math.PI/2; bBow.scale.z=.35; bBow.position.set(0,.45,2.7); boat.add(bBow);
+  // Poppa arrotondata
+  const bSternR=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.3,.9,12),bHullM); bSternR.rotation.x=Math.PI/2; bSternR.scale.z=.35; bSternR.position.set(0,.45,-3.0); boat.add(bSternR);
+  const bKeel=new THREE.Mesh(new THREE.BoxGeometry(.3,1.1,6.2),bKeelM); bKeel.position.y=-.2; boat.add(bKeel);
   const bDeck=new THREE.Mesh(new THREE.BoxGeometry(2.4,.12,5.8),bDeckM); bDeck.position.y=.95; boat.add(bDeck);
   const bCabin=new THREE.Mesh(new THREE.BoxGeometry(1.8,.9,2.2),bCabM); bCabin.position.set(0,1.52,-.6); boat.add(bCabin);
   const bCabRoof=new THREE.Mesh(new THREE.BoxGeometry(1.9,.12,2.3),M(0x8a5a28,.95)); bCabRoof.position.set(0,2.02,-.6); boat.add(bCabRoof);
