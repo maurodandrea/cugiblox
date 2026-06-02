@@ -2096,6 +2096,54 @@ function GameBallPit(){
   }};
 }
 
+/* ===================== SCUOLA – suoni ambiente ===================== */
+function bellSound(){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+  const now=AC.currentTime;
+  [1046,1318,784].forEach((f,k)=>{ const o=AC.createOscillator(),g=AC.createGain(); o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(.22-k*.04,now); g.gain.exponentialRampToValueAtTime(.0001,now+2.8);
+    o.connect(g);g.connect(AC.destination);o.start(now);o.stop(now+3); });
+}catch(e){} }
+function carEngineSound(){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+  const now=AC.currentTime;
+  [65,80,130].forEach((f,k)=>{ const o=AC.createOscillator(),g=AC.createGain(); o.type='sawtooth'; o.frequency.value=f;
+    g.gain.setValueAtTime([.06,.04,.02][k],now); g.gain.exponentialRampToValueAtTime(.0001,now+.55);
+    o.connect(g);g.connect(AC.destination);o.start(now);o.stop(now+.6); });
+}catch(e){} }
+function carHornSound(){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+  const now=AC.currentTime;
+  [[440,.5],[554,.3]].forEach(([f,d],i)=>{ const o=AC.createOscillator(),g=AC.createGain(); o.type='sawtooth'; o.frequency.value=f;
+    const t=now+i*.14; g.gain.setValueAtTime(.09,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.05); });
+}catch(e){} }
+function kidsVoiceSound(){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+  for(let i=0;i<5;i++){ const now=AC.currentTime+i*.13+Math.random()*.07;
+    const o=AC.createOscillator(),g=AC.createGain(); o.type='sine'; o.frequency.value=280+Math.random()*300;
+    g.gain.setValueAtTime(.045,now); g.gain.exponentialRampToValueAtTime(.0001,now+.2);
+    o.connect(g);g.connect(AC.destination);o.start(now);o.stop(now+.22); }
+}catch(e){} }
+function teacherVoiceSound(){ try{ if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+  const now=AC.currentTime;
+  [260,280,300,275,260,295,280,260].forEach((f,i)=>{ const o=AC.createOscillator(),g=AC.createGain(); o.type='sine'; o.frequency.value=f;
+    const t=now+i*.22; g.gain.setValueAtTime(.055,t); g.gain.exponentialRampToValueAtTime(.0001,t+.2);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.22); });
+}catch(e){} }
+
+/* ===================== SCUOLA – lezioni lavagna ===================== */
+const BB_LESSONS=[
+  {sub:'Matematica',exs:['3 + 5 = 8','7 × 4 = 28','x² + y² = z²'],pg:24},
+  {sub:'Matematica',exs:['12 ÷ 4 = 3','6 × 8 = 48','(a+b)² = a²+2ab+b²'],pg:36},
+  {sub:'Matematica',exs:['15 - 9 = 6','9 × 9 = 81','area = π × r²'],pg:48},
+  {sub:'Italiano',exs:['il sole splende alto','la luna è brillante','le stelle scintillano'],pg:18},
+  {sub:'Italiano',exs:['soggetto + predicato','il cane abbaia forte','aggettivo qualificativo'],pg:22},
+  {sub:'Italiano',exs:['nome proprio: Roma','verbo: correre, saltare','avverbio: velocemente'],pg:30},
+  {sub:'Storia',exs:['Roma fondata 753 a.C.','Medioevo 476-1492 d.C.','Rinascimento XV sec.'],pg:44},
+  {sub:'Scienze',exs:['H₂O = acqua 💧','CO₂ = anidride carbonica','fotosintesi clorofilliana 🌱'],pg:55},
+  {sub:'Arte',exs:['colori primari 🎨','rosso + blu = viola','ombra, luce, prospettiva'],pg:12},
+  {sub:'Musica',exs:['Do Re Mi Fa Sol La Si','biscroma = 1/32','allegro = veloce 🎵'],pg:8},
+  {sub:'Inglese',exs:['Hello! = Ciao! 👋','How are you? → Fine!','cat 🐱  dog 🐶  house 🏠'],pg:60},
+  {sub:'Matematica & Arte',exs:['2 + 2 = 4','5 × 3 = 15','a² + b² = c²'],pg:32},
+];
+
 /* ===================== SCUOLA (esterno → piano terra → scale → aula) ===================== */
 function renameCousin(c,name){ const old=c.userData.nameTag; if(!old)return c; const nt=nameSprite(name); nt.position.copy(old.position); nt.scale.copy(old.scale); c.remove(old); c.add(nt); c.userData.nameTag=nt; return c; }
 function GameScuola(){
@@ -2106,6 +2154,7 @@ function GameScuola(){
   const player=buildCousin(hero); world.add(player);
   const busPos={x:-13,z:6.5};
   let stage='', collected=0, t=0, done=false, books=[], mover=[], drivingCars=[], gymState=null, gymBall=null, mensaFoods=[], mensaSeated=false, mensaNPCs=[]; const GOAL=6;
+  let bellTimer=rand(18,30), carTimer=rand(3,7), kidsTimer=rand(2,4), teacherTimer=rand(4,8);
   function setStage(s){ clearEnv(); books=[]; mover=[]; drivingCars=[]; gymState=null; gymBall=null; mensaFoods=[]; mensaSeated=false; mensaNPCs=[]; stage=s;
     if(s==='ext'){
       const grd=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); grd.rotation.x=-Math.PI/2; env.add(grd);
@@ -2204,13 +2253,14 @@ function GameScuola(){
       const f=new THREE.Mesh(new THREE.PlaneGeometry(18,16),M(0xd8c8a0,.92)); f.rotation.x=-Math.PI/2; env.add(f);
       E(18,4,.3,0xeae0c8,0,2,-8); E(.3,4,16,0xeae0c8,-9,2,0); E(.3,4,16,0xeae0c8,9,2,0);
       // lavagna con contenuto canvas
-      { const bbC=document.createElement('canvas'); bbC.width=512; bbC.height=256; const gx=bbC.getContext('2d');
+      { const les=BB_LESSONS[Math.floor(Math.random()*BB_LESSONS.length)];
+        const bbC=document.createElement('canvas'); bbC.width=512; bbC.height=256; const gx=bbC.getContext('2d');
         gx.fillStyle='#1b3d1b'; gx.fillRect(0,0,512,256);
         gx.strokeStyle='rgba(255,255,255,.1)'; gx.lineWidth=1; for(let y=30;y<256;y+=28){ gx.beginPath(); gx.moveTo(0,y); gx.lineTo(512,y); gx.stroke(); }
         gx.fillStyle='rgba(255,255,255,.85)'; gx.font='bold 30px monospace'; gx.textAlign='center';
-        ['2 + 2 = 4','5 × 3 = 15','a² + b² = c²'].forEach((txt,i)=>gx.fillText(txt,256,40+i*60));
-        gx.fillStyle='rgba(255,228,80,.85)'; gx.font='22px monospace'; gx.fillText('Oggi: Matematica & Arte',256,210);
-        gx.fillStyle='rgba(160,230,160,.7)'; gx.font='17px monospace'; gx.fillText('Compito → pag. 32',256,242);
+        les.exs.forEach((txt,i)=>gx.fillText(txt,256,42+i*58));
+        gx.fillStyle='rgba(255,228,80,.88)'; gx.font='22px monospace'; gx.fillText('Oggi: '+les.sub,256,210);
+        gx.fillStyle='rgba(160,230,160,.7)'; gx.font='17px monospace'; gx.fillText('Compito → pag. '+les.pg,256,242);
         const bbMesh=new THREE.Mesh(new THREE.BoxGeometry(6,2.5,.15),new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(bbC),roughness:.9})); bbMesh.position.set(0,2,-7.84); env.add(bbMesh); }
       // disegni colorati sulle pareti laterali
       [[0xe84a4a,-8.85,2,-3],[0x4ac8e8,-8.85,2,1],[0xe8b04a,8.85,2,-3],[0x6be860,8.85,2,1]].forEach(([col,px,py,pz])=>{
@@ -2229,7 +2279,9 @@ function GameScuola(){
       setInstr('In aula! Raccogli i '+GOAL+' libri 📚 · ⬇️ porta = torna al piano terra');
     } else if(s==='gym'){
       const f=new THREE.Mesh(new THREE.PlaneGeometry(12,22),new THREE.MeshStandardMaterial({map:gymCourtTexture(),roughness:.6})); f.rotation.x=-Math.PI/2; env.add(f);
-      E(12,5,.3,0xeae0c8,0,2.5,-11); E(.3,5,22,0xeae0c8,-6,2.5,0); E(.3,5,22,0xeae0c8,6,2.5,0);
+      E(12,5,.3,0xeae0c8,0,2.5,-11); E(.3,5,22,0xeae0c8,-6,2.5,0);
+      // parete destra con apertura per la porta di uscita (z=0)
+      E(.3,5,10,0xeae0c8,6,2.5,-6); E(.3,5,10,0xeae0c8,6,2.5,6); E(.3,2.6,2,0xeae0c8,6,3.7,0);
       // rete da pallavolo con pali
       E(12,.14,.08,0xffffff,0,2.5,0); for(let i=0;i<5;i++) E(.06,2.52,.06,0xdddddd,-5+i*2.5,1.26,0);
       const np1=cyl(.06,.06,3.6,0x888888); np1.position.set(-6,1.8,0); env.add(np1);
@@ -2276,6 +2328,11 @@ function GameScuola(){
   setStage('ext');
   camera.position.set(0,5,14);
   return { update(dt){ if(done)return; t+=dt;
+    // suoni ambiente scuola
+    if(stage==='ground'||stage==='aula'||stage==='gym'||stage==='mensa'){ bellTimer-=dt; if(bellTimer<=0){ bellSound(); bellTimer=rand(20,45); } }
+    if(stage==='ext'){ carTimer-=dt; if(carTimer<=0){ Math.random()<.3?carHornSound():carEngineSound(); carTimer=rand(3,8); } }
+    if(stage==='mensa'){ kidsTimer-=dt; if(kidsTimer<=0){ kidsVoiceSound(); kidsTimer=rand(2,5); } }
+    if(stage==='aula'){ teacherTimer-=dt; if(teacherTimer<=0){ teacherVoiceSound(); teacherTimer=rand(4,9); } }
     const moved=thirdPersonWalk(player,dt,5); walkAnim(player,moved?t*9:0);
     const cx=stage==='ext'?16:stage==='bus'?1.4:stage==='mensa'?6.5:8.5, cz=stage==='aula'?7:stage==='bus'?6.2:stage==='mensa'?4.5:11.5;
     player.position.x=THREE.MathUtils.clamp(player.position.x,-cx,cx); player.position.z=THREE.MathUtils.clamp(player.position.z,-cz,cz);
