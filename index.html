@@ -1850,6 +1850,47 @@ function GameMare(){
   const bFlag=new THREE.Mesh(new THREE.BoxGeometry(.6,.3,.02),M(0xe74c3c,.85)); bFlag.position.set(.4,6.5,.6); boat.add(bFlag);
   boat.position.set(-6,.05,-10); boat.rotation.y=Math.PI; boat.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(boat);
   const bLabel=labelSprite('⛵ Barca',1.8); bLabel.position.set(-6,7.8,-10); world.add(bLabel);
+  // === ATTREZZATURA SPIAGGIA ===
+  const SKNS=[0xffcba4,0xe8a07a,0xd4845a,0xb5651d,0x8b4513];
+  const SUTS=[0xff3355,0x3377ff,0xff9900,0x22aa44,0xdd44bb,0xffdd00,0xff66aa,0x44ccdd];
+  const rsk=()=>SKNS[Math.floor(Math.random()*SKNS.length)];
+  const rst=()=>SUTS[Math.floor(Math.random()*SUTS.length)];
+  // Asciugamani
+  [[-10,4],[-6,6.5],[-3,3.5],[1,5],[4.5,7.5],[8,3.5],[10,8],[-8,10],[0,10],[6,11],[-4,12],[2,2.5]].forEach(([tx,tz],i)=>{
+    const tw=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.9),M([0xff4444,0x4499ff,0xffcc00,0x22bb55,0xee44cc,0xff8800,0x6655ff,0xff5577,0x11aacc,0xee2244,0x55ee55,0xffaa22][i],.88));
+    tw.rotation.x=-Math.PI/2; tw.rotation.z=(Math.random()-.5)*.5; tw.position.set(tx,.016,tz); world.add(tw);
+  });
+  // Lettino factory
+  const mkLett=(lx,lz,lry)=>{
+    const g=new THREE.Group();
+    const mat=new THREE.Mesh(new THREE.BoxGeometry(2.0,.09,.72),M(rst(),.6)); g.add(mat);
+    [[-0.8,-0.28],[-0.8,0.28],[0.8,-0.28],[0.8,0.28]].forEach(([llx,llz])=>{ const l=cyl(.028,.028,.26,0xaaaaaa); l.position.set(llx,.13,llz); g.add(l); });
+    const bk=new THREE.Mesh(new THREE.BoxGeometry(2.0,.07,.72),M(0x999999,.8)); bk.position.set(-0.7,.38,0); bk.rotation.z=.55; g.add(bk);
+    g.position.set(lx,.0,lz); g.rotation.y=lry; world.add(g);
+  };
+  // Bagnante sdraiato factory (persone random non-cugini)
+  const mkBgn=(bx,bz,bry,skin,suit)=>{
+    const g=new THREE.Group();
+    const hd=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),M(skin,.7)); hd.position.set(-0.74,.31,0); g.add(hd);
+    const bo=new THREE.Mesh(new THREE.BoxGeometry(1.1,.19,.38),M(skin,.7)); bo.position.set(.08,.28,0); g.add(bo);
+    const cs=new THREE.Mesh(new THREE.BoxGeometry(.9,.21,.41),M(suit,.55)); cs.position.set(.08,.28,0); g.add(cs);
+    const lg=new THREE.Mesh(new THREE.BoxGeometry(.65,.17,.34),M(skin,.7)); lg.position.set(.82,.24,0); g.add(lg);
+    g.position.set(bx,.0,bz); g.rotation.y=bry; world.add(g);
+  };
+  const BPOS=[[-10.5,3.5],[-6.5,5.5],[-2.5,4],[1.5,4.5],[5,6.5],[8.5,3],[-9,9.5],[11,7],[0,11],[-5,11.5],[3,9],[7.5,10]];
+  BPOS.forEach(([px,pz])=>{ const ry=(Math.random()-.5)*1.2; mkLett(px,pz,ry); mkBgn(px,pz,ry,rsk(),rst()); });
+  // Nuotatori in mare
+  const swimmers=[];
+  for(let si=0;si<6;si++){
+    const sk=rsk(), sg=new THREE.Group();
+    const sh=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),M(sk,.7)); sh.position.y=.23; sg.add(sh);
+    const la=new THREE.Mesh(new THREE.BoxGeometry(.42,.1,.1),M(sk,.7)); la.position.set(-0.3,.16,0); sg.add(la);
+    const ra=new THREE.Mesh(new THREE.BoxGeometry(.42,.1,.1),M(sk,.7)); ra.position.set(0.3,.16,0); sg.add(ra);
+    sg.position.set(rand(-13,13),.05,rand(-3,-12));
+    sg.userData.sx=rand(.5,1.0)*(Math.random()<.5?1:-1);
+    sg.userData.ph=rand(0,Math.PI*2); sg.userData.la=la; sg.userData.ra=ra;
+    world.add(sg); swimmers.push(sg);
+  }
   const player=buildCousin(hero); player.position.set(0,0,9); world.add(player);
   const crowd=otherCousins(5).map((id,i)=>{ const c=buildCousin(id); c.position.set(rand(-14,14),0,rand(2,13)); c.userData.h=rand(0,6.28); c.userData.tw=rand(1,3.5); world.add(c); return c; });
   camera.position.set(0,9,17);
@@ -1892,6 +1933,7 @@ function GameMare(){
     if(diving&&!wasDiving){ scene.background=new THREE.Color(0x0a3550); scene.fog=new THREE.Fog(0x0a3550,3,22); } else if(!diving&&wasDiving){ scene.background=new THREE.Color(CITIES[city].sky); scene.fog=new THREE.Fog(CITIES[city].sky,55,180); } wasDiving=diving;
     uw.forEach(g=>g.rotation.z=Math.sin(t*1.5+g.userData.sway)*0.15);
     ufish.forEach(ff=>{ ff.position.x+=ff.userData.s*dt; if(ff.position.x>15||ff.position.x<-15)ff.userData.s*=-1; ff.rotation.y=ff.userData.s>0?Math.PI/2:-Math.PI/2; });
+    swimmers.forEach(sw=>{ sw.position.x+=sw.userData.sx*dt; if(sw.position.x>14||sw.position.x<-14)sw.userData.sx*=-1; sw.rotation.y=sw.userData.sx>0?Math.PI/2:-Math.PI/2; const aa=Math.sin(t*3.5+sw.userData.ph)*.85; sw.userData.la.rotation.z=aa; sw.userData.ra.rotation.z=-aa; });
     for(let i=items.length-1;i>=0;i--){ const it=items[i]; it.rotation.y+=dt*2; if(it.userData.deep&&!diving)continue; if(Math.hypot(player.position.x-it.position.x,player.position.z-it.position.z)<1.3){ collected++; beep(760+collected*40,.08); world.remove(it); items.splice(i,1); } }
     setScore('🏖️ '+collected+'/'+GOAL+(onSailboat?'  ⛵':onBoat?'  🛶':diving?'  🤿':inWater?'  🏊':'  👣')+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s');
     if(collected>=GOAL){ done=true; finishGame(15+Math.ceil(Math.max(0,time)),'Giornata al mare super! 🏖️'); }
