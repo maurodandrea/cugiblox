@@ -900,6 +900,14 @@ function walkCollect(th){
 const THEMES = {
   casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[0,0],dropLabel:'🧺 Scatolone',exitDoor:[0,8],furniture:[{type:'bed',x:-5.5,z:-5},{type:'sofa',x:3.5,z:-5.5}],instr:'Riordina · avvicinati al letto per sdraiarti, al divano per sederti · 🚪 esci',win:'Cameretta in ordine! 🏠',
     decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(1.1,.18,.75,0xf5eedd,-6.2,1.04,-6.6); B(1.1,.18,.75,0xf5eedd,-4.8,1.04,-6.6); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5);
+      // === PARETE CAMERA DA LETTO (chiude metà sinistra) ===
+      B(.3,4,6.5,0xf0e6d2,0,2,-4.75);           // parete laterale destra (x=0)
+      B(4.5,4,.3,0xf0e6d2,-5.75,2,-1.5);         // parete frontale sinistra
+      B(.22,4,.22,0x9c6b3f,-3.5,2,-1.5);         // pilastro porta sx
+      B(.22,4,.22,0x9c6b3f,-1.0,2,-1.5);         // pilastro porta dx
+      B(2.5,.6,.32,0xd4c8a0,-2.25,3.7,-1.5);     // architrave porta
+      B(1.0,4,.3,0xf0e6d2,-.5,2,-1.5);           // parete frontale destra
+      { const brl=labelSprite('🛏️ Camera',1.6); brl.position.set(-4.5,2.8,-5); world.add(brl); }
       B(2,1.4,.12,0x9fd6ee,-3,2.2,-7.84); B(2,1.4,.12,0x9fd6ee,3,2.2,-7.84); B(.12,1.4,2,0x9fd6ee,-7.84,2.2,-2); B(.12,1.4,2,0x9fd6ee,7.84,2.2,2);   // finestre
       B(2.8,.5,1.1,0x4a6fa5,3.5,.4,-5.5); B(2.8,.7,.25,0x4a6fa5,3.5,.85,-5.1);  // divano vicino TV
       B(3.4,.06,2.2,0x9c3a3a,3.5,.04,-6.5);                                       // tappeto davanti TV
@@ -981,7 +989,26 @@ const THEMES = {
       for(let k=0;k<10;k++){ const a=k/10*Math.PI*2, r=2.5+Math.random()*.25; const st=new THREE.Mesh(new THREE.DodecahedronGeometry(.28+Math.random()*.14),M(0x7a8a6a,.9)); st.position.set(5+Math.cos(a)*r,.12,-6+Math.sin(a)*r); world.add(st); }
       const lly=cyl(.06,.06,.55,0x2f8f4a); lly.position.set(4.4,.28,-5.4); world.add(lly); const llf=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M(0xffe14a,.4)); llf.scale.set(1,.3,1); llf.position.set(4.4,.55,-5.4); world.add(llf); },
     item(){ const g=new THREE.Group(); const ball=new THREE.Mesh(new THREE.SphereGeometry(.32,14,14),new THREE.MeshStandardMaterial({color:TC[Math.floor(Math.random()*TC.length)],emissive:0x222222,emissiveIntensity:.15})); ball.position.y=.7; const str=cyl(.01,.01,.7,0xffffff); str.position.y=.2; g.add(ball,str); return g; },
-    activities(){ const oc=otherCousins(); const PT=['talk','drink','jump','write','draw']; return [aNPC(oc[2],-2,6,0,'talk',PT), aNPC(oc[3],-1.1,6.2,Math.PI,'talk',PT)]; },
+    activities(){ const oc=otherCousins(); const A=[];
+      // altalena
+      A.push(aNPC(oc[0],-5.8,2.8,0,'jump',['jump','talk']));
+      A.push(aNPC(oc[1%oc.length],-6.4,1.2,Math.PI,'jump',['jump','talk']));
+      // scivolo - uno in fila in cima, uno in attesa sotto
+      A.push(aNPC(oc[2%oc.length],5.6,-2.8,0,'jump',['jump']));
+      A.push(aNPC(oc[3%oc.length],6.5,.5,Math.PI,'jump',['jump','throw']));
+      // ruota panoramica
+      A.push(aNPC(oc[4%oc.length],1.2,-7.2,Math.PI/2,'talk',['talk','jump']));
+      A.push(aNPC(oc[5%oc.length],3.0,-6.8,-Math.PI/2,'talk',['talk','drink']));
+      // laghetto / panchine
+      A.push(aNPC(oc[6%oc.length],4.5,-4.5,Math.PI/4,'draw',['draw','talk']));
+      A.push(aNPC(oc[7%oc.length],-2,3.5,Math.PI,'drink',['drink','talk']));
+      // centro parco - corrono/giocano
+      A.push(aNPC(oc[8%oc.length],-1,-2,1.2,'throw',['throw','jump']));
+      A.push(aNPC(oc[9%oc.length],1.5,-3.5,-0.8,'throw',['throw','jump']));
+      // panchine
+      A.push(aNPC(oc[10%oc.length],-4,3.2,0,'talk',['talk','drink']));
+      A.push(aNPC(oc[11%oc.length],4.2,3.0,Math.PI,'jump',['jump','talk']));
+      return A; },
     rides(){ const R=[];
       const sx=-6,sz=2; B(.15,2.4,.15,0x6a4a2a,sx-1,1.2,sz); B(.15,2.4,.15,0x6a4a2a,sx+1,1.2,sz); B(2.2,.15,.15,0x6a4a2a,sx,2.4,sz);
       const pivot=new THREE.Group(); pivot.position.set(sx,2.4,sz); world.add(pivot);
