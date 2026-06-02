@@ -86,8 +86,8 @@
     <button class="mkb lbl-left" data-city="roma"    style="left:57%;top:51%"><span class="dot"></span>Roma</button>
     <button class="mkb"          data-city="matera"  style="left:78%;top:63%"><span class="dot"></span>Matera</button>
     <button class="mkb"          data-city="rossano" style="left:75%;top:74%"><span class="dot"></span>Rossano</button>
-    <button class="mkb lbl-left" data-city="napoli"  style="left:67%;top:62%"><span class="dot"></span>Napoli</button>
-    <button class="mkb"          data-city="bari"    style="left:85%;top:54%"><span class="dot"></span>Bari</button>
+    <button class="mkb lbl-left" data-city="napoli"  style="left:67%;top:62%"><span class="dot"></span>Nave da Napoli</button>
+    <button class="mkb"          data-city="bari"    style="left:85%;top:54%"><span class="dot"></span>Aereo da Bari</button>
   </div>
   <button class="go" id="mapBack" style="background:rgba(255,255,255,.15);color:#fff">◀ Cambia personaggio</button>
 </div>
@@ -3229,7 +3229,7 @@ document.getElementById('startBtn').onclick=()=>{ if(!AC){try{AC=new(window.Audi
 document.getElementById('charNext').onclick=()=>{ if(hero==='random'&&!CHARS.random.name)generateRandomHero(); document.querySelectorAll('.mkb').forEach(m=>m.classList.toggle('sel',m.dataset.city===city)); show('s_map'); };
 document.getElementById('mapBack').onclick=()=>{ show('s_char'); };
 const TRAVEL_VEHICLES={roma:'✈️',matera:'🚂',rossano:'🚗',napoli:'🚢',bari:'✈️'};
-const TRAVEL_LABELS={roma:'Roma',matera:'Matera',rossano:'Rossano',napoli:'Napoli',bari:'Bari'};
+const TRAVEL_LABELS={roma:'Roma',matera:'Matera',rossano:'Rossano',napoli:'Nave da Napoli',bari:'Aereo da Bari'};
 function drawTravelDest(cv,dest){ const x=cv.getContext('2d'),W=cv.width,H=cv.height; x.clearRect(0,0,W,H);
   if(dest==='roma'){
     const sk=x.createLinearGradient(0,0,0,H*.72); sk.addColorStop(0,'#0d1b40'); sk.addColorStop(1,'#1e3668'); x.fillStyle=sk; x.fillRect(0,0,W,H*.72);
