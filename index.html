@@ -979,11 +979,11 @@ const THEMES = {
         if(dSi<1.4) setInstr('🚰 AZIONE: apri rubinetto'); }
     },
     activities(){ const oc=otherCousins(); const A=[]; const P=['draw','drink','build','paint','talk','jump','write','throw','fight'];
-      B(1.2,.5,.8,0x9c6b3f,-3,.25,-3.2); A.push(aNPC(oc[0],-3,-2.4,0,'draw',P));
-      B(.4,.4,.4,0x4aa3ff,6.7,.2,-4); A.push(aNPC(oc[1],6.5,-4,Math.PI/2,'paint',P));
-      A.push(aNPC(oc[2],-5,3,.6,'drink',P));
-      for(let i=0;i<4;i++) B(.38,.38,.38,TC[i],2+(i%2)*.42,.2+((i/2)|0)*.4,4); A.push(aNPC(oc[3],2.3,4.9,Math.PI,'build',P));
-      A.push(aNPC(oc[4],-1,0,2.3,'talk',P)); A.push(aNPC(oc[0],.6,.2,2.3+Math.PI,'fight',P));
+      B(1.2,.5,.8,0x9c6b3f,-3,.25,-3.2); A.push(aNPC(oc[0%oc.length],-3,-2.4,0,'draw',P));
+      B(.4,.4,.4,0x4aa3ff,6.7,.2,-4); A.push(aNPC(oc[1%oc.length],6.5,-4,Math.PI/2,'paint',P));
+      A.push(aNPC(oc[2%oc.length],-5,3,.6,'drink',P));
+      for(let i=0;i<4;i++) B(.38,.38,.38,TC[i],2+(i%2)*.42,.2+((i/2)|0)*.4,4); A.push(aNPC(oc[3%oc.length],2.3,4.9,Math.PI,'build',P));
+      A.push(aNPC(oc[4%oc.length],-1,0,2.3,'talk',P)); A.push(aNPC(oc[0],.6,.2,2.3+Math.PI,'fight',P));
       return A; }},
   scuola:{emoji:'📚',ground:0xd8c8a0,size:18,goal:8,time:60,deliver:true,drop:[0,-7],dropLabel:'📕 Cattedra',instr:'Raccogli un libro e portalo in cattedra!',win:'Tutti i libri a posto! 📚',
     decor(){ B(18,4,.3,0xeae0c8,0,2,-9); B(6,2.5,.2,0x224422,0,2,-8.8); B(3,1.1,1.2,0x9c6b3f,0,.55,-7); for(let r=0;r<3;r++)for(let c=0;c<3;c++){ B(1.6,.9,1,0xa6794a,-4+c*4,.45,0+r*3); }
