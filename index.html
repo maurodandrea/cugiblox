@@ -849,8 +849,14 @@ const THEMES = {
       B(.9,1.5,.6,0xb0306a,7,.75,-5); B(.7,.4,.5,0x222,7,1.65,-4.7); for(let i=0;i<3;i++){ const note=labelSprite('🎵',.7); note.position.set(7,2.4+i*.1,-4.6); world.add(note); }  // jukebox
       B(8,2,.3,0x4a2f24,0,1.5,-7.4);                                              // parete dietro
       for(let i=0;i<14;i++){ const bo=cyl(.06,.06,.45,[0x2f8f4a,0xe04030,0xffd24a,0x6bd0ff][i%4]); bo.position.set(-3.4+i*.5,1.6,-7.2); world.add(bo); }  // bottiglie sullo scaffale
-      B(.8,.7,.6,0xd0d0d8,-3,1.5,-6.4);   // macchina caffè
-      for(let i=0;i<3;i++){ const tb=cyl(.5,.45,.1,0x8a5a2b); tb.position.set(-4+i*4,.75,3); world.add(tb); const leg=cyl(.08,.08,.75,0x6a4a2a); leg.position.set(-4+i*4,.38,3); world.add(leg); for(let k=0;k<2;k++){ const ch=cyl(.28,.28,.5,0x556); ch.position.set(-4+i*4+(k?.8:-.8),.25,3); world.add(ch);} }  // tavolini con sgabelli
+      // macchina caffè sul bancone (corpo+pannello+display+gruppi+cannello vapore+vassoio)
+      B(1.0,.9,.6,0x8a8a8a,-3,1.52,-6.4); B(.88,.28,.07,0x111111,-3,1.78,-6.1); B(.36,.15,.04,0x00ccff,-3.1,1.83,-6.1);
+      const gh1=cyl(.1,.1,.22,0x666); gh1.rotation.x=Math.PI/2; gh1.position.set(-2.68,1.38,-6.0); world.add(gh1); const gh2=gh1.clone(); gh2.position.set(-3.32,1.38,-6.0); world.add(gh2); const stn=cyl(.03,.03,.34,0x999); stn.position.set(-2.55,1.55,-6.1); stn.rotation.z=.3; world.add(stn); B(1.0,.06,.44,0x777,-3,1.06,-6.0);
+      // frigorifero bar
+      B(1.1,2.3,.55,0xe4e4e4,3.5,1.15,-7.1); B(.95,2.1,.05,0x9fd6ee,3.5,1.15,-6.82); B(.04,.5,.06,0x888,3.04,1.4,-6.78);
+      for(let i=0;i<6;i++){ const bt=cyl(.06,.06,.28,[0x5bd0ff,0xff6b6b,0xffd24a,0x6bff8a,0xe04030,0xaa44ff][i]); bt.position.set(3.2+(i%2)*.32,.32+Math.floor(i/2)*.42,-6.95); world.add(bt); }
+      // tavolini con sgabelli + drink sul tavolo
+      for(let i=0;i<3;i++){ const tb=cyl(.5,.45,.1,0x8a5a2b); tb.position.set(-4+i*4,.75,3); world.add(tb); const leg=cyl(.08,.08,.75,0x6a4a2a); leg.position.set(-4+i*4,.38,3); world.add(leg); for(let k=0;k<2;k++){ const ch=cyl(.28,.28,.5,0x556); ch.position.set(-4+i*4+(k?.8:-.8),.25,3); world.add(ch);} const dr=makeTreat(['cocktail','caffe','cocktail'][i]); dr.scale.setScalar(1.8); dr.position.set(-4+i*4,.84,3); world.add(dr); }
       const pot=cyl(.3,.25,.5,0x884); pot.position.set(-7,.25,2); world.add(pot); const pl=new THREE.Mesh(new THREE.ConeGeometry(.6,1.2,8),M(0x2f8f4a)); pl.position.set(-7,1.1,2); world.add(pl);
       const ins=labelSprite('🍹 BAR',2.4); ins.position.set(0,2.7,-7.2); world.add(ins); },
     item(){ const c=cyl(.22,.16,.5,TC[Math.floor(Math.random()*TC.length)]); c.position.y=.3; return c; },
@@ -885,7 +891,7 @@ const THEMES = {
   color_hotel:{emoji:'🧳',ground:0x88c0c0,size:18,goal:8,time:60,spray:{wallZ:-8},ballpit:{x:4.5,z:3,w:7,l:7,floorColor:0xf2f2ee,ballColor:0xf5f5f5,ballCount:180},instr:'Raccogli le valigie · spray sui muri 🎨 · tuffati nella vasca palline! 🫧',win:'Benvenuti al Color Hotel! 🏨',
     decor(){ B(18,3.2,.3,0xeae2d0,0,1.6,-8); B(.3,3.2,18,0xeae2d0,-8.6,1.6,0); B(.3,3.2,18,0xeae2d0,8.6,1.6,0); B(6,1.2,1.6,0x33aaaa,-3,.6,-7); for(let i=0;i<6;i++){ const col=cyl(.3,.3,2.6,TC[i]); col.position.set(-7+i*2.8,1.3,-7.5); col.castShadow=true; world.add(col); } },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.7,.35),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.35; const hd=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,12),M(0x333333)); hd.position.y=.45; b.add(hd); return b; }},
-  piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:60,instr:'Raccogli le monete · entra nelle 🚪 o usa altalena/scivoli! ⛲',win:'Piazzetta scintillante! ⛲',
+  piazzetta:{emoji:'🪙',ground:0xc9ad86,size:18,goal:12,time:60,instr:'Raccogli le monete · altalena, scivoli, 🎡 ruota · entra nelle 🚪! ⛲',win:'Piazzetta scintillante! ⛲',
     gameDoors:[{gid:'bar',x:-4,z:-7.5,label:'🍹 Bar',col:0xff9ec4},{gid:'ristorante',x:4,z:-7.5,label:'🍝 Ristorante',col:0x6bd0ff},{gid:'casa',x:7.8,z:0,rot:Math.PI/2,label:'🏠 Casa',col:0xffd24a}],
     rides(){ const R=[];
       const sx=-4,sz=-1.5; B(.15,2.4,.15,0x6a4a2a,sx-1,1.2,sz); B(.15,2.4,.15,0x6a4a2a,sx+1,1.2,sz); B(2.2,.15,.15,0x6a4a2a,sx,2.4,sz);
@@ -893,6 +899,17 @@ const THEMES = {
       const r1=cyl(.03,.03,1.6,0x444444); r1.position.set(-.3,-.8,0); const r2=r1.clone(); r2.position.x=.3; const seat=new THREE.Mesh(new THREE.BoxGeometry(.7,.1,.4),M(0x8a5a2b)); seat.position.set(0,-1.6,0); pivot.add(r1,r2,seat);
       R.push({type:'swing',x:sx,z:sz,pivot,dur:6});
       [[4,-1.5],[7,-5]].forEach(([px,pz])=>{ B(2,.3,1,0x6fc0e0,px,1.4,pz); B(.12,2.6,.12,0x6a4a2a,px-.8,1.3,pz-.5); B(.12,2.6,.12,0x6a4a2a,px+.8,1.3,pz-.5); const ramp=B(1,.12,3.4,0x8fd0e6,px,.9,pz+2); ramp.rotation.x=.5; R.push({type:'slide',x:px,z:pz,dur:2.2}); });
+      // ruota panoramica
+      const fx=-7,fz=-3.5,FR=1.8,FH=2.2;
+      B(.18,(FH+FR*2),.18,0x555588,fx-2.0,(FH+FR*2)/2,fz); B(.18,(FH+FR*2),.18,0x555588,fx+2.0,(FH+FR*2)/2,fz);
+      B(4.2,.15,.15,0x555588,fx,FH+FR*2,fz);
+      const pfax=cyl(.16,.16,.45,0x999999); pfax.rotation.x=Math.PI/2; pfax.position.set(fx,FH+FR,fz); world.add(pfax);
+      const pfWheel=new THREE.Group(); pfWheel.position.set(fx,FH+FR,fz); world.add(pfWheel);
+      const pfCols=[0xff6b6b,0x6bd0ff,0xffe14a,0x2f8f4a,0xff9ec4,0xaa44ff];
+      for(let fi=0;fi<6;fi++){ const fa2=fi/6*Math.PI*2; const sp=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,FR,6),M(0x555588)); sp.position.set(Math.sin(fa2)*FR/2,Math.cos(fa2)*FR/2,0); sp.rotation.z=-fa2; pfWheel.add(sp); const gon=new THREE.Mesh(new THREE.BoxGeometry(.5,.42,.35),M(pfCols[fi],.88)); gon.position.set(Math.sin(fa2)*FR,Math.cos(fa2)*FR,0); pfWheel.add(gon); }
+      const pfRim=new THREE.Mesh(new THREE.TorusGeometry(FR,.07,8,24),M(0x555588,.88)); pfWheel.add(pfRim);
+      const pflab=labelSprite('🎡 Ruota'); pflab.position.set(fx,FH+FR*2+.8,fz); world.add(pflab);
+      R.push({type:'ferris',x:fx,z:fz,wheel:pfWheel,FR,FH,dur:14});
       return R; },
     decor(){ const base=cyl(2,2.3,.6,0x9fb0c0); base.position.set(0,.3,-5); base.castShadow=true; world.add(base); const w=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,.3,16),M(0x6fc0e0,.3)); w.position.set(0,.7,-5); world.add(w); const sp=cyl(.2,.2,1.6,0x9fb0c0); sp.position.set(0,1.4,-5); world.add(sp); const stat=new THREE.Mesh(new THREE.SphereGeometry(.35,12,12),M(0x9fb0c0)); stat.position.set(0,2.3,-5); world.add(stat);
       B(2,.4,.6,0x8a5a2b,-5,.4,2); B(2,.4,.6,0x8a5a2b,5,.4,2);
@@ -1847,8 +1864,8 @@ function GameScuola(){
   function E(w,h,d,c,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); env.add(m); return m; }
   const player=buildCousin(hero); world.add(player);
   const busPos={x:-13,z:6.5};
-  let stage='', collected=0, t=0, done=false, books=[], mover=[], drivingCars=[], gymState=null, gymBall=null; const GOAL=6;
-  function setStage(s){ clearEnv(); books=[]; mover=[]; drivingCars=[]; gymState=null; gymBall=null; stage=s;
+  let stage='', collected=0, t=0, done=false, books=[], mover=[], drivingCars=[], gymState=null, gymBall=null, mensaFoods=[], mensaSeated=false; const GOAL=6;
+  function setStage(s){ clearEnv(); books=[]; mover=[]; drivingCars=[]; gymState=null; gymBall=null; mensaFoods=[]; mensaSeated=false; stage=s;
     if(s==='ext'){
       const grd=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); grd.rotation.x=-Math.PI/2; env.add(grd);
       const road=new THREE.Mesh(new THREE.PlaneGeometry(60,5),M(0x3a3d44,.95)); road.rotation.x=-Math.PI/2; road.position.set(0,.05,5); env.add(road);
@@ -1988,7 +2005,11 @@ function GameScuola(){
       E(14,4,.3,0xeae0c8,0,2,-5); E(.3,4,10,0xeae0c8,-7,2,0); E(.3,4,10,0xeae0c8,7,2,0);
       // bancone servizio (fondo stanza)
       E(10,1,.85,0xc49060,0,.5,-4); E(10,.1,.9,0xaa7040,0,1.03,-4);
-      ['🍕','🥗','🍝','🍮','🥤','🧃'].forEach((em,i)=>{ const l=labelSprite(em,1.2); l.position.set(-3.8+i*1.3,1.55,-3.6); env.add(l); });
+      // cibo interattivo sul bancone (sprite + mesh 3D raccoglibile)
+      ['🍕','🥗','🍝','🍮','🥤','🧃'].forEach((em,i)=>{
+        const l=labelSprite(em,1.2); l.position.set(-3.8+i*1.3,1.55,-3.6); env.add(l);
+        const tr=makeTreat(['cocktail','gelato','caffe','yogurt','cocktail','gelato'][i]); tr.scale.setScalar(1.6); tr.position.set(-3.8+i*1.3,1.06,-3.7); env.add(tr);
+        mensaFoods.push({obj:tr,lbl:l,x:-3.8+i*1.3,z:-3.7}); });
       const cook=buildCousin(otherCousins()[3]); cook.position.set(1,.0,-4.6); cook.rotation.y=0; cook.userData.arms[0].rotation.x=-1.2; env.add(cook);
       const clabel=labelSprite('👨‍🍳 Cuoco',2); clabel.position.set(1,2.4,-4.6); env.add(clabel);
       // tavoli rotondi con sedie
@@ -2003,7 +2024,7 @@ function GameScuola(){
       // porta ritorno al piano terra
       { const dg=new THREE.Group(); dg.rotation.y=-Math.PI/2; const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(-6.5,0,0); env.add(dg); const dl=labelSprite('🚪 Piano terra',2); dl.position.set(-6.5,3,0); env.add(dl); }
       player.position.set(-4,0,0); player.rotation.y=Math.PI/2;
-      setInstr('🍽️ Mensa! Siediti a tavola · 🚪 sinistra = torna al piano terra');
+      setInstr('🍽️ Mensa! AZIONE vicino al cibo per mangiarlo · AZIONE vicino al tavolo per sedersi · 🚪 sinistra = esci');
     }
   }
   setStage('ext');
@@ -2033,7 +2054,16 @@ function GameScuola(){
         else if(gv.pt>1.5){ gv.phase='idle'; gv.pt=0; beep(220,.15,'sawtooth',.06); setInstr('💪 Mancato! '+gv.pscore+'/5 · ◀▶ muoviti · AZIONE per battere'); } }
       if(gv.shadow){ gv.shadow.position.x=gymBall.position.x; gv.shadow.position.z=gymBall.position.z; gv.shadow.material.opacity=Math.max(0,.28-gymBall.position.y*.04); }
       setScore('💪 '+gv.pscore+'/5 punti · ◀▶ muoviti'); return; }
-    else if(stage==='mensa'){ if(player.position.x<-5.8){ beep(600,.1); setStage('ground'); } }
+    else if(stage==='mensa'){
+      if(player.position.x<-5.8){ mensaSeated=false; player.position.y=0; player.userData.legs[0].rotation.x=0; player.userData.legs[1].rotation.x=0; beep(600,.1); setStage('ground'); return; }
+      // mangia cibo: AZIONE vicino a un piatto sul bancone
+      let ateFood=false;
+      for(let i=mensaFoods.length-1;i>=0;i--){ const fd=mensaFoods[i]; if(Math.hypot(player.position.x-fd.x,player.position.z-fd.z)<1.3 && hit('Space')){ beep(660,.1,'sine',.08); env.remove(fd.obj); env.remove(fd.lbl); mensaFoods.splice(i,1); ateFood=true; setInstr(mensaFoods.length>0?'😋 Buono! '+mensaFoods.length+' piatti rimasti · AZIONE al tavolo per sedersi':'😋 Hai mangiato tutto! Siediti al tavolo · 🚪 esci'); break; } }
+      // siediti/alzati al tavolo: AZIONE vicino a un tavolo
+      if(!ateFood){ const mT=[[-3.5,0],[2.5,0],[-3.5,3.5],[2.5,3.5]]; let nearT=false; for(const [tx,tz] of mT){ if(Math.hypot(player.position.x-tx,player.position.z-tz)<1.5){ nearT=true; break; } }
+        if(nearT && hit('Space')){ mensaSeated=!mensaSeated; if(!mensaSeated){ player.position.y=0; player.userData.legs[0].rotation.x=0; player.userData.legs[1].rotation.x=0; } beep(mensaSeated?500:400,.07); setInstr(mensaSeated?'🪑 Seduto · AZIONE per alzarsi':'🍽️ AZIONE vicino al cibo per mangiare · AZIONE al tavolo per sedersi'); } else if(mensaSeated&&!nearT){ mensaSeated=false; player.position.y=0; player.userData.legs[0].rotation.x=0; player.userData.legs[1].rotation.x=0; } }
+      if(mensaSeated){ player.userData.legs[0].rotation.x=-1.3; player.userData.legs[1].rotation.x=-1.3; player.position.y=THREE.MathUtils.lerp(player.position.y,.55,.15); }
+    }
     else { stepCrowd(mover,dt,t,7);
       if(player.position.z>6.5 && Math.abs(player.position.x)<2.5){ beep(600,.1); setStage('ground'); return; }
       for(let i=books.length-1;i>=0;i--){ const b=books[i]; b.rotation.y+=dt*2; if(Math.hypot(player.position.x-b.position.x,player.position.z-b.position.z)<1){ collected++; beep(700+collected*50,.08); env.remove(b); books.splice(i,1); } }
