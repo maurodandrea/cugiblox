@@ -2953,10 +2953,10 @@ function GameAereo(){
       const frm=new THREE.Mesh(new THREE.BoxGeometry(5.5,7,.35),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.2})); frm.position.set(x,3.5,59.85); g.add(frm);
       // Door panel (solid bright color, no transparency)
       const dm=new THREE.Mesh(new THREE.BoxGeometry(4.2,5.8,.22),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.45,side:THREE.DoubleSide})); dm.position.set(x,2.9,60.1); g.add(dm);
-      // Country label above door
-      const dl=labelSprite(d.label,3.2); dl.position.set(x,7.8,59.6); g.add(dl);
-      // Number plate at bottom
-      const numL=labelSprite(String(i+1).padStart(2,'0'),1.2); numL.position.set(x,6.1,60.2); g.add(numL);
+      // Country label centered on door
+      const dl=labelSprite(d.label,3.4); dl.position.set(x,3.0,60.5); g.add(dl);
+      // Number plate at top of frame
+      const numL=labelSprite(String(i+1).padStart(2,'0'),1.2); numL.position.set(x,6.8,60.2); g.add(numL);
       destDoors.push({mesh:dm,id:d.id,label:d.label,x,z:60.0});
     });
     return g;
@@ -2965,6 +2965,14 @@ function GameAereo(){
   // ── buildDest ──
   function buildDest(d){
     const g=new THREE.Group();
+    // ── Tarmac / Pista d'atterraggio universale ──
+    const gy=new THREE.Mesh(new THREE.PlaneGeometry(250,200),new THREE.MeshStandardMaterial({color:0x5a5a68,roughness:.92})); gy.rotation.x=-Math.PI/2; gy.position.set(0,0,0); g.add(gy);
+    // Striscia centrale bianca
+    const rwC=new THREE.Mesh(new THREE.BoxGeometry(.25,.01,120),M(0xffffff)); rwC.position.set(0,.01,0); g.add(rwC);
+    // Tacche di soglia pista
+    for(let ri=-5;ri<=5;ri++){ const rm=new THREE.Mesh(new THREE.BoxGeometry(2.2,.01,5),M(0xffffff,.8)); rm.position.set(ri*4.5,.01,-45); g.add(rm); }
+    // Strisce laterali
+    [-14,14].forEach(lx=>{ const ln=new THREE.Mesh(new THREE.BoxGeometry(.15,.01,80),M(0xffee44,.7)); ln.position.set(lx,.01,0); g.add(ln); });
     if(d==='parigi'){
       const ef=new THREE.Group(); const base=new THREE.Mesh(new THREE.BoxGeometry(9,.55,9),M(0x777777)); base.position.y=.28; ef.add(base);
       [[-3.5,0,-3.5],[-3.5,0,3.5],[3.5,0,-3.5],[3.5,0,3.5]].forEach(([lx,,lz])=>{ const leg=cyl(.28,.65,13,0x777777); leg.position.set(lx,6.5,lz); leg.rotation.z=Math.atan2(Math.abs(lx),6.5)*(lx<0?1:-1); leg.rotation.x=Math.atan2(Math.abs(lz),6.5)*(lz<0?1:-1); ef.add(leg); });
@@ -3497,7 +3505,7 @@ function drawTravelDest(cv,dest){ const x=cv.getContext('2d'),W=cv.width,H=cv.he
   }
 }
 function travelTo(c,cb){ const ov=document.getElementById('travel'); const em=document.getElementById('tv-em'); const tx=document.getElementById('tv-txt'); const cv=document.getElementById('tv-dest'); em.textContent=TRAVEL_VEHICLES[c]||'🚗'; tx.textContent='In viaggio verso '+TRAVEL_LABELS[c]+'...'; drawTravelDest(cv,c); em.style.left='-15%'; em.style.transition='none'; ov.classList.add('on'); requestAnimationFrame(()=>requestAnimationFrame(()=>{ em.style.transition='left 2s ease-in-out'; em.style.left='115%'; })); setTimeout(()=>{ ov.classList.remove('on'); cb(); },2600); }
-document.querySelectorAll('.mkb').forEach(m=>{ m.addEventListener('click',()=>{ city=m.dataset.city; travelTo(city,enterHub); }); });
+document.querySelectorAll('.mkb').forEach(m=>{ m.addEventListener('click',()=>{ city=m.dataset.city; travelTo(city, city==='bari'?(()=>startGame('aereo')):enterHub); }); });
 // rendi trasparente lo sfondo bianco della mappa
 (function(){ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.width; c.height=im.height; const x=c.getContext('2d'); x.drawImage(im,0,0); const d=x.getImageData(0,0,c.width,c.height), a=d.data; for(let i=0;i<a.length;i+=4){ if(a[i]>234&&a[i+1]>234&&a[i+2]>234) a[i+3]=0; } x.putImageData(d,0,0); document.getElementById('italyImg').src=c.toDataURL(); }catch(e){} }; im.src='italia.jpg'; })();
 
