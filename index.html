@@ -779,7 +779,7 @@ function walkCollect(th){
     }
     haz.forEach(h=>{ h.position.addScaledVector(h.userData.v,dt); if(Math.abs(h.position.x)>half)h.userData.v.x*=-1; if(Math.abs(h.position.z)>half)h.userData.v.z*=-1; h.lookAt(player.position.x,h.position.y,player.position.z);
       if(Math.hypot(player.position.x-h.position.x,player.position.z-h.position.z)<1.1){ time-=3*dt; beep(140,.06,'sawtooth',.06); const dx=player.position.x-h.position.x,dz=player.position.z-h.position.z,d=Math.hypot(dx,dz)||1; player.position.x+=dx/d*0.12; player.position.z+=dz/d*0.12; } });
-    if(th._tvMat && Math.hypot(player.position.x-3.5,player.position.z+7.5)<2.2 && hit('Space')){ th._tvOn=!th._tvOn; const g2=th._tvC.getContext('2d'); if(th._tvOn){ g2.fillStyle='#05111f'; g2.fillRect(0,0,256,160); g2.fillStyle='#1a3a6a'; g2.fillRect(0,30,256,90); g2.fillStyle='#3a1a05'; g2.fillRect(0,120,256,40); g2.fillStyle='rgba(255,235,100,.9)'; g2.beginPath(); g2.arc(128,75,18,0,Math.PI*2); g2.fill(); g2.fillStyle='rgba(255,255,255,.85)'; g2.font='bold 14px sans-serif'; g2.textAlign='center'; g2.fillText('★ LE AVVENTURE ★',128,16); g2.font='11px sans-serif'; g2.fillText('🎬 Film in corso',128,150); th._tvMat.emissive.set(0x223366); th._tvMat.emissiveIntensity=0.7; } else { g2.fillStyle='#000'; g2.fillRect(0,0,256,160); th._tvMat.emissive.set(0); th._tvMat.emissiveIntensity=0; } th._tvTex.needsUpdate=true; beep(th._tvOn?440:220,.1); }
+    if(th.onUpdate) th.onUpdate(player,t,dt,hit('Space'));
     setScore(th.emoji+' '+collected+'/'+th.goal+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s');
     if(th.goal>0 && collected>=th.goal){ done=true; finishGame(15+Math.ceil(Math.max(0,time)),th.win); }
     else if(time<=0){ done=true; finishGame(5+collected,'Tempo scaduto — '+collected+' fatti'); }
@@ -823,8 +823,29 @@ const THEMES = {
       B(.08,2.2,.9,0x9fd6ee,7.84,1.1,5.0); B(.9,2.2,.06,0x9fd6ee,7.42,1.1,4.6);   // vetri doccia
       B(.8,.1,.9,0xddeeff,7.42,.06,5.0);                                              // piatto doccia
       const shh=cyl(.15,.15,.03,0x888888); shh.position.set(7.42,2.1,5.0); world.add(shh);
-      const batLbl=labelSprite('🚿 Bagno',1.9); batLbl.position.set(6.2,2.5,5.7); world.add(batLbl); },
+      const batLbl=labelSprite('🚿 Bagno',1.9); batLbl.position.set(6.2,2.5,5.7); world.add(batLbl);
+      // Acqua doccia (colonna, visibile solo quando accesa)
+      const shW=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,2.0,12),new THREE.MeshStandardMaterial({color:0x88d4ff,transparent:true,opacity:0,roughness:.08,emissive:new THREE.Color(0x2255aa),emissiveIntensity:0}));
+      shW.position.set(7.42,1.05,5.0); world.add(shW); this._shW=shW; this._shOn=false;
+      // Acqua lavandino (sferetta che scende, visibile solo quando aperto)
+      const sinW=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),new THREE.MeshStandardMaterial({color:0x88d4ff,transparent:true,opacity:0,roughness:.08}));
+      sinW.position.set(5.2,.97,7.45); world.add(sinW); this._sinW=sinW; this._sinT=0; },
     item(){ const b=smallBox(TC[Math.floor(Math.random()*TC.length)]); b.position.y=.3; return b; },
+    onUpdate(player,t,dt,sp){
+      // TV
+      if(this._tvMat){ const dTV=Math.hypot(player.position.x-3.5,player.position.z+7.75);
+        if(dTV<2.4 && sp){ this._tvOn=!this._tvOn; const g2=this._tvC.getContext('2d'); if(this._tvOn){ g2.fillStyle='#05111f'; g2.fillRect(0,0,256,160); g2.fillStyle='#1a3a6a'; g2.fillRect(0,30,256,90); g2.fillStyle='rgba(255,235,100,.9)'; g2.beginPath(); g2.arc(128,75,18,0,Math.PI*2); g2.fill(); g2.fillStyle='rgba(255,255,255,.85)'; g2.font='bold 14px sans-serif'; g2.textAlign='center'; g2.fillText('★ LE AVVENTURE ★',128,16); g2.font='11px sans-serif'; g2.fillText('🎬 Film in corso',128,150); this._tvMat.emissive.set(0x223366); this._tvMat.emissiveIntensity=0.7; } else { g2.fillStyle='#000'; g2.fillRect(0,0,256,160); this._tvMat.emissive.set(0); this._tvMat.emissiveIntensity=0; } this._tvTex.needsUpdate=true; beep(this._tvOn?440:220,.1); }
+        if(dTV<2.4) setInstr('📺 AZIONE: '+(this._tvOn?'spegni TV':'accendi TV')); }
+      // Doccia
+      if(this._shW){ const dSh=Math.hypot(player.position.x-7.42,player.position.z-5.0);
+        if(dSh<1.6 && sp){ this._shOn=!this._shOn; this._shW.material.opacity=this._shOn?.38:0; this._shW.material.emissiveIntensity=this._shOn?.4:0; beep(this._shOn?900:.350,.14,'sine',.08); }
+        if(dSh<1.6) setInstr('🚿 AZIONE: '+(this._shOn?'chiudi doccia':'apri doccia')); }
+      // Lavandino
+      if(this._sinW){ const dSi=Math.hypot(player.position.x-5.2,player.position.z-7.5);
+        if(dSi<1.4 && sp){ this._sinT=2.2; beep(1100,.09,'sine',.05); setTimeout(()=>beep(950,.07,'sine',.04),100); }
+        if(this._sinT>0){ this._sinT-=dt; this._sinW.material.opacity=Math.max(0,this._sinT*.4); this._sinW.position.y=.97+Math.sin(t*10)*.07; } else this._sinW.material.opacity=0;
+        if(dSi<1.4) setInstr('🚰 AZIONE: apri rubinetto'); }
+    },
     activities(){ const oc=otherCousins(); const A=[]; const P=['draw','drink','build','paint','talk','jump','write','throw','fight'];
       B(1.2,.5,.8,0x9c6b3f,-3,.25,-3.2); A.push(aNPC(oc[0],-3,-2.4,0,'draw',P));
       B(.4,.4,.4,0x4aa3ff,6.7,.2,-4); A.push(aNPC(oc[1],6.5,-4,Math.PI/2,'paint',P));
