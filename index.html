@@ -161,6 +161,7 @@ const META = {
   arco:{e:'🏹',n:'Tiro con Arco'},
 };
 let hero='giorgia', city='roma', mode='hub';
+let danzaOv=null;
 let total = parseInt(localStorage.getItem('cugini3d_total')||'0',10);
 function otherChar(){ return CHAR_IDS.find(i=>i!==hero)||CHAR_IDS[0]; }
 
@@ -213,7 +214,7 @@ function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=inner
 addEventListener('resize',resize); resize();
 const M=(c,r=0.85)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:0.04});
 function applyTheme(){ const c=CITIES[city]; scene.background=new THREE.Color(c.sky); scene.fog=new THREE.Fog(c.sky,55,180); }
-function clearWorld(){ stopMusic(); for(let i=world.children.length-1;i>=0;i--){ const o=world.children[i];
+function clearWorld(){ stopMusic(); if(danzaOv){danzaOv.remove();danzaOv=null;} for(let i=world.children.length-1;i>=0;i--){ const o=world.children[i];
   o.traverse(n=>{ if(n.geometry)n.geometry.dispose(); if(n.material){(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map&&!m.map.__keep)m.map.dispose(); m.dispose&&m.dispose(); });} }); world.remove(o); } }
 function addGround2(col){ const g=new THREE.Mesh(new THREE.PlaneGeometry(500,500),M(col,.95)); g.rotation.x=-Math.PI/2; g.receiveShadow=true; world.add(g); return g; }
 function skyTexture(top,bot){ const c=document.createElement('canvas'); c.width=16;c.height=160; const x=c.getContext('2d'); const g=x.createLinearGradient(0,0,0,160); g.addColorStop(0,top); g.addColorStop(.55,bot); g.addColorStop(1,'#ffffff'); x.fillStyle=g; x.fillRect(0,0,16,160); return new THREE.CanvasTexture(c); }
@@ -1587,44 +1588,165 @@ function GamePiscina(){
 }
 function GameDanza(){
   applyTheme(); scene.background=new THREE.Color(0x160b22); scene.fog=null; addGround2(0x241a2e);
-  const stageW=8; B(stageW,.4,5,0x8a5a2b,0,.2,-2);                 // palco di legno
-  B(stageW+2,4.6,.3,0x2a1230,0,2.3,-5.4);                          // fondale
-  B(1.3,4.6,.6,0xb01030,-(stageW/2+0.3),2.3,-3); B(1.3,4.6,.6,0xb01030,(stageW/2+0.3),2.3,-3);  // tende laterali rosse
-  B(stageW+2.8,1.2,.6,0x8a0c26,0,4.3,-3);                          // mantovana
-  for(const x of [-2.6,2.6]){ const sl=new THREE.Mesh(new THREE.ConeGeometry(.9,1.6,16,1,true),new THREE.MeshStandardMaterial({color:0xfff3b0,transparent:true,opacity:.18,side:THREE.DoubleSide})); sl.position.set(x,3.4,-2); world.add(sl); } // fasci di luce
-  // lampadario
+  const stageW=8; B(stageW,.4,5,0x8a5a2b,0,.2,-2);
+  B(stageW+2,4.6,.3,0x2a1230,0,2.3,-5.4);
+  B(1.3,4.6,.6,0xb01030,-(stageW/2+0.3),2.3,-3); B(1.3,4.6,.6,0xb01030,(stageW/2+0.3),2.3,-3);
+  B(stageW+2.8,1.2,.6,0x8a0c26,0,4.3,-3);
+  for(const x of [-2.6,2.6]){ const sl=new THREE.Mesh(new THREE.ConeGeometry(.9,1.6,16,1,true),new THREE.MeshStandardMaterial({color:0xfff3b0,transparent:true,opacity:.18,side:THREE.DoubleSide})); sl.position.set(x,3.4,-2); world.add(sl); }
   const chand=new THREE.Mesh(new THREE.TorusGeometry(.8,.06,8,20),new THREE.MeshStandardMaterial({color:0xffd24a,emissive:0xffd24a,emissiveIntensity:.5})); chand.rotation.x=Math.PI/2; chand.position.set(0,4.6,1); world.add(chand);
   for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const b=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshStandardMaterial({color:0xfff3b0,emissive:0xffe9a0,emissiveIntensity:.8})); b.position.set(Math.cos(a)*.8,4.55,1+Math.sin(a)*.8); world.add(b); }
-  // luci di scena (footlights)
   for(let i=0;i<7;i++){ const fl=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),new THREE.MeshStandardMaterial({color:0xffe9a0,emissive:0xffd24a,emissiveIntensity:.7})); fl.position.set(-3+i,.5,.6); world.add(fl); }
-  // pavimento del palco lucido (assi)
   for(let i=0;i<6;i++) B(.05,.02,5,0x5a3a22,-3+i*1.2,.41,-2);
-  // platea: spettatori seduti ai lati
   const aud=[]; const oca=otherCousins(); let an=0;
-  for(const side of [-1,1]){ for(let r=0;r<2;r++){ for(let s=0;s<2;s++){ B(.7,.45,.7,0x5a2a3a, side*(5+r*1.5), .22, 4-s*1.7);
+  for(const side of [-1,1]){ for(let r=0;r<2;r++){ for(let s=0;s<2;s++){ B(.7,.45,.7,0x5a2a3a,side*(5+r*1.5),.22,4-s*1.7);
     const f=buildCousin(oca[an++%oca.length]); f.position.set(side*(5+r*1.5),.5,4-s*1.7); f.rotation.y=Math.PI;
     f.userData.legs[0].rotation.x=-1.2; f.userData.legs[1].rotation.x=-1.2; world.add(f); aud.push(f); } } }
   const dancer=buildCousin(hero); dancer.position.set(0,.4,-1); world.add(dancer);
-  // DDR: 4 corsie con frecce
-  const laneX=[-3,-1,1,3], laneKey=['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'], laneCol=[0xff5b5b,0x5bffb0,0x5bddff,0xffdd5b], laneTxt=['◀','▼','▲','▶'];
-  const HITZ=2.4;
-  const pads=laneX.map((x,i)=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(.72,.08,.72),new THREE.MeshStandardMaterial({color:laneCol[i],emissive:laneCol[i],emissiveIntensity:.4,roughness:.5})); p.position.set(x,.43,HITZ); world.add(p); const lab=labelSprite(laneTxt[i],1.5); lab.position.set(x,1.15,HITZ); world.add(lab); return p; });
-  B(10,.04,.1,0xffffff,0,.42,HITZ);
   camera.position.set(0,3.6,7.5); camera.lookAt(0,1.2,0);
-  const notes=[]; let spawn=1.1, hits=0, miss=0, combo=0, t=0, done=false, fb=0, poseT=0;
-  const GOAL=20, SPD=5.8, PERF=.38, GOODW=.85;
-  setInstr('Premi ◀ ▼ ▲ ▶ quando la freccia arriva sul pad!');
-  function makeNote(ln){ const g=new THREE.Group(); const col=laneCol[ln]; const mat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.55}); const shaft=new THREE.Mesh(new THREE.BoxGeometry(.28,.08,.42),mat); const head=new THREE.Mesh(new THREE.ConeGeometry(.28,.38,4),mat); head.rotation.y=Math.PI/4; if(ln===0){head.rotation.z=-Math.PI/2;head.position.x=-.32;shaft.position.x=.1;} else if(ln===1){head.rotation.x=Math.PI/2;head.position.z=.32;shaft.position.z=-.1;} else if(ln===2){head.rotation.x=-Math.PI/2;head.position.z=-.32;shaft.position.z=.1;} else {head.rotation.z=Math.PI/2;head.position.x=.32;shaft.position.x=-.1;} g.add(shaft,head); g.position.set(laneX[ln],.5,-10); g.userData.ln=ln; world.add(g); return g; }
-  function doPose(d){ poseT=0.65; const a=dancer.userData.arms, l=dancer.userData.legs; a[0].rotation.x=0;a[0].rotation.z=0;a[1].rotation.x=0;a[1].rotation.z=0;l[0].rotation.x=0;l[0].rotation.z=0;l[1].rotation.x=0;l[1].rotation.z=0; if(d===0){a[0].rotation.x=-1.5;a[0].rotation.z=1.1;l[0].rotation.x=.8;l[0].rotation.z=.3;} else if(d===1){l[0].rotation.x=.85;l[1].rotation.x=.85;a[0].rotation.x=-.6;a[1].rotation.x=-.6;} else if(d===2){a[1].rotation.x=-1.7;a[1].rotation.z=-1.0;l[1].rotation.x=.7;} else {a[1].rotation.x=-1.5;a[1].rotation.z=-1.1;l[1].rotation.x=.9;l[1].rotation.z=-.3;} }
-  return { update(dt){ if(done)return; t+=dt; if(fb>0)fb-=dt; else showMsg('');
-    aud.forEach((f,i)=>{ f.position.y=.5+Math.abs(Math.sin(t*2+i))*0.07; f.rotation.z=Math.sin(t*3+i)*0.06; });
-    spawn-=dt; if(spawn<=0){ spawn=rand(.65,1.1); notes.push(makeNote(Math.floor(Math.random()*4))); }
-    for(let i=0;i<4;i++){ if(hit(laneKey[i])){ let best=-1,bd=99; notes.forEach((n,j)=>{ if(n.userData.ln===i&&!n.userData.dead){ const d=Math.abs(n.position.z-HITZ); if(d<bd){bd=d;best=j;} } }); if(best>=0&&bd<GOODW){ const n=notes[best]; n.userData.dead=true; world.remove(n); notes.splice(best,1); doPose(i); pads[i].material.emissiveIntensity=1.6; hits++; combo++; if(bd<PERF){beep(700+i*130,.08);showMsg('PERFETTO! x'+combo);}else{beep(560+i*90,.07);showMsg('Bene! x'+combo);} fb=.55; } else { combo=0; beep(140,.07,'sawtooth'); showMsg('Manca!'); fb=.4; } } }
-    for(let i=notes.length-1;i>=0;i--){ const n=notes[i]; n.position.z+=SPD*dt; if(n.position.z>HITZ+GOODW+.5){ miss++; combo=0; world.remove(n); notes.splice(i,1); showMsg('Perso!'); fb=.3; } }
-    pads.forEach(p=>p.material.emissiveIntensity=THREE.MathUtils.lerp(p.material.emissiveIntensity,.4,.14));
-    if(poseT>0){ poseT-=dt; if(poseT<=0){ const a=dancer.userData.arms,l=dancer.userData.legs; a[0].rotation.x=0;a[0].rotation.z=0;a[1].rotation.x=0;a[1].rotation.z=0;l[0].rotation.x=0;l[0].rotation.z=0;l[1].rotation.x=0;l[1].rotation.z=0; } } else { dancer.rotation.y=Math.sin(t*3.5)*.22; }
-    setScore('💃 '+hits+'/'+GOAL+'   ·   combo '+combo+'   ·   persi '+miss);
-    if(hits>=GOAL){ done=true; finishGame(12+Math.max(0,12-miss),'Che ballerino! 💃'); }
+  setPad('walk');
+
+  // ---- 2D overlay canvas ----
+  if(danzaOv){danzaOv.remove();danzaOv=null;}
+  const ov=document.createElement('canvas');
+  ov.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:7;';
+  document.body.appendChild(ov); danzaOv=ov;
+  const ctx2=ov.getContext('2d');
+  function resizeOv(){ov.width=window.innerWidth;ov.height=window.innerHeight;}
+  resizeOv(); window.addEventListener('resize',resizeOv);
+
+  // ---- Lago dei Cigni (Swan Lake) – tema principale semplificato ----
+  const SWAN=[
+    [493.88,.40],[466.16,.15],[493.88,.55],[587.33,.40],[659.25,.85],
+    [587.33,.40],[493.88,.40],[587.33,.55],[880.00,.85],
+    [830.61,.40],[880.00,.40],[987.77,.85],
+    [880.00,.40],[830.61,.40],[739.99,.40],[659.25,.85],
+    [587.33,.40],[554.37,.15],[587.33,.55],[739.99,.40],[830.61,.85],
+    [739.99,.40],[587.33,.40],[739.99,.55],[1108.73,.85],
+    [987.77,.40],[1108.73,.40],[1174.66,.85],
+    [1108.73,.40],[987.77,.40],[880.00,.40],[739.99,.85],
+    [659.25,.35],[587.33,.35],[659.25,.35],[493.88,1.10],[0,.50]
+  ];
+  let swanIdx=0;
+  function playSwanNote(){
+    if(!musicTimer2)return;
+    const [freq,dur]=SWAN[swanIdx%SWAN.length]; swanIdx++;
+    try{
+      if(freq>0){
+        if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+        const o=AC.createOscillator(),g=AC.createGain();
+        o.type='triangle'; o.frequency.value=freq; g.gain.value=0.0001;
+        o.connect(g); g.connect(AC.destination);
+        const n=AC.currentTime;
+        g.gain.exponentialRampToValueAtTime(0.055,n+0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001,n+dur*.88);
+        o.start(n); o.stop(n+dur);
+      }
+    }catch(e){}
+    musicTimer2=setTimeout(playSwanNote,dur*980);
+  }
+  musicTimer2=setTimeout(playSwanNote,80);
+
+  // ---- sistema frecce 2D ----
+  const LANE_N=4;
+  const DKEYS=['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'];
+  const DSYMS=['◀','▼','▲','▶'];
+  const DCOLS=['#ff5b5b','#5bffb0','#5bddff','#ffdd5b'];
+  let arrows2d=[],spawnT=1.0,hits=0,miss=0,combo=0,poseT=0,t=0,done=false,fb=0;
+  const GOAL=20, SPD_PX=260, HIT_W=54;
+  const laneFlash=[0,0,0,0];
+
+  function getLX(i){const W=ov.width;const tot=Math.min(W*.62,240);const sx=(W-tot)/2;return sx+i*(tot/3);}
+  function getTY(){return ov.height*.72;}
+
+  function doPose(d){poseT=0.65;const a=dancer.userData.arms,l=dancer.userData.legs;
+    a[0].rotation.x=0;a[0].rotation.z=0;a[1].rotation.x=0;a[1].rotation.z=0;
+    l[0].rotation.x=0;l[0].rotation.z=0;l[1].rotation.x=0;l[1].rotation.z=0;
+    if(d===0){a[0].rotation.x=-1.5;a[0].rotation.z=1.1;l[0].rotation.x=.8;l[0].rotation.z=.3;}
+    else if(d===1){l[0].rotation.x=.85;l[1].rotation.x=.85;a[0].rotation.x=-.6;a[1].rotation.x=-.6;}
+    else if(d===2){a[1].rotation.x=-1.7;a[1].rotation.z=-1.0;l[1].rotation.x=.7;}
+    else{a[1].rotation.x=-1.5;a[1].rotation.z=-1.1;l[1].rotation.x=.9;l[1].rotation.z=-.3;}
+  }
+
+  function drawOverlay(){
+    const W=ov.width,H=ov.height,TY=getTY(),SZ=40;
+    ctx2.clearRect(0,0,W,H);
+    // sfondo semi-trasparente zona frecce
+    ctx2.save(); ctx2.globalAlpha=0.28; ctx2.fillStyle='#000';
+    ctx2.fillRect(getLX(0)-SZ,80,getLX(3)-getLX(0)+SZ*2,TY-80+SZ/2+12); ctx2.restore();
+    // linee corsia
+    for(let i=0;i<LANE_N;i++){
+      ctx2.save(); ctx2.globalAlpha=0.10; ctx2.strokeStyle='#fff'; ctx2.lineWidth=1;
+      ctx2.beginPath(); ctx2.moveTo(getLX(i),90); ctx2.lineTo(getLX(i),TY-SZ/2-4); ctx2.stroke(); ctx2.restore();
+    }
+    // linea orizzontale bersaglio
+    ctx2.save(); ctx2.globalAlpha=0.18; ctx2.strokeStyle='#fff'; ctx2.lineWidth=1;
+    ctx2.setLineDash([5,7]);
+    ctx2.beginPath(); ctx2.moveTo(getLX(0)-SZ/2,TY); ctx2.lineTo(getLX(3)+SZ/2,TY); ctx2.stroke(); ctx2.restore();
+    // recettori
+    for(let i=0;i<LANE_N;i++){
+      const x=getLX(i),fl=laneFlash[i];
+      ctx2.save(); ctx2.globalAlpha=fl>0?.95:.32;
+      if(fl>0){ctx2.shadowColor=DCOLS[i];ctx2.shadowBlur=22;}
+      ctx2.strokeStyle=DCOLS[i]; ctx2.lineWidth=3;
+      ctx2.beginPath(); ctx2.arc(x,TY,SZ/2+5,0,Math.PI*2); ctx2.stroke();
+      ctx2.fillStyle=DCOLS[i];
+      ctx2.font='bold '+SZ+'px sans-serif'; ctx2.textAlign='center'; ctx2.textBaseline='middle';
+      ctx2.fillText(DSYMS[i],x,TY); ctx2.restore();
+    }
+    // frecce in movimento
+    for(const a of arrows2d){
+      if(a.dead)continue;
+      const x=getLX(a.ln),y=a.y;
+      const alpha=y<0?Math.max(0,(y+50)/50):1;
+      const dist=Math.abs(y-TY);
+      ctx2.save(); ctx2.globalAlpha=alpha;
+      if(dist<HIT_W){ctx2.shadowColor=DCOLS[a.ln];ctx2.shadowBlur=16;}
+      ctx2.fillStyle=DCOLS[a.ln];
+      ctx2.font='bold '+SZ+'px sans-serif'; ctx2.textAlign='center'; ctx2.textBaseline='middle';
+      ctx2.fillText(DSYMS[a.ln],x,y); ctx2.restore();
+    }
+  }
+
+  setInstr('Premi ◀ ▼ ▲ ▶ quando la freccia arriva sul bersaglio!');
+  setScore('💃 0/'+GOAL+'   combo 0');
+
+  return { update(dt){
+    if(done){drawOverlay();return;}
+    t+=dt; if(fb>0)fb-=dt; else showMsg('');
+    for(let i=0;i<LANE_N;i++) laneFlash[i]=Math.max(0,laneFlash[i]-dt);
+    aud.forEach((f,i)=>{f.position.y=.5+Math.abs(Math.sin(t*2+i))*.07;f.rotation.z=Math.sin(t*3+i)*.06;});
+    // spawn frecce
+    spawnT-=dt;
+    if(spawnT<=0){spawnT=rand(.55,.95);arrows2d.push({ln:Math.floor(Math.random()*LANE_N),y:-50,dead:false});}
+    // muovi frecce
+    for(const a of arrows2d) if(!a.dead) a.y+=SPD_PX*dt;
+    // input
+    const TY=getTY();
+    for(let i=0;i<LANE_N;i++){
+      if(hit(DKEYS[i])){
+        let best=-1,bd=999;
+        arrows2d.forEach((a,j)=>{if(a.ln===i&&!a.dead){const d=Math.abs(a.y-TY);if(d<bd){bd=d;best=j;}}});
+        if(best>=0&&bd<HIT_W){
+          arrows2d[best].dead=true; doPose(i); laneFlash[i]=0.32; hits++; combo++;
+          if(bd<HIT_W/2){beep(700+i*130,.08);showMsg('PERFETTO! x'+combo);}
+          else{beep(560+i*90,.07);showMsg('Bene! x'+combo);} fb=.55;
+        } else {combo=0;beep(140,.07,'sawtooth');showMsg('Manca!');fb=.4;}
+      }
+    }
+    // rimuovi frecce perse o morte
+    for(let i=arrows2d.length-1;i>=0;i--){
+      const a=arrows2d[i];
+      if(a.dead||a.y>TY+HIT_W+45){
+        if(!a.dead){miss++;combo=0;showMsg('Perso!');fb=.3;}
+        arrows2d.splice(i,1);
+      }
+    }
+    // reset posa
+    if(poseT>0){poseT-=dt;if(poseT<=0){const a=dancer.userData.arms,l=dancer.userData.legs;a[0].rotation.x=0;a[0].rotation.z=0;a[1].rotation.x=0;a[1].rotation.z=0;l[0].rotation.x=0;l[0].rotation.z=0;l[1].rotation.x=0;l[1].rotation.z=0;}}
+    else{dancer.rotation.y=Math.sin(t*3.5)*.22;}
+    setScore('💃 '+hits+'/'+GOAL+'   combo '+combo+'   persi '+miss);
+    drawOverlay();
+    if(hits>=GOAL){done=true;finishGame(12+Math.max(0,12-miss),'Che ballerino! 💃');}
   }};
 }
 function GamePesca(){
