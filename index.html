@@ -84,10 +84,13 @@
 </div>
 
 <div id="s_nick" class="screen">
-  <h2>Come ti chiami?</h2>
-  <div class="sub">Il tuo nickname per la classifica globale</div>
-  <input id="nickInput" type="text" maxlength="20" placeholder="Es: SuperGiulio99" autocomplete="off">
-  <button class="go" id="nickNext">Avanti ▶</button>
+  <h2>Accedi o Registrati</h2>
+  <div class="sub">Inserisci username e password</div>
+  <input id="nickInput" type="text" maxlength="20" placeholder="Username" autocomplete="username" style="margin-bottom:10px">
+  <input id="passInput" type="password" maxlength="50" placeholder="Password" autocomplete="current-password">
+  <div id="nickErr" style="color:#ff6b6b;font-size:14px;min-height:20px;margin-top:6px"></div>
+  <button class="go" id="nickNext" style="margin-top:8px">Entra ▶</button>
+  <div class="small">Nuovo? L'account viene creato in automatico</div>
 </div>
 
 <div id="s_char" class="screen">
@@ -191,6 +194,7 @@ let hero='giorgia', city='roma', mode='hub';
 let danzaOv=null;
 let total = parseInt(localStorage.getItem('cugini3d_total')||'0',10);
 let nickname = localStorage.getItem('cugini3d_nick')||'';
+let _savedHash = localStorage.getItem('cugini3d_hash')||'';
 
 const _sb = window.supabase.createClient(
   'https://dppugotdorntundojuir.supabase.co',
@@ -205,6 +209,11 @@ async function pushScore(){
       {onConflict:'nickname'}
     );
   } catch(e) {}
+}
+
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
 async function openLeaderboard(){
@@ -3495,9 +3504,55 @@ function buildCharGrid(){ const el=document.getElementById('charGrid'); el.inner
     el.appendChild(d); }); }
 
 /* wiring */
-document.getElementById('startBtn').onclick=()=>{ if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}} titleActive=false; document.getElementById('nickInput').value=nickname; show('s_nick'); };
-document.getElementById('nickNext').onclick=()=>{ const v=document.getElementById('nickInput').value.trim(); if(!v){document.getElementById('nickInput').focus();return;} nickname=v; localStorage.setItem('cugini3d_nick',nickname); buildCharGrid(); show('s_char'); };
-document.getElementById('nickInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('nickNext').click();});
+document.getElementById('startBtn').onclick=()=>{
+  if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+  titleActive=false;
+  if(nickname&&_savedHash){ buildCharGrid(); show('s_char'); return; }
+  document.getElementById('nickInput').value=nickname;
+  document.getElementById('passInput').value='';
+  document.getElementById('nickErr').textContent='';
+  show('s_nick');
+};
+
+document.getElementById('nickNext').onclick=async()=>{
+  const u=document.getElementById('nickInput').value.trim();
+  const p=document.getElementById('passInput').value;
+  const errEl=document.getElementById('nickErr');
+  if(!u){document.getElementById('nickInput').focus(); errEl.textContent='Inserisci un username.'; return;}
+  if(!p){document.getElementById('passInput').focus(); errEl.textContent='Inserisci una password.'; return;}
+  errEl.textContent='Verifica in corso…';
+  document.getElementById('nickNext').disabled=true;
+  try{
+    const h=await sha256(p);
+    const {data,error}=await _sb.from('leaderboard').select('nickname,score,password_hash').eq('nickname',u).maybeSingle();
+    if(error) throw error;
+    if(!data){
+      const {error:e2}=await _sb.from('leaderboard').insert({nickname:u,score:0,password_hash:h,updated_at:new Date().toISOString()});
+      if(e2) throw e2;
+      nickname=u; _savedHash=h; total=0;
+      localStorage.setItem('cugini3d_nick',u); localStorage.setItem('cugini3d_hash',h); localStorage.setItem('cugini3d_total','0');
+    } else if(!data.password_hash){
+      await _sb.from('leaderboard').update({password_hash:h}).eq('nickname',u);
+      nickname=u; _savedHash=h; total=data.score||0;
+      localStorage.setItem('cugini3d_nick',u); localStorage.setItem('cugini3d_hash',h); localStorage.setItem('cugini3d_total',String(total));
+    } else if(data.password_hash===h){
+      nickname=u; _savedHash=h; total=data.score||0;
+      localStorage.setItem('cugini3d_nick',u); localStorage.setItem('cugini3d_hash',h); localStorage.setItem('cugini3d_total',String(total));
+    } else {
+      errEl.textContent='Password errata.';
+      document.getElementById('nickNext').disabled=false;
+      return;
+    }
+    errEl.textContent='';
+    buildCharGrid(); show('s_char');
+  } catch(e){
+    errEl.textContent='Errore di connessione.';
+  }
+  document.getElementById('nickNext').disabled=false;
+};
+
+document.getElementById('nickInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('passInput').focus();});
+document.getElementById('passInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('nickNext').click();});
 document.getElementById('lb-btn').onclick=openLeaderboard;
 document.getElementById('lb-close').onclick=()=>document.getElementById('leaderboard-modal').classList.remove('on');
 document.getElementById('charNext').onclick=()=>{ if(hero==='random'&&!CHARS.random.name)generateRandomHero(); document.querySelectorAll('.mkb').forEach(m=>m.classList.toggle('sel',m.dataset.city===city)); show('s_map'); };
