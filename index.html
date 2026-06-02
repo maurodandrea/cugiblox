@@ -142,7 +142,7 @@ const CITIES = {
 const CITY_GAMES = {
   roma:    ['bowling','scuola','casa','parco','danza','piscina','color_hotel','guida','moto','bici','pattinaggio'],
   matera:  ['cavallo','scuola','parco','tennis','bar','casa','parco_avventure','calcio','basket','piscina','arco'],
-  rossano: ['mare','piscina','acquapark','pesca','giostre','bar','bici','piazzetta','gavettoni','ristorante'],
+  rossano: ['mare','piscina','acquapark','pesca','giostre','bar','bici','piazzetta','gavettoni','ristorante','arco'],
   napoli:  ['crociera'],
   bari:    ['aereo'],
 };
@@ -857,15 +857,15 @@ function walkCollect(th){
     }
     haz.forEach(h=>{ h.position.addScaledVector(h.userData.v,dt); if(Math.abs(h.position.x)>half)h.userData.v.x*=-1; if(Math.abs(h.position.z)>half)h.userData.v.z*=-1; h.lookAt(player.position.x,h.position.y,player.position.z);
       if(Math.hypot(player.position.x-h.position.x,player.position.z-h.position.z)<1.1){ time-=3*dt; beep(140,.06,'sawtooth',.06); const dx=player.position.x-h.position.x,dz=player.position.z-h.position.z,d=Math.hypot(dx,dz)||1; player.position.x+=dx/d*0.12; player.position.z+=dz/d*0.12; } });
-    if(th._tvMat && Math.hypot(player.position.x-3.5,player.position.z+7.5)<2.2 && hit('Space')){ th._tvOn=!th._tvOn; const g2=th._tvC.getContext('2d'); if(th._tvOn){ g2.fillStyle='#05111f'; g2.fillRect(0,0,256,160); g2.fillStyle='#1a3a6a'; g2.fillRect(0,30,256,90); g2.fillStyle='#3a1a05'; g2.fillRect(0,120,256,40); g2.fillStyle='rgba(255,235,100,.9)'; g2.beginPath(); g2.arc(128,75,18,0,Math.PI*2); g2.fill(); g2.fillStyle='rgba(255,255,255,.85)'; g2.font='bold 14px sans-serif'; g2.textAlign='center'; g2.fillText('★ LE AVVENTURE ★',128,16); g2.font='11px sans-serif'; g2.fillText('🎬 Film in corso',128,150); th._tvMat.emissive.set(0x223366); th._tvMat.emissiveIntensity=0.7; } else { g2.fillStyle='#000'; g2.fillRect(0,0,256,160); th._tvMat.emissive.set(0); th._tvMat.emissiveIntensity=0; } th._tvTex.needsUpdate=true; beep(th._tvOn?440:220,.1); }
+    if(th.onUpdate) th.onUpdate(player,t,dt,hit('Space'));
     setScore(th.emoji+' '+collected+'/'+th.goal+'   ·   ⏱️ '+Math.max(0,Math.ceil(time))+'s');
     if(th.goal>0 && collected>=th.goal){ done=true; finishGame(15+Math.ceil(Math.max(0,time)),th.win); }
     else if(time<=0){ done=true; finishGame(5+collected,'Tempo scaduto — '+collected+' fatti'); }
   }};
 }
 const THEMES = {
-  casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[6,5.5],dropLabel:'🧺 Scatolone',exitDoor:[0,8],furniture:[{type:'bed',x:-5.5,z:-5},{type:'sofa',x:3.5,z:-5.5}],instr:'Riordina · avvicinati al letto per sdraiarti, al divano per sederti · 🚪 esci',win:'Cameretta in ordine! 🏠',
-    decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(1.1,.18,.75,0xf5eedd,-6.2,1.04,-6.6); B(1.1,.18,.75,0xf5eedd,-4.8,1.04,-6.6); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5); B(1.6,1.2,1.6,0xd2691e,6,.6,5.5);
+  casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[0,0],dropLabel:'🧺 Scatolone',exitDoor:[0,8],furniture:[{type:'bed',x:-5.5,z:-5},{type:'sofa',x:3.5,z:-5.5}],instr:'Riordina · avvicinati al letto per sdraiarti, al divano per sederti · 🚪 esci',win:'Cameretta in ordine! 🏠',
+    decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(1.1,.18,.75,0xf5eedd,-6.2,1.04,-6.6); B(1.1,.18,.75,0xf5eedd,-4.8,1.04,-6.6); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5);
       B(2,1.4,.12,0x9fd6ee,-3,2.2,-7.84); B(2,1.4,.12,0x9fd6ee,3,2.2,-7.84); B(.12,1.4,2,0x9fd6ee,-7.84,2.2,-2); B(.12,1.4,2,0x9fd6ee,7.84,2.2,2);   // finestre
       B(2.8,.5,1.1,0x4a6fa5,3.5,.4,-5.5); B(2.8,.7,.25,0x4a6fa5,3.5,.85,-5.1);  // divano vicino TV
       B(3.4,.06,2.2,0x9c3a3a,3.5,.04,-6.5);                                       // tappeto davanti TV
@@ -888,6 +888,9 @@ const THEMES = {
       B(4.5,.65,.38,0xddb87a,-7.7,2.20,2.5);                                         // pensili
       B(.9,2.0,.68,0xe4e4e4,-7.5,1.0,5.5); B(.06,.5,.08,0x888888,-7.06,1.25,5.5);  // frigo + maniglia
       const kitLbl=labelSprite('🍳 Cucina',1.9); kitLbl.position.set(-7.5,3.0,2.5); world.add(kitLbl);
+      // Pasti e vino sul bancone
+      [[- 7.1,2.2,'🍝'],[- 6.7,2.5,'🥘'],[- 6.3,2.2,'🍮']].forEach(([kx,kz,em])=>{ const kf=makeTreat('gelato'); kf.scale.setScalar(1.35); kf.position.set(kx,1.05,kz); world.add(kf); const kl=labelSprite(em,1.1); kl.position.set(kx,1.52,kz); world.add(kl); });
+      B(.13,.52,.13,0x2a5020,-7.45,.69,2.5); B(.07,.22,.07,0x1e3a15,-7.45,1.08,2.5); const wlbl=labelSprite('🍷',1.1); wlbl.position.set(-7.45,1.45,2.5); world.add(wlbl);
       // === BAGNO (angolo destra, z=4..7.5) ===
       const bflr=new THREE.Mesh(new THREE.PlaneGeometry(2.8,3.2),M(0xeaeaea)); bflr.rotation.x=-Math.PI/2; bflr.position.set(5.9,.02,5.7); world.add(bflr);  // piastrelle
       B(.08,1.5,3.0,0xe8ddd0,4.6,.75,5.7);                                           // muretto divisorio
@@ -898,8 +901,29 @@ const THEMES = {
       B(.08,2.2,.9,0x9fd6ee,7.84,1.1,5.0); B(.9,2.2,.06,0x9fd6ee,7.42,1.1,4.6);   // vetri doccia
       B(.8,.1,.9,0xddeeff,7.42,.06,5.0);                                              // piatto doccia
       const shh=cyl(.15,.15,.03,0x888888); shh.position.set(7.42,2.1,5.0); world.add(shh);
-      const batLbl=labelSprite('🚿 Bagno',1.9); batLbl.position.set(6.2,2.5,5.7); world.add(batLbl); },
+      const batLbl=labelSprite('🚿 Bagno',1.9); batLbl.position.set(6.2,2.5,5.7); world.add(batLbl);
+      // Acqua doccia (colonna, visibile solo quando accesa)
+      const shW=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,2.0,12),new THREE.MeshStandardMaterial({color:0x88d4ff,transparent:true,opacity:0,roughness:.08,emissive:new THREE.Color(0x2255aa),emissiveIntensity:0}));
+      shW.position.set(7.42,1.05,5.0); world.add(shW); this._shW=shW; this._shOn=false;
+      // Acqua lavandino (sferetta che scende, visibile solo quando aperto)
+      const sinW=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),new THREE.MeshStandardMaterial({color:0x88d4ff,transparent:true,opacity:0,roughness:.08}));
+      sinW.position.set(5.2,.97,7.45); world.add(sinW); this._sinW=sinW; this._sinT=0; },
     item(){ const b=smallBox(TC[Math.floor(Math.random()*TC.length)]); b.position.y=.3; return b; },
+    onUpdate(player,t,dt,sp){
+      // TV
+      if(this._tvMat){ const dTV=Math.hypot(player.position.x-3.5,player.position.z+7.75);
+        if(dTV<2.4 && sp){ this._tvOn=!this._tvOn; const g2=this._tvC.getContext('2d'); if(this._tvOn){ g2.fillStyle='#05111f'; g2.fillRect(0,0,256,160); g2.fillStyle='#1a3a6a'; g2.fillRect(0,30,256,90); g2.fillStyle='rgba(255,235,100,.9)'; g2.beginPath(); g2.arc(128,75,18,0,Math.PI*2); g2.fill(); g2.fillStyle='rgba(255,255,255,.85)'; g2.font='bold 14px sans-serif'; g2.textAlign='center'; g2.fillText('★ LE AVVENTURE ★',128,16); g2.font='11px sans-serif'; g2.fillText('🎬 Film in corso',128,150); this._tvMat.emissive.set(0x223366); this._tvMat.emissiveIntensity=0.7; } else { g2.fillStyle='#000'; g2.fillRect(0,0,256,160); this._tvMat.emissive.set(0); this._tvMat.emissiveIntensity=0; } this._tvTex.needsUpdate=true; beep(this._tvOn?440:220,.1); }
+        if(dTV<2.4) setInstr('📺 AZIONE: '+(this._tvOn?'spegni TV':'accendi TV')); }
+      // Doccia
+      if(this._shW){ const dSh=Math.hypot(player.position.x-7.42,player.position.z-5.0);
+        if(dSh<1.6 && sp){ this._shOn=!this._shOn; this._shW.material.opacity=this._shOn?.38:0; this._shW.material.emissiveIntensity=this._shOn?.4:0; beep(this._shOn?900:.350,.14,'sine',.08); }
+        if(dSh<1.6) setInstr('🚿 AZIONE: '+(this._shOn?'chiudi doccia':'apri doccia')); }
+      // Lavandino
+      if(this._sinW){ const dSi=Math.hypot(player.position.x-5.2,player.position.z-7.5);
+        if(dSi<1.4 && sp){ this._sinT=2.2; beep(1100,.09,'sine',.05); setTimeout(()=>beep(950,.07,'sine',.04),100); }
+        if(this._sinT>0){ this._sinT-=dt; this._sinW.material.opacity=Math.max(0,this._sinT*.4); this._sinW.position.y=.97+Math.sin(t*10)*.07; } else this._sinW.material.opacity=0;
+        if(dSi<1.4) setInstr('🚰 AZIONE: apri rubinetto'); }
+    },
     activities(){ const oc=otherCousins(); const A=[]; const P=['draw','drink','build','paint','talk','jump','write','throw','fight'];
       B(1.2,.5,.8,0x9c6b3f,-3,.25,-3.2); A.push(aNPC(oc[0],-3,-2.4,0,'draw',P));
       B(.4,.4,.4,0x4aa3ff,6.7,.2,-4); A.push(aNPC(oc[1],6.5,-4,Math.PI/2,'paint',P));
@@ -1836,7 +1860,7 @@ function GameMare(){
     const inWater=player.position.z<SEAEDGE; let diving=false;
     // barca: salita (AZIONE vicino) e navigazione
     const nearBoat=!onBoat&&Math.hypot(player.position.x-boat.position.x,player.position.z-boat.position.z)<4.5;
-    if(!onSailboat && nearBoat && hit('Space')){ onSailboat=true; beep(700,.12,'sine',.1); }
+    let boardedNow=false; if(!onSailboat && nearBoat && hit('Space')){ onSailboat=true; boardedNow=true; beep(700,.12,'sine',.1); }
     if(onSailboat){
       if(keys['ArrowLeft'])boat.rotation.y+=dt*1.4; if(keys['ArrowRight'])boat.rotation.y-=dt*1.4;
       let bf=0; if(keys['ArrowUp'])bf=1; else if(keys['ArrowDown'])bf=-.5;
@@ -1844,7 +1868,7 @@ function GameMare(){
       boat.position.x=THREE.MathUtils.clamp(boat.position.x,-22,22); boat.position.z=THREE.MathUtils.clamp(boat.position.z,-26,-2);
       const bry=boat.rotation.y; player.position.set(boat.position.x-Math.sin(bry)*.3,boat.position.y+1.1,boat.position.z-Math.cos(bry)*.3); player.rotation.y=bry+Math.PI;
       walkAnim(player,(keys['ArrowUp']||keys['ArrowDown'])?t*8:0);
-      if(hit('Space')){ onSailboat=false; beep(400,.08); }
+      if(!boardedNow && hit('Space')){ onSailboat=false; beep(400,.08); }
       followCam(player,9,7,.8);
       setInstr('◀▶ sterza · ▲▼ naviga · AZIONE per scendere ⛵');
     } else {
@@ -2576,7 +2600,7 @@ const GAME_FN={
   acquapark:()=>walkCollect(THEMES.acquapark_hub),
   parco_avventure:ParcoAvventure,
   cavallo:()=>RunnerGame({mode:'fence'}),
-  calcio:GameCalcio, basket:GameBasket, piscina:GamePiscina, danza:GameDanza, pesca:GamePesca, giostre:GameGiostre, gavettoni:GameGavettoni, mare:GameMare, bowling:GameBowling,
+  calcio:GameCalcio, basket:GameBasket, piscina:GamePiscina, danza:GameDanza, pesca:GamePesca, giostre:GameGiostre, gavettoni:GameGavettoni, mare:GameMare, bowling:GameBowling, arco:GameArco,
   giostre_car:GameGiostreCarousel, giostre_salt:GameSaltaSalta, giostre_ruota:GameRuotaGiostra,
   acquapark_slide:()=>DriveGame({veh:'tube',terrain:'slide',goal:520,maxspeed:32}),
   acquapark_onde:GamePiscinaOnde, acquapark_fiume:GameFiumeLento, acquapark_scivolo2:GameScivoloStretto,
