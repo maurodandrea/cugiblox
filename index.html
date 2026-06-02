@@ -1007,7 +1007,7 @@ const THEMES = {
     item(){ const g=new THREE.Group(); const ball=new THREE.Mesh(new THREE.SphereGeometry(.32,14,14),new THREE.MeshStandardMaterial({color:TC[Math.floor(Math.random()*TC.length)],emissive:0x222222,emissiveIntensity:.15})); ball.position.y=.7; const str=cyl(.01,.01,.7,0xffffff); str.position.y=.2; g.add(ball,str); return g; },
     activities(){ const oc=otherCousins(); const A=[];
       // ogni cugino compare una sola volta, tutti in movimento
-      const r0=aNPC(oc[0],-1,-2,1.2,'run'); r0.z0=-2; r0.span=12; A.push(r0);
+      const r0=aNPC(oc[0],-1,3,1.2,'run'); r0.z0=3; r0.span=10; A.push(r0);
       if(oc.length>1){ const sl=aNPC(oc[1],6,-1.5,0,'slide'); sl.x0=6; sl.z0=-1.5; A.push(sl); }
       if(oc.length>2){ const bk=aNPC(oc[2],0,3.5,Math.PI/2,'bikeX'); bk.x0=0; bk.span=12; A.push(bk); }
       if(oc.length>3){ const r1=aNPC(oc[3],3,4.5,Math.PI,'run'); r1.z0=4.5; r1.span=10; A.push(r1); }
