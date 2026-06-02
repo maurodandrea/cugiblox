@@ -296,8 +296,8 @@ function buildFish(col){ const g=new THREE.Group(); const m=M(col,.5);
 function buildPlane3D(livery){
   const g=new THREE.Group(); const WHITE=M(0xffffff,.6), BLUE=M(livery||0x1a55aa,.6), GRAY=M(0xcccccc,.5), DARK=M(0x222222,.7), GLASS=new THREE.MeshStandardMaterial({color:0x8de0ff,transparent:true,opacity:.7,roughness:.1});
   const fuse=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,22,18),WHITE); fuse.rotation.z=Math.PI/2; g.add(fuse);
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(1.4,5,18),WHITE); nose.rotation.z=Math.PI/2; nose.position.x=13.5; g.add(nose);
-  const tailC=new THREE.Mesh(new THREE.ConeGeometry(1.4,3,18),WHITE); tailC.rotation.z=-Math.PI/2; tailC.position.x=-12.5; g.add(tailC);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(1.4,5,18),WHITE); nose.rotation.z=-Math.PI/2; nose.position.x=13.5; g.add(nose);
+  const tailC=new THREE.Mesh(new THREE.ConeGeometry(1.4,3,18),WHITE); tailC.rotation.z=Math.PI/2; tailC.position.x=-12.5; g.add(tailC);
   const winGeo=new THREE.BoxGeometry(.18,2.2,18);
   [-1,1].forEach(s=>{ const w=new THREE.Mesh(winGeo,WHITE); w.position.set(.4,-.4,s*9); w.rotation.x=s*-.08; g.add(w); const wlet=new THREE.Mesh(new THREE.BoxGeometry(.1,1.6,.65),BLUE); wlet.position.set(.5,.4,s*18); g.add(wlet); });
   const stabH=new THREE.BoxGeometry(.1,.7,7); [-1,1].forEach(s=>{ const sh=new THREE.Mesh(stabH,WHITE); sh.position.set(-12,.5,s*3.5); g.add(sh); });
@@ -414,8 +414,10 @@ function cityLandmark(){
     const tw=new THREE.Mesh(new THREE.BoxGeometry(3,14,3),M(0xd8e2ee)); tw.position.set(23,7,34); world.add(tw);
     const twTop=new THREE.Mesh(new THREE.BoxGeometry(4.5,2.2,4.5),new THREE.MeshStandardMaterial({color:0x6bd0ff,transparent:true,opacity:.7})); twTop.position.set(23,14.5,34); world.add(twTop);
     const ant=new THREE.Mesh(new THREE.BoxGeometry(.15,.15,4),M(0x888888)); ant.position.set(23,16.5,34); world.add(ant);
-    // Aereo parcheggiato
-    const pap=buildPlane3D(); pap.position.set(-18,0,14); pap.rotation.y=Math.PI/2; pap.scale.setScalar(.9); world.add(pap);
+    // Aerei parcheggiati (dimensioni diverse, nosi verso terminal)
+    const pap=buildPlane3D(0xffffff); pap.position.set(-18,0,14); pap.rotation.y=-Math.PI/2; pap.scale.setScalar(.9); world.add(pap);
+    const pap2=buildPlane3D(0x1a44cc); pap2.position.set(12,0,18); pap2.rotation.y=-Math.PI/2; pap2.scale.setScalar(.72); world.add(pap2);
+    const pap3=buildPlane3D(0xcc2222); pap3.position.set(-2,0,-22); pap3.rotation.y=Math.PI/2; pap3.scale.setScalar(1.15); world.add(pap3);
     // Passerella imbarco
     const pg=new THREE.Mesh(new THREE.BoxGeometry(2,2.5,9),M(0x9a9aaa)); pg.position.set(-18,1.25,19); world.add(pg);
     // Luci pista
@@ -2359,15 +2361,15 @@ function GameCrociera(){
   deckConf.forEach(d=>{ const fl=new THREE.Mesh(new THREE.BoxGeometry(d.w,d.h,d.l),M(d.c)); fl.position.set(0,d.y,-2); ship.add(fl);
     for(let w=-Math.floor(d.l/2)+2;w<d.l/2;w+=1.8){ [-1,1].forEach(s=>{ const win=new THREE.Mesh(new THREE.BoxGeometry(.06,.65,.8),new THREE.MeshStandardMaterial({color:0x9de0ff,emissive:0x4488bb,emissiveIntensity:.4,transparent:true,opacity:.85})); win.position.set(d.w/2*s,d.y,w); ship.add(win); }); } });
   // Ponte lido (coperta superiore)
-  ship.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10.5,.22,28),M(0xe8e4d8)),{position:new THREE.Vector3(0,15.28,-2)}));
+  { const ld=new THREE.Mesh(new THREE.BoxGeometry(10.5,.22,28),M(0xe8e4d8)); ld.position.set(0,15.28,-2); ship.add(ld); }
   // Zona casino (poppa): pavimento scuro
-  ship.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10.5,.06,10),M(0x3a1a2a)),{position:new THREE.Vector3(0,15.31,-10)}));
+  { const ca=new THREE.Mesh(new THREE.BoxGeometry(10.5,.06,10),M(0x3a1a2a)); ca.position.set(0,15.31,-10); ship.add(ca); }
   for(let i=0;i<4;i++){ const sl=new THREE.Mesh(new THREE.BoxGeometry(.7,1.4,.5),M(0x222255)); sl.position.set(-3.5+i*2.3,16.01,-10); ship.add(sl); }
   // Zona ristorante (centro): pavimento caldo
-  ship.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10.5,.06,10),M(0x8a5c3a)),{position:new THREE.Vector3(0,15.31,0)}));
+  { const rs=new THREE.Mesh(new THREE.BoxGeometry(10.5,.06,10),M(0x8a5c3a)); rs.position.set(0,15.31,0); ship.add(rs); }
   for(let i=0;i<3;i++){ const tb=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.08,12),M(0xfff8e8)); tb.position.set(-2+i*2,15.5,rand(-4,4)); ship.add(tb); }
   // Zona cabina (prua): pavimento blu
-  ship.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10.5,.06,10),M(0x1a3a6a)),{position:new THREE.Vector3(0,15.31,10)}));
+  { const cb=new THREE.Mesh(new THREE.BoxGeometry(10.5,.06,10),M(0x1a3a6a)); cb.position.set(0,15.31,10); ship.add(cb); }
   const lcols2=[0xff6655,0x6bd0ff,0xffd24a,0x6bff8a];
   for(let i=0;i<4;i++){ const ch=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,1.5),M(lcols2[i])); ch.position.set(-3+i*2,15.5,10); ship.add(ch); }
   // Piscina sul ponte lido
@@ -2407,7 +2409,7 @@ function GameCrociera(){
   const GOAL=12;
   setPad('walk'); setInstr('🚢 Cammina sul ponte lido! Casino 🎰 (poppa) · Ristorante 🍝 (centro) · Cabina 🛏️ (prua) · raccogli!');
   setScore('🚢 Crociera · 0/'+GOAL+' ★');
-  camera.position.set(0,23,22);
+  camera.position.set(0,20,22);
 
   return { update(dt){ if(won)return; t+=dt; rockT+=dt;
     ship.rotation.z=Math.sin(rockT*.38)*.012; ship.position.y=Math.sin(rockT*.28)*.06;
@@ -2419,7 +2421,7 @@ function GameCrociera(){
     portT+=dt; if(portT>10 && portIdx<portGroups.length){ portGroups[portIdx].visible=true; portIdx++; portT=0; beep(440,.15,'sine',.04); showMsg('⚓ '+portNames[portIdx-1]); setTimeout(()=>showMsg(''),2200); }
     portGroups.forEach(pg=>{ if(pg.visible){ pg.rotation.y=Math.sin(t*.12)*.05; } });
     casinoSign.position.y=17.5+Math.sin(t*2)*.14; restSign.position.y=17.5+Math.sin(t*2+1)*.14; cabinSign.position.y=17.5+Math.sin(t*2+2)*.14;
-    const moved=thirdPersonWalk(player,dt,5); player.position.x=THREE.MathUtils.clamp(player.position.x,-4,4); player.position.z=THREE.MathUtils.clamp(player.position.z,-13,12); player.position.y=15.3; walkAnim(player,moved?t*9:0); followCam(player,12,23,15.3);
+    const moved=thirdPersonWalk(player,dt,5); player.position.x=THREE.MathUtils.clamp(player.position.x,-4.5,4.5); player.position.z=THREE.MathUtils.clamp(player.position.z,-14,11); player.position.y=15.3; walkAnim(player,moved?t*9:0); followCam(player,10,19.8,16.2);
     for(let i=items.length-1;i>=0;i--){ const it=items[i]; if(!it.m.parent)continue; it.m.rotation.y+=dt*2;
       const baseY=it.type==='casino'?15.6:it.type==='food'?15.5:15.6; it.m.position.y=baseY+Math.sin(t*2+i)*.13;
       const dx=player.position.x-it.m.position.x, dz=player.position.z-it.m.position.z;
@@ -2459,7 +2461,7 @@ function GameAereo(){
 
   // ===== AEREO PRINCIPALE =====
   const plane=buildPlane3D(0x0044aa);
-  plane.position.set(0,0,-65); plane.rotation.y=0;
+  plane.position.set(0,0,-65); plane.rotation.y=Math.PI/2;
   world.add(plane);
 
   const player=buildCousin(hero); player.position.set(0,0,25); player.rotation.y=Math.PI; world.add(player);
