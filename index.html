@@ -27,10 +27,9 @@
   .small{font-size:13px;color:rgba(255,255,255,.6);margin-top:14px;}
   #mapWrap{position:relative;display:inline-block;}
   #italyImg{width:min(78vw,360px);height:auto;border-radius:12px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5));}
-  .mkb{position:absolute;transform:translate(-50%,-50%);background:none;border:none;padding:2px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:bold;color:#111;cursor:pointer;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 6px #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;}
-  .mkb .dot{width:9px;height:9px;background:#c0392b;border:1.5px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.55);flex-shrink:0;transition:.15s;}
-  .mkb.lbl-left{flex-direction:row-reverse;}
-  .mkb:hover .dot,.mkb.sel .dot{background:#e74c3c;transform:scale(1.4);}
+  .mkb{position:absolute;transform:translate(-50%,-50%);background:#ffd86b;color:#3a2400;font-weight:bold;border:2px solid #fff;border-radius:14px;padding:3px 8px;font-size:11px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.45);white-space:nowrap;}
+  .mkb::before{content:'📍';margin-right:3px;}
+  .mkb:hover,.mkb.sel{background:#ff6b6b;color:#fff;transform:translate(-50%,-50%) scale(1.08);}
   #hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:8;} #hud.on{display:block;}
   #score{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.45);padding:8px 18px;border-radius:20px;font-weight:bold;font-size:17px;text-align:center;}
   #instr{position:absolute;top:58px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.35);padding:6px 14px;border-radius:14px;font-size:14px;color:#ffe;text-align:center;max-width:90vw;}
@@ -83,11 +82,11 @@
   <div class="sub">Tocca una città sulla cartina</div>
   <div id="mapWrap">
     <img id="italyImg" src="italia.jpg" alt="Italia">
-    <button class="mkb lbl-left" data-city="roma"    style="left:57%;top:51%"><span class="dot"></span>Roma</button>
-    <button class="mkb"          data-city="matera"  style="left:78%;top:63%"><span class="dot"></span>Matera</button>
-    <button class="mkb"          data-city="rossano" style="left:75%;top:74%"><span class="dot"></span>Rossano</button>
-    <button class="mkb lbl-left" data-city="napoli"  style="left:67%;top:62%"><span class="dot"></span>Nave da Napoli</button>
-    <button class="mkb"          data-city="bari"    style="left:85%;top:54%"><span class="dot"></span>Aereo da Bari</button>
+    <button class="mkb" data-city="roma"    style="left:57%;top:46%">Roma</button>
+    <button class="mkb" data-city="bari"    style="left:82%;top:55%">Aereo da Bari</button>
+    <button class="mkb" data-city="matera"  style="left:72%;top:63%">Matera</button>
+    <button class="mkb" data-city="napoli"  style="left:51%;top:71%">Nave da Napoli</button>
+    <button class="mkb" data-city="rossano" style="left:72%;top:79%">Rossano</button>
   </div>
   <button class="go" id="mapBack" style="background:rgba(255,255,255,.15);color:#fff">◀ Cambia personaggio</button>
 </div>
