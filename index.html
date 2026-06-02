@@ -2007,11 +2007,11 @@ function GameMare(){
   const canotto=new THREE.Group(); const hull=new THREE.Mesh(new THREE.TorusGeometry(.9,.32,10,18),M(0xff6b3b,.5)); hull.rotation.x=Math.PI/2; hull.position.y=.3; const fl=new THREE.Mesh(new THREE.CircleGeometry(.78,18),M(0xffd24a,.5)); fl.rotation.x=-Math.PI/2; fl.position.y=.22; canotto.add(hull,fl); canotto.position.set(3,0,-5); canotto.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(canotto);
   // Canotto a remi
   const rowboat=new THREE.Group();
-  const rbHull=new THREE.Mesh(new THREE.BoxGeometry(1.0,.36,2.8),M(0x7a3b10,.95)); rbHull.position.y=.18; rowboat.add(rbHull);
-  const rbInner=new THREE.Mesh(new THREE.BoxGeometry(.7,.12,2.2),M(0xb8864e,.9)); rbInner.position.y=.42; rowboat.add(rbInner);
-  const rbSeat=new THREE.Mesh(new THREE.BoxGeometry(.82,.08,.38),M(0x9a7040,.9)); rbSeat.position.set(0,.5,0); rowboat.add(rbSeat);
-  const rbBow=new THREE.Mesh(new THREE.ConeGeometry(.5,.55,4),M(0x7a3b10,.95)); rbBow.rotation.x=-Math.PI/2; rbBow.position.set(0,.18,1.67); rowboat.add(rbBow);
-  const mkOar=(side)=>{ const og=new THREE.Group(); const sh=cyl(.03,.03,1.7,0xc8a060); sh.rotation.z=Math.PI/2; og.add(sh); const bl=new THREE.Mesh(new THREE.BoxGeometry(.28,.05,.52),M(0x9a7040,.9)); bl.position.set(side*.88,0,-.05); og.add(bl); og.position.set(side*.52,.52,-.05); return og; };
+  const rbHull=new THREE.Mesh(new THREE.BoxGeometry(1.0,.36,2.8),M(0x1a5fb4,.95)); rbHull.position.y=.18; rowboat.add(rbHull);
+  const rbInner=new THREE.Mesh(new THREE.BoxGeometry(.7,.12,2.2),M(0xffd600,.9)); rbInner.position.y=.42; rowboat.add(rbInner);
+  const rbSeat=new THREE.Mesh(new THREE.BoxGeometry(.82,.08,.38),M(0xffd600,.9)); rbSeat.position.set(0,.5,0); rowboat.add(rbSeat);
+  const rbBow=new THREE.Mesh(new THREE.ConeGeometry(.5,.55,4),M(0x1a5fb4,.95)); rbBow.rotation.x=-Math.PI/2; rbBow.position.set(0,.18,1.67); rowboat.add(rbBow);
+  const mkOar=(side)=>{ const og=new THREE.Group(); const sh=cyl(.03,.03,1.7,0x1a5fb4); sh.rotation.z=Math.PI/2; og.add(sh); const bl=new THREE.Mesh(new THREE.BoxGeometry(.28,.05,.52),M(0xffd600,.9)); bl.position.set(side*.88,0,-.05); og.add(bl); og.position.set(side*.52,.52,-.05); return og; };
   const oarL=mkOar(-1), oarR=mkOar(1); rowboat.add(oarL,oarR);
   rowboat.position.set(6,.08,-2); rowboat.traverse(o=>{if(o.isMesh)o.castShadow=true;}); world.add(rowboat);
   const rbLabel=labelSprite('🚣 Canotto',1.1); rbLabel.position.set(6,2.2,-2); world.add(rbLabel);
