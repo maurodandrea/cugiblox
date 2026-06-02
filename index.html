@@ -130,6 +130,9 @@ const CHARS = {
   corrado:{name:'Corrado',age:10,skin:0xf0c9a8,hair:0x8a5a30,style:'curly', shirt:0x4cae58,pants:0x3a6fa0},
   giulio: {name:'Giulio', age:6, skin:0xf0c9a8,hair:0x4a3526,style:'buzz',  shirt:0xffce3a,pants:0x444444},
   random: {name:'Casuale',age:10,skin:0xf3cda9,hair:0xc79655,style:'long',  shirt:0xff9ec4,pants:0x4a6fa5},
+  bruno:  {name:'Bruno',  age:42,skin:0xf0c9a8,hair:0x3a2010,style:'adult',beard:true, shirt:0x2a5ab0,pants:0x333344},
+  cuoco1: {name:'Chef Marco',age:40,skin:0xf5c2a0,hair:0x2a1800,style:'adult',beard:false,shirt:0xfafafa,pants:0x2a2a6a},
+  cuoco2: {name:'Chef Luca', age:38,skin:0xf0b880,hair:0x3a2010,style:'adult',beard:true, shirt:0xfafafa,pants:0x2a2a6a},
 };
 const CHAR_IDS = ['letizia','giorgia','eleonora','corrado','giulio'];
 const PLAYER_IDS = [...CHAR_IDS,'random'];
@@ -992,18 +995,11 @@ const THEMES = {
       const lly=cyl(.06,.06,.55,0x2f8f4a); lly.position.set(4.4,.28,-5.4); world.add(lly); const llf=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M(0xffe14a,.4)); llf.scale.set(1,.3,1); llf.position.set(4.4,.55,-5.4); world.add(llf); },
     item(){ const g=new THREE.Group(); const ball=new THREE.Mesh(new THREE.SphereGeometry(.32,14,14),new THREE.MeshStandardMaterial({color:TC[Math.floor(Math.random()*TC.length)],emissive:0x222222,emissiveIntensity:.15})); ball.position.y=.7; const str=cyl(.01,.01,.7,0xffffff); str.position.y=.2; g.add(ball,str); return g; },
     activities(){ const oc=otherCousins(); const A=[];
-      A.push(aNPC(oc[0%oc.length],-5.8,2.8,0,'jump',['jump','talk']));
-      A.push(aNPC(oc[1%oc.length],-6.4,1.2,Math.PI,'jump',['jump','talk']));
-      A.push(aNPC(oc[2%oc.length],6,-1.5,0,'slide'));                               // scivolo animato
-      A.push(aNPC(oc[3%oc.length],6.5,.5,Math.PI,'jump',['jump','throw']));
-      A.push(aNPC(oc[4%oc.length],1.2,-7.2,Math.PI/2,'talk',['talk','jump']));
-      A.push(aNPC(oc[5%oc.length],3.0,-6.8,-Math.PI/2,'talk',['talk','drink']));
-      A.push(aNPC(oc[6%oc.length],4.5,-4.5,Math.PI/4,'draw',['draw','talk']));
-      A.push(aNPC(oc[7%oc.length],-2,3.5,Math.PI,'drink',['drink','talk']));
-      const runner=aNPC(oc[8%oc.length],-1,-2,1.2,'run'); runner.span=12; A.push(runner);
-      A.push(aNPC(oc[9%oc.length],1.5,-3.5,-0.8,'throw',['throw','jump']));
-      A.push(aNPC(oc[10%oc.length],-4,3.2,0,'talk',['talk','drink']));
-      A.push(aNPC(oc[11%oc.length],4.2,3.0,Math.PI,'jump',['jump','talk']));
+      // ogni cugino compare una sola volta, tutti in movimento
+      const r0=aNPC(oc[0],-1,-2,1.2,'run'); r0.z0=-2; r0.span=12; A.push(r0);
+      if(oc.length>1){ const sl=aNPC(oc[1],6,-1.5,0,'slide'); sl.x0=6; sl.z0=-1.5; A.push(sl); }
+      if(oc.length>2){ const bk=aNPC(oc[2],0,3.5,Math.PI/2,'bikeX'); bk.x0=0; bk.span=12; A.push(bk); }
+      if(oc.length>3){ const r1=aNPC(oc[3],3,4.5,Math.PI,'run'); r1.z0=4.5; r1.span=10; A.push(r1); }
       return A; },
     rides(){ const R=[];
       const sx=-6,sz=2; B(.15,2.4,.15,0x6a4a2a,sx-1,1.2,sz); B(.15,2.4,.15,0x6a4a2a,sx+1,1.2,sz); B(2.2,.15,.15,0x6a4a2a,sx,2.4,sz);
@@ -1278,15 +1274,22 @@ function GameBasket(){
   const standL=buildStand(); standL.position.set(-10.5,0,-2.5); standL.rotation.y=Math.PI/2; world.add(standL);
   const standR=buildStand(); standR.position.set(10.5,0,-2.5); standR.rotation.y=-Math.PI/2; world.add(standR);
   const standBack=buildStand(); standBack.position.set(0,0,-13.5); standBack.rotation.y=Math.PI; world.add(standBack);
-  const oc=otherCousins(); const fans=[]; for(let i=0;i<4;i++){ const f=buildCousin(oc[i%oc.length]); f.position.set(i<2?-8.4:8.4,0,-5+(i%2)*4); f.rotation.y=i<2?Math.PI/2:-Math.PI/2; world.add(f); fans.push(f); }
-  for(let i=0;i<5;i++){ const f=buildCousin(oc[(i+1)%oc.length]); f.position.set(-4+i*2,0,-11.5); f.rotation.y=0; world.add(f); fans.push(f); }
+  const oc=otherCousins(); const fans=[];
+  // gradinate retro (standBack: pos=(0,0,-13.5), rot.y=π → seatY row0=0.66 z=-13.5, row1=1.21 z=-12.1, row2=1.76 z=-10.7)
+  const backRows=[[0.66,-13.5,[-3,0,3]],[1.21,-12.1,[-2,2]],[1.76,-10.7,[0]]];
+  backRows.forEach(([sy,wz,xs])=>xs.forEach((wx,fi)=>{ const f=buildCousin(oc[(wx+5)%oc.length]); f.position.set(wx,sy,wz); f.rotation.y=0; f.userData.legs[0].rotation.x=-1.3; f.userData.legs[1].rotation.x=-1.3; f.userData.baseY=sy; world.add(f); fans.push(f); }));
+  // gradinate laterali sinistra (standL: pos=(-10.5,0,-2.5), rot.y=π/2 → worldX=-10.5+localZ, worldZ=-2.5-localX)
+  // row0 localZ=0→worldX=-10.5, row1 localZ=-1.4→worldX=-11.9
+  [[0.66,-10.5],[ 1.21,-11.9]].forEach(([sy,wx],ri)=>[-1.5,1.5].forEach((dz,fi)=>{ const f=buildCousin(oc[(ri+fi)%oc.length]); f.position.set(wx,sy,-2.5+dz); f.rotation.y=Math.PI/2; f.userData.legs[0].rotation.x=-1.3; f.userData.legs[1].rotation.x=-1.3; f.userData.baseY=sy; world.add(f); fans.push(f); }));
+  // gradinate laterali destra (standR: pos=(10.5,0,-2.5), rot.y=-π/2)
+  [[0.66,10.5],[1.21,11.9]].forEach(([sy,wx],ri)=>[-1.5,1.5].forEach((dz,fi)=>{ const f=buildCousin(oc[(ri+fi)%oc.length]); f.position.set(wx,sy,-2.5+dz); f.rotation.y=-Math.PI/2; f.userData.legs[0].rotation.x=-1.3; f.userData.legs[1].rotation.x=-1.3; f.userData.baseY=sy; world.add(f); fans.push(f); }));
   const ball=makeBall(.28,'basket'); world.add(ball);
   const player=buildCousin(hero); player.position.set(0,0,1); player.rotation.y=Math.PI; world.add(player);
   camera.position.set(0,2.7,5.8); camera.lookAt(0,2.4,-6);
   let phase='aim', aimX=0, pw=0, pdir=1, vel=new THREE.Vector3(), made=0, shots=0, flyT=0, scored=false, t=0; const GOAL=5;
   function reset(){ ball.position.set(aimX*1.2,1.3,.2); phase='aim'; pw=0; scored=false; showPower(false); }
   reset(); setInstr('◀ ▶ mira · SPAZIO potenza, poi tira'); setScore('Canestri: 0/'+GOAL);
-  return { update(dt){ t+=dt; fans.forEach((f,i)=>f.position.y=Math.abs(Math.sin(t*3+i))*0.14);
+  return { update(dt){ t+=dt; fans.forEach((f,i)=>{ f.position.y=(f.userData.baseY||0)+Math.abs(Math.sin(t*2.5+i))*0.1; walkAnim(f,Math.abs(Math.sin(t*2+i))>0.7?t*4+i:0); });
     if(phase==='aim'){ if(keys['ArrowLeft'])aimX=Math.max(-1,aimX-dt*1.2); if(keys['ArrowRight'])aimX=Math.min(1,aimX+dt*1.2); ball.position.x=aimX*1.2; if(hit('Space')){ phase='power'; showPower(true); } }
     else if(phase==='power'){ pw+=pdir*dt*80; if(pw>100){pw=100;pdir=-1;} if(pw<0){pw=0;pdir=1;} setPower(pw);
       if(hit('Space')){ phase='fly'; showPower(false); shots++; const sp=7.5+pw*.06, ang=THREE.MathUtils.degToRad(56); const d=new THREE.Vector3(-ball.position.x,0,hoopZ-ball.position.z).normalize(); vel.set(d.x*sp*Math.cos(ang),sp*Math.sin(ang),d.z*sp*Math.cos(ang)); beep(440,.1); } }
@@ -1595,27 +1598,25 @@ function GameDanza(){
   for(const side of [-1,1]){ for(let r=0;r<2;r++){ for(let s=0;s<2;s++){ B(.7,.45,.7,0x5a2a3a, side*(5+r*1.5), .22, 4-s*1.7);
     const f=buildCousin(oca[an++%oca.length]); f.position.set(side*(5+r*1.5),.5,4-s*1.7); f.rotation.y=Math.PI;
     f.userData.legs[0].rotation.x=-1.2; f.userData.legs[1].rotation.x=-1.2; world.add(f); aud.push(f); } } }
-  const dancer=buildCousin(hero); dancer.position.set(0,.4,-3); world.add(dancer);
-  const laneX=[-2,0,2], laneKey=['ArrowLeft','Space','ArrowRight'], laneCol=[0xff5b8a,0xffd84a,0x5bc0ff], laneTxt=['◀','AZIONE','▶'];
-  const HITZ=2.6;
-  // pedane + barra colpo
-  const pads=laneX.map((x,i)=>{ const p=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.15,20),new THREE.MeshStandardMaterial({color:laneCol[i],emissive:laneCol[i],emissiveIntensity:.35})); p.position.set(x,.12,HITZ); world.add(p);
-    const lab=labelSprite(laneTxt[i],1.6); lab.position.set(x,1.1,HITZ); world.add(lab); return p; });
-  const line=B(7,.05,.15,0xffffff,0,.2,HITZ); line.material.emissive=new THREE.Color(0xffffff); line.material.emissiveIntensity=.5;
-  camera.position.set(0,3.4,7); camera.lookAt(0,1.2,-1);
-  const notes=[]; let spawn=1, hits=0, miss=0, combo=0, t=0, done=false, fb=0; const GOAL=18, SPD=5.5, PERF=.45, GOODW=.9;
-  setInstr('Premi ◀ / AZIONE / ▶ quando il disco arriva sulla pedana del suo colore!');
-  function move(i){ if(i===0){ dancer.rotation.z=.4; } else if(i===2){ dancer.rotation.z=-.4; } else { dancer.position.y=.7; } }
+  const dancer=buildCousin(hero); dancer.position.set(0,.4,-1); world.add(dancer);
+  // DDR: 4 corsie con frecce
+  const laneX=[-3,-1,1,3], laneKey=['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'], laneCol=[0xff5b5b,0x5bffb0,0x5bddff,0xffdd5b], laneTxt=['◀','▼','▲','▶'];
+  const HITZ=2.4;
+  const pads=laneX.map((x,i)=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(.72,.08,.72),new THREE.MeshStandardMaterial({color:laneCol[i],emissive:laneCol[i],emissiveIntensity:.4,roughness:.5})); p.position.set(x,.43,HITZ); world.add(p); const lab=labelSprite(laneTxt[i],1.5); lab.position.set(x,1.15,HITZ); world.add(lab); return p; });
+  B(10,.04,.1,0xffffff,0,.42,HITZ);
+  camera.position.set(0,3.6,7.5); camera.lookAt(0,1.2,0);
+  const notes=[]; let spawn=1.1, hits=0, miss=0, combo=0, t=0, done=false, fb=0, poseT=0;
+  const GOAL=20, SPD=5.8, PERF=.38, GOODW=.85;
+  setInstr('Premi ◀ ▼ ▲ ▶ quando la freccia arriva sul pad!');
+  function makeNote(ln){ const g=new THREE.Group(); const col=laneCol[ln]; const mat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.55}); const shaft=new THREE.Mesh(new THREE.BoxGeometry(.28,.08,.42),mat); const head=new THREE.Mesh(new THREE.ConeGeometry(.28,.38,4),mat); head.rotation.y=Math.PI/4; if(ln===0){head.rotation.z=-Math.PI/2;head.position.x=-.32;shaft.position.x=.1;} else if(ln===1){head.rotation.x=Math.PI/2;head.position.z=.32;shaft.position.z=-.1;} else if(ln===2){head.rotation.x=-Math.PI/2;head.position.z=-.32;shaft.position.z=.1;} else {head.rotation.z=Math.PI/2;head.position.x=.32;shaft.position.x=-.1;} g.add(shaft,head); g.position.set(laneX[ln],.5,-10); g.userData.ln=ln; world.add(g); return g; }
+  function doPose(d){ poseT=0.65; const a=dancer.userData.arms, l=dancer.userData.legs; a[0].rotation.x=0;a[0].rotation.z=0;a[1].rotation.x=0;a[1].rotation.z=0;l[0].rotation.x=0;l[0].rotation.z=0;l[1].rotation.x=0;l[1].rotation.z=0; if(d===0){a[0].rotation.x=-1.5;a[0].rotation.z=1.1;l[0].rotation.x=.8;l[0].rotation.z=.3;} else if(d===1){l[0].rotation.x=.85;l[1].rotation.x=.85;a[0].rotation.x=-.6;a[1].rotation.x=-.6;} else if(d===2){a[1].rotation.x=-1.7;a[1].rotation.z=-1.0;l[1].rotation.x=.7;} else {a[1].rotation.x=-1.5;a[1].rotation.z=-1.1;l[1].rotation.x=.9;l[1].rotation.z=-.3;} }
   return { update(dt){ if(done)return; t+=dt; if(fb>0)fb-=dt; else showMsg('');
     aud.forEach((f,i)=>{ f.position.y=.5+Math.abs(Math.sin(t*2+i))*0.07; f.rotation.z=Math.sin(t*3+i)*0.06; });
-    spawn-=dt; if(spawn<=0){ spawn=rand(.7,1.15); const ln=Math.floor(Math.random()*3); const n=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.18,18),new THREE.MeshStandardMaterial({color:laneCol[ln],emissive:laneCol[ln],emissiveIntensity:.4})); n.rotation.x=Math.PI/2; n.position.set(laneX[ln],.5,-9); n.userData.ln=ln; world.add(n); notes.push(n); }
-    for(let i=0;i<3;i++){ if(hit(laneKey[i])){ move(i); let best=-1,bd=99; notes.forEach((n,j)=>{ if(n.userData.ln===i && !n.userData.dead){ const d=Math.abs(n.position.z-HITZ); if(d<bd){bd=d;best=j;} } });
-      if(best>=0 && bd<GOODW){ const n=notes[best]; n.userData.dead=true; world.remove(n); notes.splice(best,1); pads[i].material.emissiveIntensity=1.2;
-        if(bd<PERF){ hits++; combo++; beep(700+i*120,.07); showMsg('PERFETTO! x'+combo); } else { hits++; combo++; beep(560+i*100,.06); showMsg('Bene! x'+combo); } fb=.6; }
-      else { combo=0; beep(150,.06); showMsg('Manca!'); fb=.4; } } }
-    for(let i=notes.length-1;i>=0;i--){ const n=notes[i]; n.position.z+=SPD*dt; n.rotation.z+=dt*4; if(n.position.z>HITZ+GOODW+.5){ miss++; combo=0; world.remove(n); notes.splice(i,1); } }
-    pads.forEach(p=>p.material.emissiveIntensity=THREE.MathUtils.lerp(p.material.emissiveIntensity,.35,.15));
-    dancer.rotation.z=THREE.MathUtils.lerp(dancer.rotation.z,0,.12); dancer.position.y=THREE.MathUtils.lerp(dancer.position.y,.3,.12); dancer.rotation.y=Math.sin(t*4)*.25;
+    spawn-=dt; if(spawn<=0){ spawn=rand(.65,1.1); notes.push(makeNote(Math.floor(Math.random()*4))); }
+    for(let i=0;i<4;i++){ if(hit(laneKey[i])){ let best=-1,bd=99; notes.forEach((n,j)=>{ if(n.userData.ln===i&&!n.userData.dead){ const d=Math.abs(n.position.z-HITZ); if(d<bd){bd=d;best=j;} } }); if(best>=0&&bd<GOODW){ const n=notes[best]; n.userData.dead=true; world.remove(n); notes.splice(best,1); doPose(i); pads[i].material.emissiveIntensity=1.6; hits++; combo++; if(bd<PERF){beep(700+i*130,.08);showMsg('PERFETTO! x'+combo);}else{beep(560+i*90,.07);showMsg('Bene! x'+combo);} fb=.55; } else { combo=0; beep(140,.07,'sawtooth'); showMsg('Manca!'); fb=.4; } } }
+    for(let i=notes.length-1;i>=0;i--){ const n=notes[i]; n.position.z+=SPD*dt; if(n.position.z>HITZ+GOODW+.5){ miss++; combo=0; world.remove(n); notes.splice(i,1); showMsg('Perso!'); fb=.3; } }
+    pads.forEach(p=>p.material.emissiveIntensity=THREE.MathUtils.lerp(p.material.emissiveIntensity,.4,.14));
+    if(poseT>0){ poseT-=dt; if(poseT<=0){ const a=dancer.userData.arms,l=dancer.userData.legs; a[0].rotation.x=0;a[0].rotation.z=0;a[1].rotation.x=0;a[1].rotation.z=0;l[0].rotation.x=0;l[0].rotation.z=0;l[1].rotation.x=0;l[1].rotation.z=0; } } else { dancer.rotation.y=Math.sin(t*3.5)*.22; }
     setScore('💃 '+hits+'/'+GOAL+'   ·   combo '+combo+'   ·   persi '+miss);
     if(hits>=GOAL){ done=true; finishGame(12+Math.max(0,12-miss),'Che ballerino! 💃'); }
   }};
@@ -2098,8 +2099,8 @@ function GameScuola(){
   function E(w,h,d,c,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); env.add(m); return m; }
   const player=buildCousin(hero); world.add(player);
   const busPos={x:-13,z:6.5};
-  let stage='', collected=0, t=0, done=false, books=[], mover=[], drivingCars=[], gymState=null, gymBall=null, mensaFoods=[], mensaSeated=false; const GOAL=6;
-  function setStage(s){ clearEnv(); books=[]; mover=[]; drivingCars=[]; gymState=null; gymBall=null; mensaFoods=[]; mensaSeated=false; stage=s;
+  let stage='', collected=0, t=0, done=false, books=[], mover=[], drivingCars=[], gymState=null, gymBall=null, mensaFoods=[], mensaSeated=false, mensaNPCs=[]; const GOAL=6;
+  function setStage(s){ clearEnv(); books=[]; mover=[]; drivingCars=[]; gymState=null; gymBall=null; mensaFoods=[]; mensaSeated=false; mensaNPCs=[]; stage=s;
     if(s==='ext'){
       const grd=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({map:groundTexture('roma'),roughness:.95})); grd.rotation.x=-Math.PI/2; env.add(grd);
       const road=new THREE.Mesh(new THREE.PlaneGeometry(60,5),M(0x3a3d44,.95)); road.rotation.x=-Math.PI/2; road.position.set(0,.05,5); env.add(road);
@@ -2169,7 +2170,7 @@ function GameScuola(){
       for(let i=-3;i<=3;i+=2){ if(Math.abs(i)>1) E(1.8,1.4,.1,0x9fd0e8,i*2.4,2.5,-11.8); }
       // reception
       E(4,1.1,1.5,0x9c6b3f,-6,.55,-9); const sb=labelSprite('Reception',2.4); sb.position.set(-6,2.2,-9); env.add(sb);
-      E(.9,.5,.7,0x6a4a2a,-6,.25,-7.9); const bruno=renameCousin(buildCousin(otherChar()),'Bruno'); bruno.position.set(-6,.5,-7.9); bruno.userData.legs[0].rotation.x=-1.3; bruno.userData.legs[1].rotation.x=-1.3; env.add(bruno);
+      E(.9,.5,.7,0x6a4a2a,-6,.25,-7.9); const bruno=buildCousin('bruno'); bruno.position.set(-6,.5,-7.9); bruno.userData.legs[0].rotation.x=-1.3; bruno.userData.legs[1].rotation.x=-1.3; env.add(bruno);
       // armadietti (lockers) lungo la parete destra
       for(let i=0;i<5;i++){ E(.9,2,.4,0x7a9aaa,8.8,1,-4+i*2); E(.9,.04,.4,0xaacccc,8.8,2,-4+i*2); E(.06,.06,.35,0x888888,9.25,1.2,-4+i*2); }
       // bacheca/tabellone
@@ -2250,8 +2251,7 @@ function GameScuola(){
         const l=labelSprite(em,1.2); l.position.set(-3.8+i*1.3,1.55,-3.6); env.add(l);
         const tr=makeTreat(['cocktail','gelato','caffe','yogurt','cocktail','gelato'][i]); tr.scale.setScalar(1.6); tr.position.set(-3.8+i*1.3,1.06,-3.7); env.add(tr);
         mensaFoods.push({obj:tr,lbl:l,x:-3.8+i*1.3,z:-3.7}); });
-      const cook=buildCousin(otherCousins()[3]); cook.position.set(1,.0,-4.6); cook.rotation.y=0; cook.userData.arms[0].rotation.x=-1.2; env.add(cook);
-      const clabel=labelSprite('👨‍🍳 Cuoco',2); clabel.position.set(1,2.4,-4.6); env.add(clabel);
+      [-2.5,1.5].forEach((cx,ci)=>{ const ck=buildCousin(ci?'cuoco2':'cuoco1'); ck.position.set(cx,.0,-4.6); ck.rotation.y=0; const brim=new THREE.Mesh(new THREE.CylinderGeometry(.26,.26,.07,12),M(0xfafafa)); brim.position.set(0,1.52,0); ck.add(brim); const crown=new THREE.Mesh(new THREE.CylinderGeometry(.17,.22,.5,12),M(0xfafafa)); crown.position.set(0,1.79,0); ck.add(crown); ck.userData.arms[0].rotation.x=-1.2; ck.userData.arms[1].rotation.x=-.8; env.add(ck); });
       // tavoli rotondi con sedie
       [[-3.5,0],[2.5,0],[-3.5,3.5],[2.5,3.5]].forEach(([tx,tz])=>{
         const ttop=new THREE.Mesh(new THREE.CylinderGeometry(.92,.92,.09,16),M(0xd4a45a,.4)); ttop.position.set(tx,.75,tz); env.add(ttop);
@@ -2260,7 +2260,7 @@ function GameScuola(){
           E(.46,.07,.42,0x8a5030,tx+dx,.5,tz+dz);
           E(.07,.38,.42,0xa06030,tx+dx,.73,tz+dz+(dz>0?-.22:dz<0?.22:0)); });
       });
-      const ocp=otherCousins(); for(let i=0;i<3;i++){ const p=buildCousin(ocp[i]); p.position.set(-3.5+i*3,.5,0); p.userData.legs[0].rotation.x=-1.3; p.userData.legs[1].rotation.x=-1.3; env.add(p); }
+      const ocp=otherCousins(); ocp.forEach((id,i)=>{ const p=buildCousin(id); if(i<2){ const seats=[[-3.5+.82,0],[2.5-.82,3.5]]; p.position.set(seats[i][0],.55,seats[i][1]); p.rotation.y=Math.PI; p.userData.legs[0].rotation.x=-1.3; p.userData.legs[1].rotation.x=-1.3; env.add(p); mensaNPCs.push({m:p,seated:true}); } else { p.position.set(-2+(i-2)*4,.0,2); p.rotation.y=Math.PI; env.add(p); mensaNPCs.push({m:p,seated:false,targetZ:-3.2,homeZ:2}); } });
       // porta ritorno al piano terra
       { const dg=new THREE.Group(); dg.rotation.y=-Math.PI/2; const j1=new THREE.Mesh(new THREE.BoxGeometry(.2,2.4,.2),M(0x8a5a2b)); j1.position.set(-.9,1.2,0); const j2=j1.clone(); j2.position.x=.9; const dtop=new THREE.Mesh(new THREE.BoxGeometry(2,.3,.2),M(0x8a5a2b)); dtop.position.set(0,2.4,0); const pan=new THREE.Mesh(new THREE.PlaneGeometry(1.5,2.3),new THREE.MeshStandardMaterial({color:0x6fc0e0,emissive:0x2a7fbf,emissiveIntensity:.35,transparent:true,opacity:.55,side:THREE.DoubleSide})); pan.position.set(0,1.2,0); dg.add(j1,j2,dtop,pan); dg.position.set(-6.5,0,0); env.add(dg); const dl=labelSprite('🚪 Piano terra',2); dl.position.set(-6.5,3,0); env.add(dl); }
       player.position.set(-4,0,0); player.rotation.y=Math.PI/2;
@@ -2303,6 +2303,7 @@ function GameScuola(){
       if(!ateFood){ const mT=[[-3.5,0],[2.5,0],[-3.5,3.5],[2.5,3.5]]; let nearT=false; for(const [tx,tz] of mT){ if(Math.hypot(player.position.x-tx,player.position.z-tz)<1.5){ nearT=true; break; } }
         if(nearT && hit('Space')){ mensaSeated=!mensaSeated; if(!mensaSeated){ player.position.y=0; player.userData.legs[0].rotation.x=0; player.userData.legs[1].rotation.x=0; } beep(mensaSeated?500:400,.07); setInstr(mensaSeated?'🪑 Seduto · AZIONE per alzarsi':'🍽️ AZIONE vicino al cibo per mangiare · AZIONE al tavolo per sedersi'); } else if(mensaSeated&&!nearT){ mensaSeated=false; player.position.y=0; player.userData.legs[0].rotation.x=0; player.userData.legs[1].rotation.x=0; } }
       if(mensaSeated){ player.userData.legs[0].rotation.x=-1.3; player.userData.legs[1].rotation.x=-1.3; player.position.y=THREE.MathUtils.lerp(player.position.y,.55,.15); }
+      mensaNPCs.forEach((n,i)=>{ if(n.seated)return; const dz=n.targetZ-n.m.position.z; if(Math.abs(dz)>0.3){ n.m.position.z+=Math.sign(dz)*1.4*dt; n.m.rotation.y=dz>0?Math.PI:0; walkAnim(n.m,t*9+i); } else { n.targetZ=(n.targetZ<0)?n.homeZ:-3.2; walkAnim(n.m,0); } });
     }
     else { stepCrowd(mover,dt,t,7);
       if(player.position.z>6.5 && Math.abs(player.position.x)<2.5){ beep(600,.1); setStage('ground'); return; }
