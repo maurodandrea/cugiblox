@@ -2917,16 +2917,19 @@ function GameAereo(){
   // ── TARMAC VISIBLE ELEMENTS (hidden until tarmac stage) ──
   const tarmacVisGroup=new THREE.Group(); tarmacVisGroup.visible=false; world.add(tarmacVisGroup);
   { const m=new THREE.Mesh(new THREE.BoxGeometry(58,9,18),M(0xe0ddd5)); m.position.set(0,4.5,47); tarmacVisGroup.add(m); }
-  // Vetrate facciata principale (lato pista, z≈38)
-  { const gfMat=new THREE.MeshStandardMaterial({color:0x88c8e8,transparent:true,opacity:.62,metalness:.25,roughness:.1,side:THREE.DoubleSide});
-    const gf=new THREE.Mesh(new THREE.BoxGeometry(40,7,.14),gfMat); gf.position.set(0,4,38.1); tarmacVisGroup.add(gf);
-    // montanti verticali vetrata
-    for(let gi=-5;gi<=5;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.2,7,.16),M(0x8899aa)); bar.position.set(gi*4,4,38.2); tarmacVisGroup.add(bar); }
-    // montanti orizzontali
-    for(let gi=0;gi<3;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(40,.15,.16),M(0x8899aa)); bar.position.set(0,1.5+gi*2,38.2); tarmacVisGroup.add(bar); } }
+  // Vetrate facciata principale (lato pista, z≈38) — pannelli ampi e ben visibili
+  { const gfMat=new THREE.MeshStandardMaterial({color:0x7ac8e8,transparent:true,opacity:.75,metalness:.3,roughness:.05,side:THREE.DoubleSide,envMapIntensity:1});
+    // Tre grandi pannelli vetrati
+    [-18,0,18].forEach(px=>{ const gf=new THREE.Mesh(new THREE.BoxGeometry(11,7,.18),gfMat); gf.position.set(px,3.8,38.15); tarmacVisGroup.add(gf); });
+    // Montanti verticali in alluminio
+    for(let gi=-3;gi<=3;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.28,7.4,.28),new THREE.MeshStandardMaterial({color:0x99aabb,metalness:.8,roughness:.2})); bar.position.set(gi*9,3.8,38.2); tarmacVisGroup.add(bar); }
+    // Montanti orizzontali
+    for(let fi=0;fi<4;fi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(56,.2,.28),new THREE.MeshStandardMaterial({color:0x99aabb,metalness:.8,roughness:.2})); bar.position.set(0,.5+fi*2.1,38.2); tarmacVisGroup.add(bar); }
+    // Fascia piena sopra la vetrata
+    const fascia=new THREE.Mesh(new THREE.BoxGeometry(58,1.4,.3),M(0xd0cec8)); fascia.position.set(0,8.1,38.15); tarmacVisGroup.add(fascia); }
   // Grande insegna aeroporto
-  { const sign=new THREE.Mesh(new THREE.BoxGeometry(22,1.6,.2),new THREE.MeshStandardMaterial({color:0x1a4a8a,emissive:0x0a2a5a,emissiveIntensity:.6})); sign.position.set(0,8.2,38.1); tarmacVisGroup.add(sign);
-    const signL=labelSprite('✈  AEROPORTO DI BARI',4); signL.position.set(0,8.2,38.2); tarmacVisGroup.add(signL); }
+  { const sign=new THREE.Mesh(new THREE.BoxGeometry(28,1.6,.22),new THREE.MeshStandardMaterial({color:0x1a4a8a,emissive:0x0a2a5a,emissiveIntensity:.7})); sign.position.set(0,8.2,38.1); tarmacVisGroup.add(sign);
+    const signL=labelSprite('✈  AEROPORTO DI BARI',5); signL.position.set(0,8.25,38.35); tarmacVisGroup.add(signL); }
   { const m=new THREE.Mesh(new THREE.BoxGeometry(4,16,4),M(0xd8e2ee)); m.position.set(-32,8,47); tarmacVisGroup.add(m); }
   { const m=new THREE.Mesh(new THREE.BoxGeometry(6,2.8,6),new THREE.MeshStandardMaterial({color:0x6bd0ff,transparent:true,opacity:.7})); m.position.set(-32,16.8,47); tarmacVisGroup.add(m); }
   { const m=buildPlane3D(0xcc2222); m.position.set(-22,0,22); m.rotation.y=Math.PI/2; m.scale.setScalar(.76); tarmacVisGroup.add(m); }
@@ -3051,10 +3054,20 @@ function GameAereo(){
     // Ceiling with warm lights
     const iCeil=new THREE.Mesh(new THREE.BoxGeometry(98,.5,22),M(0xf5f5f5)); iCeil.position.set(0,9.4,49); g.add(iCeil);
     for(let i=-7;i<=7;i++) for(const cz of [41,45,49,53,57]){ const ltc=new THREE.Mesh(new THREE.BoxGeometry(5,.08,2.2),new THREE.MeshStandardMaterial({color:0xfffce8,emissive:0xfffde8,emissiveIntensity:.85})); ltc.position.set(i*6.2,9.3,cz); g.add(ltc); }
-    // Side walls
-    [-48,48].forEach(wx=>{ const w=new THREE.Mesh(new THREE.BoxGeometry(.4,9.5,22),M(0xd8d4cc)); w.position.set(wx,4.75,49); g.add(w); });
+    // Side walls con vetrate
+    const glassMat=new THREE.MeshStandardMaterial({color:0x88c8e8,transparent:true,opacity:.55,metalness:.2,roughness:.08,side:THREE.DoubleSide});
+    [-48,48].forEach(wx=>{ const w=new THREE.Mesh(new THREE.BoxGeometry(.4,9.5,22),M(0xd8d4cc)); w.position.set(wx,4.75,49); g.add(w);
+      // Vetrate sulle pareti laterali
+      const gp=new THREE.Mesh(new THREE.BoxGeometry(.1,7,20),glassMat); gp.position.set(wx,4.5,49); g.add(gp);
+      for(let fi=0;fi<5;fi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.12,7,.1),M(0x8899aa)); bar.position.set(wx,4.5,40+fi*4); g.add(bar); }
+      for(let fi=0;fi<3;fi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,20),M(0x8899aa)); bar.position.set(wx,1.5+fi*2.2,49); g.add(bar); } });
     // Back wall (behind doors)
     const wBack=new THREE.Mesh(new THREE.BoxGeometry(98,9.5,.4),M(0xdedad2)); wBack.position.set(0,4.75,60.2); g.add(wBack);
+    // Vetrata fronte ingresso (lato z=38)
+    const wFront=new THREE.Mesh(new THREE.BoxGeometry(98,.1,9.5),glassMat.clone()); wFront.rotation.z=Math.PI/2; wFront.position.set(0,4.75,38.2); g.add(wFront);
+    const gFront=new THREE.Mesh(new THREE.BoxGeometry(96,7,.1),glassMat); gFront.position.set(0,4,38.2); g.add(gFront);
+    for(let gi=-7;gi<=7;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.12,7,.12),M(0x8899aa)); bar.position.set(gi*6.5,4,38.3); g.add(bar); }
+    for(let fi=0;fi<3;fi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(96,.12,.12),M(0x8899aa)); bar.position.set(0,1.2+fi*2,38.3); g.add(bar); }
     // Entry side open (no front wall)
     // Blue overhead banner
     const bluMat2=new THREE.MeshStandardMaterial({color:0x1a5fd0,emissive:0x0a2f80,emissiveIntensity:.65});
