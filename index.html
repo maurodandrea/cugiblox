@@ -2844,9 +2844,9 @@ function GameCrociera(){
   // ===== SISTEMA MULTI-PIANO =====
   // Piano 0=Ristorante (y=6.9), Piano 1=Cabine (y=9.7), Piano 2=Terrazza (y=15.5)
   const FLOOR_Y=[6.9, 9.7, 15.5];
-  const FLOOR_CAM_H=[11.0, 13.8, 20.0];
-  const FLOOR_LOOK_Y=[7.3, 10.1, 16.2];
-  const FLOOR_CAM_DIST=[8, 8, 10];
+  const FLOOR_CAM_H=[8.5, 11.2, 20.0];
+  const FLOOR_LOOK_Y=[7.5, 10.5, 16.2];
+  const FLOOR_CAM_DIST=[7, 7, 10];
   const FLOOR_XLIM=[6.5, 4.5, 6.0];
   const FLOOR_ZLIM=[[10.5,10.5],[11.5,11.5],[16.5,16.5]];
   let curFloor=2, curFloorGroup=null, floorItems=[], triggers=[];
@@ -3013,6 +3013,7 @@ function GameCrociera(){
     if(curFloor===0) curFloorGroup=buildRestaurant();
     else if(curFloor===1) curFloorGroup=buildCabins();
     else curFloorGroup=buildTerrace();
+    ship.visible=(newFloor===2);
     player.position.set(0,FLOOR_Y[curFloor],entryZ||0);
     const flrNames=[
       '\u{1F35D} Ristorante',
