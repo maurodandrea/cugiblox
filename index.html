@@ -2844,9 +2844,9 @@ function GameCrociera(){
   // ===== SISTEMA MULTI-PIANO =====
   // Piano 0=Ristorante, 1=Cabine corridoio, 2=Terrazza, 3=Cabina singola
   const FLOOR_Y=[6.9, 9.7, 15.5, 9.7];
-  const FLOOR_CAM_H=[8.5, 11.2, 20.0, 11.0];
-  const FLOOR_LOOK_Y=[7.5, 10.5, 16.2, 10.2];
-  const FLOOR_CAM_DIST=[7, 7, 10, 5];
+  const FLOOR_CAM_H=[7.8, 10.5, 20.0, 10.5];
+  const FLOOR_LOOK_Y=[7.0, 10.0, 16.2, 10.0];
+  const FLOOR_CAM_DIST=[4, 4, 10, 2];
   const FLOOR_XLIM=[6.5, 4.5, 6.0, 2.5];
   const FLOOR_ZLIM=[[10.5,10.5],[11.5,11.5],[16.5,16.5],[2.3,2.3]];
   let curFloor=2, curFloorGroup=null, floorItems=[], triggers=[];
@@ -2952,13 +2952,13 @@ function GameCrociera(){
     const dcols=[0x2855a8,0xa83228,0x28a032,0xa8883a,0x7a28a8];
     [-8,-4,0,4,8].forEach((dz,i)=>[-1,1].forEach(side=>{
       const sx=side*4.88;
-      const cw=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.1),M(0xe0dcd4)); cw.position.set(sx,py+1.3,dz); g.add(cw);
-      const frT=new THREE.Mesh(new THREE.BoxGeometry(1.14,.26,.15),M(0x9a8060)); frT.position.set(sx,py+2.32,dz);
-      const frL=new THREE.Mesh(new THREE.BoxGeometry(.14,2.42,.15),M(0x9a8060)); frL.position.set(sx-.55,py+1.21,dz);
-      const frR=frL.clone(); frR.position.x=sx+.55; g.add(frT,frL,frR);
-      const door=new THREE.Mesh(new THREE.BoxGeometry(.92,2.22,.1),M(dcols[i])); door.position.set(sx,py+1.11,dz); g.add(door);
-      [[0,.55],[0,-.42]].forEach(([ddx,ddz])=>{ const pp=new THREE.Mesh(new THREE.BoxGeometry(.62,.52,.06),M(dcols[i])); pp.position.set(sx+ddx,py+1.15+ddz,dz+.03); g.add(pp); });
-      const kn=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.2,7),M(0xd8d8e0)); kn.rotation.z=Math.PI/2; kn.position.set(side>0?sx-.45:sx+.45,py+1.22,dz+.08); g.add(kn);
+      const cw=new THREE.Mesh(new THREE.BoxGeometry(.12,2.6,1.2),M(0xe0dcd4)); cw.position.set(sx,py+1.3,dz); g.add(cw);
+      const frT=new THREE.Mesh(new THREE.BoxGeometry(.15,.26,1.14),M(0x9a8060)); frT.position.set(sx,py+2.32,dz);
+      const frL=new THREE.Mesh(new THREE.BoxGeometry(.15,2.42,.14),M(0x9a8060)); frL.position.set(sx,py+1.21,dz-.55);
+      const frR=new THREE.Mesh(new THREE.BoxGeometry(.15,2.42,.14),M(0x9a8060)); frR.position.set(sx,py+1.21,dz+.55); g.add(frT,frL,frR);
+      const door=new THREE.Mesh(new THREE.BoxGeometry(.12,2.22,.92),M(dcols[i])); door.position.set(sx,py+1.11,dz); g.add(door);
+      [[0,.55],[0,-.42]].forEach(([ddx,ddz])=>{ const pp=new THREE.Mesh(new THREE.BoxGeometry(.06,.52,.62),M(dcols[i])); pp.position.set(sx+(side>0?-.04:.04),py+1.15+ddz,dz); g.add(pp); });
+      const kn=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.2,7),M(0xd8d8e0)); kn.rotation.z=Math.PI/2; kn.position.set(side>0?sx-.1:sx+.1,py+1.22,dz+.38); g.add(kn);
       const numL=labelSprite((100+i*2+(side>0?1:0)).toString(),.95); numL.position.set(sx,py+2.1,dz); g.add(numL);
       const bed=new THREE.Mesh(new THREE.BoxGeometry(.85,.14,1.7),M(0xfcfcfc)); bed.position.set(sx,py+.3,dz); g.add(bed);
       const pillow=new THREE.Mesh(new THREE.BoxGeometry(.36,.1,.36),M(0xf0f0ff)); pillow.position.set(sx,py+.38,dz-.6); g.add(pillow);
@@ -3050,9 +3050,9 @@ function GameCrociera(){
     else if(curFloor===1) curFloorGroup=buildCabins();
     else if(curFloor===3) curFloorGroup=buildCabinRoom();
     else curFloorGroup=buildTerrace();
-    ship.visible=(newFloor===2||newFloor===3);
+    ship.visible=(newFloor===2);
     player.position.set(0,FLOOR_Y[curFloor],entryZ||0);
-    camera.position.set(player.position.x, FLOOR_CAM_H[curFloor], player.position.z+FLOOR_CAM_DIST[curFloor]);
+    const _h=player.rotation.y; camera.position.set(player.position.x-Math.sin(_h)*FLOOR_CAM_DIST[curFloor],FLOOR_CAM_H[curFloor],player.position.z-Math.cos(_h)*FLOOR_CAM_DIST[curFloor]);
     const flrNames=['\u{1F35D} Ristorante','\u{1F6CF}\uFE0F Cabine','\u{1F30A} Terrazza','\u{1F6CF}\uFE0F Cabina'];
     const flrInstr=['Porta Cabine (nord) \u00B7 Porta Terrazza (sud)','Porta Ristorante (sud) \u00B7 Entra nelle cabine','Scale \u2B07\uFE0F Ristorante (poppa)','Porta \u{1F6AA} Corridoio'];
     setInstr(flrNames[curFloor||0]+' \u00B7 '+flrInstr[curFloor||0]+(curFloor!==3?' \u00B7 Raccogli \u2605!':''));
@@ -3184,6 +3184,8 @@ function GameAereo(){
     const swk2=new THREE.Mesh(new THREE.BoxGeometry(120,.12,4),new THREE.MeshStandardMaterial({map:tileTex,roughness:.65})); swk2.position.set(0,.06,29); g.add(swk2);
     // Piazza sotto gli edifici (evita che galleggino nel cielo)
     const piazza=new THREE.Mesh(new THREE.BoxGeometry(120,.12,22),new THREE.MeshStandardMaterial({map:tileTex,roughness:.7})); piazza.position.set(0,.06,40); g.add(piazza);
+    // Pavimentazione sotto Bari Vecchia e Teatro Petruzzelli
+    const retro=new THREE.Mesh(new THREE.BoxGeometry(120,.18,44),new THREE.MeshStandardMaterial({color:0xc0b8a8,roughness:.88})); retro.position.set(0,.09,-21); g.add(retro);
     // Hotel e edifici sul fondo strada
     const hotelC=[0xd8e4f0,0xcad4e8,0xe0d8cc];
     [[0,22,35],[25,18,36],[-25,18,36],[45,14,36],[-45,14,36]].forEach(([hx,hh,hz],k)=>{
