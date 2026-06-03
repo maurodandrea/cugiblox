@@ -372,9 +372,9 @@ function buildPlane3D(livery){
   const fuse=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,22,18),WHITE); fuse.rotation.z=Math.PI/2; g.add(fuse);
   const nose=new THREE.Mesh(new THREE.ConeGeometry(1.4,5,18),WHITE); nose.rotation.z=-Math.PI/2; nose.position.x=13.5; g.add(nose);
   const tailC=new THREE.Mesh(new THREE.ConeGeometry(1.4,3,18),WHITE); tailC.rotation.z=Math.PI/2; tailC.position.x=-12.5;
-  const winGeo=new THREE.BoxGeometry(.18,2.2,18);
+  const winGeo=new THREE.BoxGeometry(2.2,.18,18);
   [-1,1].forEach(s=>{ const w=new THREE.Mesh(winGeo,WHITE); w.position.set(.4,-.4,s*9); w.rotation.x=s*-.08; g.add(w); const wlet=new THREE.Mesh(new THREE.BoxGeometry(.1,1.6,.65),BLUE); wlet.position.set(.5,.4,s*18); g.add(wlet); });
-  const stabH=new THREE.BoxGeometry(.1,.7,7); const tg=new THREE.Group(); tg.add(tailC); [-1,1].forEach(s=>{ const sh=new THREE.Mesh(stabH,WHITE); sh.position.set(-12,.5,s*3.5); tg.add(sh); });
+  const stabH=new THREE.BoxGeometry(.7,.1,7); const tg=new THREE.Group(); tg.add(tailC); [-1,1].forEach(s=>{ const sh=new THREE.Mesh(stabH,WHITE); sh.position.set(-12,.5,s*3.5); tg.add(sh); });
   const _fSh=new THREE.Shape(); _fSh.moveTo(-2,0); _fSh.lineTo(2,0); _fSh.lineTo(0,4.5); _fSh.closePath();
   const stabV=new THREE.Mesh(new THREE.ExtrudeGeometry(_fSh,{depth:0.1,bevelEnabled:false}),WHITE); stabV.rotation.y=Math.PI/2; stabV.position.set(-11,0.5,0); tg.add(stabV); g.add(tg); g.userData.tail=tg;
   const engGeo=new THREE.CylinderGeometry(.72,.65,4.5,14); [-1,1].forEach(s=>{ const e=new THREE.Mesh(engGeo,GRAY); e.rotation.z=Math.PI/2; e.position.set(.5,-1.9,s*5.5); g.add(e); const ef=new THREE.Mesh(new THREE.CylinderGeometry(.78,.72,.5,14),DARK); ef.rotation.z=Math.PI/2; ef.position.set(2.6,-1.9,s*5.5); g.add(ef); const en=new THREE.Mesh(new THREE.CylinderGeometry(.56,.66,.4,14),DARK); en.rotation.z=Math.PI/2; en.position.set(-1.8,-1.9,s*5.5); g.add(en); const py=new THREE.Mesh(new THREE.BoxGeometry(.18,.85,.5),GRAY); py.position.set(.5,-1.2,s*5.5); g.add(py); });
