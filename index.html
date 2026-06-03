@@ -3031,7 +3031,7 @@ function GameAereo(){
     const dfr=new THREE.Mesh(new THREE.BoxGeometry(4.8,.12,0.1),new THREE.MeshStandardMaterial({color:0x223355,metalness:.8})); dfr.position.set(mx,3.8,mz); g.add(dfr);
     // Pannello segnaletica metro
     const mSign=new THREE.Mesh(new THREE.BoxGeometry(6,1.2,.14),new THREE.MeshStandardMaterial({color:0xcc0000,emissive:0x880000,emissiveIntensity:.4})); mSign.position.set(mx,4.0,mz-.08); g.add(mSign);
-    const mLbl=labelSprite('M  AEROPORTO  ✈️',3.8); mLbl.position.set(mx,4.1,mz); g.add(mLbl);
+    const mLbl=labelSprite('AEROPORTO  ✈️',3.8); mLbl.position.set(mx,4.1,mz); g.add(mLbl);
     // Gradini di accesso
     for(let si=0;si<3;si++){ const step=new THREE.Mesh(new THREE.BoxGeometry(4.6,.12,0.55),M(0xc0bcb4)); step.position.set(mx,.12+si*.12,mz+1.8-si*.55); g.add(step); }
     // Strisce gialle a terra
@@ -3267,7 +3267,7 @@ function GameAereo(){
     if(stage==='lungomare'){
       const moved=thirdPersonWalk(player,dt,4.5);
       player.position.x=THREE.MathUtils.clamp(player.position.x,-55,55);
-      player.position.z=THREE.MathUtils.clamp(player.position.z,-8,28);
+      player.position.z=THREE.MathUtils.clamp(player.position.z,-5,28);
       player.position.y=0; walkAnim(player,moved?t*8:0); followCam(player,11,5,1.5);
       const adx=player.position.x-lungomareGroup.userData.airDoorX, adz=player.position.z-lungomareGroup.userData.airDoorZ;
       if(Math.hypot(adx,adz)<3.5){
