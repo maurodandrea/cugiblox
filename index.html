@@ -3176,6 +3176,13 @@ function GameAereo(){
     // Strisce gialle a terra
     const yLine=new THREE.Mesh(new THREE.BoxGeometry(4.6,.02,.18),M(0xffd700)); yLine.position.set(mx,.11,mz+2.2); g.add(yLine);
     g.userData.airDoorX=mx; g.userData.airDoorZ=mz;
+    // === PORTA VIAGGIA (mappa scelta città) ===
+    const tvx=mx+10, tvz=mz;
+    const tvRoof=new THREE.Mesh(new THREE.BoxGeometry(4,.2,3),new THREE.MeshStandardMaterial({color:0x226622,metalness:.5,roughness:.4})); tvRoof.position.set(tvx,3.8,tvz); g.add(tvRoof);
+    [[-1.8,tvz-1],[1.8,tvz-1],[-1.8,tvz+1],[1.8,tvz+1]].forEach(([cx,cz])=>{ const col=new THREE.Mesh(new THREE.BoxGeometry(.16,.16,2.2),new THREE.MeshStandardMaterial({color:0x335533,metalness:.8})); col.position.set(cx+tvx-tvx,1.9,cz); col.position.x=cx; g.add(col); });
+    const tvGlass=new THREE.Mesh(new THREE.BoxGeometry(3.2,3.6,.06),new THREE.MeshStandardMaterial({color:0x44ee44,transparent:true,opacity:.55,side:THREE.DoubleSide})); tvGlass.position.set(tvx,1.8,tvz-.05); g.add(tvGlass);
+    const tvLbl=labelSprite('🗺️ VIAGGIA',3.2); tvLbl.position.set(tvx,4.8,tvz); g.add(tvLbl);
+    g.userData.travelDoorX=tvx; g.userData.travelDoorZ=tvz;
     return g;
   }
 
@@ -3418,6 +3425,8 @@ function GameAereo(){
       player.position.x=THREE.MathUtils.clamp(player.position.x,-55,55);
       player.position.z=THREE.MathUtils.clamp(player.position.z,-5,28);
       player.position.y=0; walkAnim(player,moved?t*8:0); followCam(player,11,5,1.5);
+      const tdx=player.position.x-lungomareGroup.userData.travelDoorX, tdz=player.position.z-lungomareGroup.userData.travelDoorZ;
+      if(Math.hypot(tdx,tdz)<3.5){ won=true; beep(500,.1); setTimeout(()=>{ activeGame=null; clearWorld(); show('s_map'); },200); return; }
       const adx=player.position.x-lungomareGroup.userData.airDoorX, adz=player.position.z-lungomareGroup.userData.airDoorZ;
       if(Math.hypot(adx,adz)<3.5){
         stage='terminal'; stageT=0; beep(520,.1,'sine');
@@ -3683,7 +3692,7 @@ function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.r
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
 const DRIVE_PAD=['guida','acquapark_slide','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare','acquapark','giostre','giostre_salt','acquapark_onde','crociera','aereo'];
 function padFor(gid){ return gid==='moto'?'race':DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'walk':''; }
-const HUB_PARENT={aereo:'aereo'};
+const HUB_PARENT={aereo:'s_map'};
 let currentGid=null;
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad('race'); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
 function startGame(gid){ currentGid=gid; titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
@@ -3699,7 +3708,7 @@ function finishGame(points,text,rows){ if(gameOver)return; gameOver=true;
   beep(700,.12); setTimeout(()=>beep(1000,.14),120);
   let delay=2200;
   if(rows&&rows.length){ showResults(text,rows,points); delay=4200; } else { showMsg(text+'  +'+points+'★'); }
-  setTimeout(()=>{ activeGame=null; gameOver=false; hideResults(); const ph=HUB_PARENT[currentGid]; if(ph){ startGame(ph); } else { enterHub(); } },delay); }
+  setTimeout(()=>{ activeGame=null; gameOver=false; hideResults(); const ph=HUB_PARENT[currentGid]; if(ph==='s_map'){ clearWorld(); show('s_map'); } else if(ph){ startGame(ph); } else { enterHub(); } },delay); }
 document.getElementById('back').addEventListener('click',()=>{ if(mode==='game'){ const ph=HUB_PARENT[currentGid]; if(ph){ startGame(ph); } else { enterHub(); } } else { activeGame=null; clearWorld(); show('s_map'); } });
 
 /* anteprime avatar */
