@@ -187,7 +187,7 @@ const META = {
   bar:{e:'🍹',n:'Bar'}, parco_avventure:{e:'🧗',n:'Parco Avventure'}, calcio:{e:'⚽',n:'Calcio'}, basket:{e:'🏀',n:'Basket'},
   mare:{e:'🏖️',n:'Mare'}, acquapark:{e:'🎢',n:'Acquapark'}, pesca:{e:'🎣',n:'Pesca'}, giostre:{e:'🎠',n:'Giostre'},
   piazzetta:{e:'⛲',n:'Piazzetta'}, gavettoni:{e:'🎈',n:'Gavettoni'}, ristorante:{e:'🍝',n:'Ristorante'}, bowling:{e:'🎳',n:'Bowling'}, pattinaggio:{e:'⛸️',n:'Pattinaggio'},
-  crociera:{e:'🚢',n:'Crociera a Napoli'}, aereo:{e:'✈️',n:'Viaggio in Aereo'},
+  crociera:{e:'🚢',n:'Crociera'}, aereo:{e:'✈️',n:'Viaggio in Aereo'},
   arco:{e:'🏹',n:'Tiro con Arco'},
 };
 let hero='giorgia', city='roma', mode='hub';
@@ -3449,7 +3449,6 @@ function GameAereo(){
   camera.position.set(-25,6,20); camera.lookAt(-25,2,8);
 
   const starObjs=[];
-  function spawnStar(){ const s=new THREE.Mesh(new THREE.DodecahedronGeometry(.75,0),new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffaa00,emissiveIntensity:.6})); s.position.set(rand(-18,18),rand(-5,5),-55); world.add(s); starObjs.push(s); }
 
   return { update(dt){ if(won)return; t+=dt; stageT+=dt;
 
@@ -3538,9 +3537,8 @@ function GameAereo(){
       if(planeAlt>45){ stage='flying'; stageT=0; planeSpeed=55;
         plane.position.set(0,0,0); planeX=0; planeY=0;
         clouds.forEach(c=>{ c.position.set(rand(-70,70),rand(-10,10),rand(-100,0)); c.visible=true; });
-        for(let i=0;i<8;i++)spawnStar();
         scene.background=new THREE.Color(0x3aa8e8); scene.fog=new THREE.Fog(0x3aa8e8,120,500);
-        setInstr('✈️ ◀▶▲▼ per volare · raccogli le stelle dorate!'); showMsg('🌤️ In volo verso '+destLabel+'!'); setTimeout(()=>showMsg(''),2500); } }
+        setInstr('✈️ ◀▶▲▼ per volare!'); showMsg('🌤️ In volo verso '+destLabel+'!'); setTimeout(()=>showMsg(''),2500); } }
 
     else if(stage==='flying'){
       const tx=(keys['ArrowLeft']?-1:0)+(keys['ArrowRight']?1:0); const ty=(keys['ArrowUp']?1:0)+(keys['ArrowDown']?-1:0);
@@ -3548,11 +3546,8 @@ function GameAereo(){
       plane.position.x=THREE.MathUtils.lerp(plane.position.x,planeX,.09); plane.position.y=THREE.MathUtils.lerp(plane.position.y,planeY,.09);
       plane.rotation.z=THREE.MathUtils.lerp(plane.rotation.z,-tx*.2,.1); plane.rotation.x=THREE.MathUtils.lerp(plane.rotation.x,-ty*.09,.1);
       clouds.forEach(c=>{ c.position.z+=planeSpeed*dt*.85; if(c.position.z>50){c.position.z-=200;c.position.x=rand(-70,70);c.position.y=rand(-10,10);} });
-      for(let i=starObjs.length-1;i>=0;i--){ const s=starObjs[i]; s.position.z+=planeSpeed*dt; s.rotation.y+=dt*3;
-        if(s.position.z>8){ world.remove(s); starObjs.splice(i,1); spawnStar(); continue; }
-        if(Math.abs(s.position.x-plane.position.x)<3.5&&Math.abs(s.position.y-plane.position.y)<3&&Math.abs(s.position.z)<2.5){ stars++; beep(880,.09); world.remove(s); starObjs.splice(i,1); spawnStar(); } }
       camera.position.x=THREE.MathUtils.lerp(camera.position.x,plane.position.x*.25,.09); camera.position.y=THREE.MathUtils.lerp(camera.position.y,plane.position.y*.3+8,.07); camera.position.z=THREE.MathUtils.lerp(camera.position.z,22,.06); camera.lookAt(plane.position.x*.2,plane.position.y*.2,-10);
-      setScore('✈️ → '+destLabel+'  ·  ⭐ '+stars);
+      setScore('✈️ → '+destLabel);
       if(stageT>18){ stage='landing'; stageT=0; starObjs.forEach(s=>world.remove(s)); starObjs.length=0;
         if(plane.userData.tail)plane.userData.tail.visible=true;
         destGroup=buildDest(dest); destGroup.position.set(0,-55,-140); world.add(destGroup);
@@ -3570,8 +3565,8 @@ function GameAereo(){
     else if(stage==='arrival'){
       if(destGroup)destGroup.rotation.y=Math.sin(stageT*.28)*.06;
       camera.position.lerp(new THREE.Vector3(Math.sin(stageT*.22)*16,13,22),.022); camera.lookAt(0,6,-18);
-      setScore('🎉 Arrivati a '+destLabel+'! ⭐ '+stars);
-      if(stageT>4&&!won){ won=true; finishGame(28+stars*3,'✈️ Atterrato a '+destLabel+'! Buon viaggio! ⭐'+stars); } }
+      setScore('🎉 Arrivati a '+destLabel+'!');
+      if(stageT>4&&!won){ won=true; finishGame(28,'✈️ Atterrato a '+destLabel+'! Buon viaggio!'); } }
   }};
 }
 
