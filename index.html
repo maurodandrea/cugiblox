@@ -372,9 +372,9 @@ function buildPlane3D(livery){
   const fuse=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,22,18),WHITE); fuse.rotation.z=Math.PI/2; g.add(fuse);
   const nose=new THREE.Mesh(new THREE.ConeGeometry(1.4,5,18),WHITE); nose.rotation.z=-Math.PI/2; nose.position.x=13.5; g.add(nose);
   const tailC=new THREE.Mesh(new THREE.ConeGeometry(1.4,3,18),WHITE); tailC.rotation.z=Math.PI/2; tailC.position.x=-12.5;
-  const winGeo=new THREE.BoxGeometry(.18,2.2,18);
+  const winGeo=new THREE.BoxGeometry(2.2,.18,18);
   [-1,1].forEach(s=>{ const w=new THREE.Mesh(winGeo,WHITE); w.position.set(.4,-.4,s*9); w.rotation.x=s*-.08; g.add(w); const wlet=new THREE.Mesh(new THREE.BoxGeometry(.1,1.6,.65),BLUE); wlet.position.set(.5,.4,s*18); g.add(wlet); });
-  const stabH=new THREE.BoxGeometry(.1,.7,7); const tg=new THREE.Group(); tg.add(tailC); [-1,1].forEach(s=>{ const sh=new THREE.Mesh(stabH,WHITE); sh.position.set(-12,.5,s*3.5); tg.add(sh); });
+  const stabH=new THREE.BoxGeometry(.7,.1,7); const tg=new THREE.Group(); tg.add(tailC); [-1,1].forEach(s=>{ const sh=new THREE.Mesh(stabH,WHITE); sh.position.set(-12,.5,s*3.5); tg.add(sh); });
   const _fSh=new THREE.Shape(); _fSh.moveTo(-2,0); _fSh.lineTo(2,0); _fSh.lineTo(0,4.5); _fSh.closePath();
   const stabV=new THREE.Mesh(new THREE.ExtrudeGeometry(_fSh,{depth:0.1,bevelEnabled:false}),WHITE); stabV.rotation.y=Math.PI/2; stabV.position.set(-11,0.5,0); tg.add(stabV); g.add(tg); g.userData.tail=tg;
   const engGeo=new THREE.CylinderGeometry(.72,.65,4.5,14); [-1,1].forEach(s=>{ const e=new THREE.Mesh(engGeo,GRAY); e.rotation.z=Math.PI/2; e.position.set(.5,-1.9,s*5.5); g.add(e); const ef=new THREE.Mesh(new THREE.CylinderGeometry(.78,.72,.5,14),DARK); ef.rotation.z=Math.PI/2; ef.position.set(2.6,-1.9,s*5.5); g.add(ef); const en=new THREE.Mesh(new THREE.CylinderGeometry(.56,.66,.4,14),DARK); en.rotation.z=Math.PI/2; en.position.set(-1.8,-1.9,s*5.5); g.add(en); const py=new THREE.Mesh(new THREE.BoxGeometry(.18,.85,.5),GRAY); py.position.set(.5,-1.2,s*5.5); g.add(py); });
@@ -2668,7 +2668,7 @@ function GameCrociera(){
   { const ld=new THREE.Mesh(new THREE.BoxGeometry(13,.22,34),M(0xe8e4d0)); ld.position.set(0,15.5,0); ship.add(ld); }
   const bri=new THREE.Mesh(new THREE.BoxGeometry(8,2.5,6),M(0xf0eee0)); bri.position.set(0,17.5,5); ship.add(bri);
   const briW=new THREE.Mesh(new THREE.BoxGeometry(7.4,1.6,.08),new THREE.MeshStandardMaterial({color:0x6bd8ff,transparent:true,opacity:.7})); briW.position.set(0,17.5,8.06); ship.add(briW);
-  [-4,4].forEach(fz=>{ const fn=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.4,5.5,13),M(0xee2222)); fn.position.set(0,17.5,fz); const ftop=new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,.65,13),M(0x111111)); ftop.position.set(0,20.5,fz); const band=new THREE.Mesh(new THREE.CylinderGeometry(1.22,1.22,1.3,13),M(0x111111)); band.position.set(0,15.2,fz); ship.add(fn,ftop,band); });
+  { const fn=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.4,5.5,13),M(0xee2222)); fn.position.set(0,17.5,4); const ftop=new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,.65,13),M(0x111111)); ftop.position.set(0,20.5,4); const band=new THREE.Mesh(new THREE.CylinderGeometry(1.22,1.22,1.3,13),M(0x111111)); band.position.set(0,15.2,4); ship.add(fn,ftop,band); }
   ship.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}}); world.add(ship);
 
   // ===== DELFINI =====
@@ -2986,13 +2986,18 @@ function GameCrociera(){
     solidWalls.push({x1:-6.4,z1: 17.1,x2:6.4,z2: 17.3});
     solidWalls.push({x1:-6.4,z1:-17.3,x2:-6.2,z2:17.3});
     solidWalls.push({x1: 6.2,z1:-17.3,x2: 6.4,z2:17.3});
+    solidWalls.push({x1:-1.65,z1: 2.5,x2: 1.65,z2: 5.5});
     [-6.3,6.3].forEach(rx=>{ const rl=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,34.2),M(0xd4aa30)); rl.position.set(rx,py+1.1,0); g.add(rl); const rl2=rl.clone(); rl2.position.y=py+.55; g.add(rl2); });
     [-17.1,17.1].forEach(rz=>{ const rl=new THREE.Mesh(new THREE.BoxGeometry(13.2,.07,.07),M(0xd4aa30)); rl.position.set(0,py+1.1,rz); g.add(rl); const rl2=rl.clone(); rl2.position.y=py+.55; g.add(rl2); });
     for(let rz=-16;rz<=16;rz+=2){ [-6.3,6.3].forEach(rx=>{ const post=cyl(.055,.055,1.15,0xd4aa30); post.position.set(rx,py+.62,rz); g.add(post); }); }
     const pb=new THREE.Mesh(new THREE.BoxGeometry(5.8,.22,7.8),M(0xfefefe)); pb.position.set(0,py-.02,4); g.add(pb);
     const pool=new THREE.Mesh(new THREE.BoxGeometry(5,.18,7),M(0x1880c0)); pool.position.set(0,py-.02,4); g.add(pool);
     const pw=new THREE.Mesh(new THREE.PlaneGeometry(4.7,6.7),new THREE.MeshStandardMaterial({color:0x40c8f8,transparent:true,opacity:.82,roughness:.06})); pw.rotation.x=-Math.PI/2; pw.position.set(0,py+.02,4); g.add(pw);
-    [[2.8,1],[-2.8,1],[2.8,7],[-2.8,7]].forEach(([px,pz])=>{ const trunk=cyl(.08,.12,2.2,0x9a7040); trunk.position.set(px,py+1.1,pz); trunk.rotation.z=px>0?.14:-.14; g.add(trunk); for(let li=0;li<5;li++){ const leaf=new THREE.Mesh(new THREE.ConeGeometry(.2,.8,5),M(0x2a8822)); const a=li/5*Math.PI*2; leaf.position.set(px+Math.cos(a)*.45,py+2.4,pz+Math.sin(a)*.45); leaf.rotation.z=.78; leaf.rotation.y=a; g.add(leaf); } });
+    // Seconda piscina al posto della canna fumaria sinistra
+    const pb2=new THREE.Mesh(new THREE.BoxGeometry(5.8,.22,7.8),M(0xfefefe)); pb2.position.set(0,py-.02,-4); g.add(pb2);
+    const pool2=new THREE.Mesh(new THREE.BoxGeometry(5,.18,7),M(0x1880c0)); pool2.position.set(0,py-.02,-4); g.add(pool2);
+    const pw2=new THREE.Mesh(new THREE.PlaneGeometry(4.7,6.7),new THREE.MeshStandardMaterial({color:0x40c8f8,transparent:true,opacity:.82,roughness:.06})); pw2.rotation.x=-Math.PI/2; pw2.position.set(0,py+.02,-4); g.add(pw2);
+    [[-3,-7],[3,-7],[-3,-1],[3,-1]].forEach(([sx,sz],si)=>{ const ch=new THREE.Mesh(new THREE.BoxGeometry(.56,.1,1.95),M([0xff4488,0x4455cc,0xff6633,0x44aa44][si])); ch.position.set(sx,py+.1,sz); g.add(ch); const p2=new THREE.Mesh(new THREE.BoxGeometry(.34,.11,1.55),M(0xffcc99)); p2.position.set(sx,py+.17,sz+.1); g.add(p2); });
     [[-4.5,11],[4.5,11],[-4.5,-9],[4.5,-9],[-4.5,-1],[4.5,-1]].forEach(([sx,sz],si)=>{
       const col3=[0x3399ff,0xff6633,0x33aa44][si%3];
       const ch=new THREE.Mesh(new THREE.BoxGeometry(.56,.1,1.95),M(col3)); ch.position.set(sx,py+.1,sz); g.add(ch);
@@ -3001,10 +3006,21 @@ function GameCrociera(){
       const pole2=cyl(.04,.04,1.75,0xd4aa30); pole2.position.set(sx+(sx>0?.38:-.38),py+.9,sz); g.add(pole2);
       const umb=new THREE.Mesh(new THREE.ConeGeometry(.95,.32,12),new THREE.MeshStandardMaterial({color:col3,transparent:true,opacity:.85,side:THREE.DoubleSide})); umb.position.set(sx+(sx>0?.38:-.38),py+1.82,sz); g.add(umb);
     });
-    const bar=new THREE.Mesh(new THREE.BoxGeometry(4,.88,.7),M(0x7a5a22)); bar.position.set(0,py+.44,-12); g.add(bar);
-    const bTop=new THREE.Mesh(new THREE.BoxGeometry(4.1,.07,.8),M(0xa08030)); bTop.position.set(0,py+.91,-12); g.add(bTop);
-    for(let bi=-1.5;bi<=1.5;bi+=.65){ const btl=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,.35,8),M([0xaacc44,0xcc4422][Math.abs(Math.round(bi))%2])); btl.position.set(bi,py+1.14,-11.65); g.add(btl); }
-    const ts=labelSprite('\u{1F30A} Terrazza \u00B7 Bar \u{1F379}',3.2); ts.position.set(0,py+2.3,0); g.add(ts);
+    // Bancone bar lungo
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(9,.88,.7),M(0x5a3a10)); bar.position.set(0,py+.44,-14); g.add(bar);
+    const bTop=new THREE.Mesh(new THREE.BoxGeometry(9.2,.1,.85),M(0x8a6028)); bTop.position.set(0,py+.91,-14); g.add(bTop);
+    const bShelf=new THREE.Mesh(new THREE.BoxGeometry(8.5,.07,.4),M(0x7a5a22)); bShelf.position.set(0,py+1.82,-14.55); g.add(bShelf);
+    const bMirror=new THREE.Mesh(new THREE.BoxGeometry(8,.06,1.7),new THREE.MeshBasicMaterial({color:0xc0e0ff,transparent:true,opacity:.38})); bMirror.rotation.x=Math.PI/2; bMirror.position.set(0,py+1.22,-14.45); g.add(bMirror);
+    [-4,-3,-2,-1,0,1,2,3,4].forEach((bx,bi)=>{ const btl=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,.42,8),M([0xaacc44,0xcc4422,0x2244aa,0xff8822,0x44aa44,0xcc2244,0x88aacc,0xddaa22,0x884422][bi])); btl.position.set(bx,py+1.28,-14.55); g.add(btl); const bn=new THREE.Mesh(new THREE.CylinderGeometry(.032,.05,.1,8),M(0x333333)); bn.position.set(bx,py+1.54,-14.55); g.add(bn); });
+    // Macchina caff\u00E8 espresso
+    const cfBase=new THREE.Mesh(new THREE.BoxGeometry(.65,.7,.52),M(0x1a1a1a)); cfBase.position.set(3.5,py+1.25,-13.5); g.add(cfBase);
+    const cfTop2=new THREE.Mesh(new THREE.BoxGeometry(.7,.12,.58),M(0x111111)); cfTop2.position.set(3.5,py+1.64,-13.5); g.add(cfTop2);
+    const cfLev=new THREE.Mesh(new THREE.BoxGeometry(.08,.22,.08),M(0x888888)); cfLev.position.set(3.22,py+1.18,-13.32); g.add(cfLev);
+    const cfSteam=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.36,8),M(0xcccccc)); cfSteam.position.set(3.78,py+1.3,-13.32); g.add(cfSteam);
+    [3.32,3.5,3.68].forEach(bx=>{ const cup=new THREE.Mesh(new THREE.CylinderGeometry(.065,.055,.1,8),M(0xffffff)); cup.position.set(bx,py+.98,-13.5); g.add(cup); });
+    [-3,-2,-1,0,1,2].forEach((bx,bi)=>{ const gl=new THREE.Mesh(new THREE.CylinderGeometry(.065,.045,.18,8),new THREE.MeshStandardMaterial({color:[0xaae0ff,0xff8888,0xffee88,0xaaffaa,0xffaaee,0xffcc88][bi],transparent:true,opacity:.72})); gl.position.set(bx,py+1.0,-13.9); g.add(gl); });
+    [-4,-3,-2,-1,0,1,2,3,4].forEach(bx=>{ const st=new THREE.Mesh(new THREE.CylinderGeometry(.2,.25,.6,10),M(0x5a3a10)); st.position.set(bx,py+.6,-13.1); g.add(st); const ss=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.06,10),M(0x2255aa)); ss.position.set(bx,py+.92,-13.1); g.add(ss); });
+    const ts=labelSprite('\u{1F30A} Terrazza \u00B7 Bar \u{1F379}\u2615',3.2); ts.position.set(0,py+2.3,0); g.add(ts);
     [[-3.5,-6],[3.5,-6],[-3.5,11],[3.5,11]].forEach(([ix,iz],i)=>{ const fc=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.12,12),new THREE.MeshStandardMaterial({color:[0xff4444,0x4444ff,0x44ff44,0xffaa00][i],emissive:[0xff4444,0x4444ff,0x44ff44,0xffaa00][i],emissiveIntensity:.4})); fc.position.set(ix,py+.15,iz); g.add(fc); floorItems.push({m:fc}); });
     addStairs(g,py,13,1,0,6,'\u2B07\uFE0F Ristorante',true);
     world.add(g); return g;
@@ -3079,6 +3095,7 @@ function GameCrociera(){
     pushOutWalls(player.position,.44);
     walkAnim(player,moved?t*9:0);
     followCam(player,FLOOR_CAM_DIST[curFloor],FLOOR_CAM_H[curFloor],FLOOR_LOOK_Y[curFloor]);
+    if(curFloor!==2){ camera.position.x=THREE.MathUtils.clamp(camera.position.x,-xl+.35,xl-.35); camera.position.z=THREE.MathUtils.clamp(camera.position.z,-zl[0]+.35,zl[1]-.35); }
     floorItems.forEach((it,i)=>{ if(!it.m.parent)return; it.m.rotation.y+=dt*2; it.m.position.y=FLOOR_Y[curFloor]+.15+Math.sin(t*2+i)*.12;
       if(it.extra)it.extra.position.y=it.m.position.y+.07;
       const dx=player.position.x-it.m.position.x, dz=player.position.z-it.m.position.z;
@@ -3571,7 +3588,7 @@ function GameAereo(){
       scene.background=new THREE.Color(THREE.MathUtils.lerp(0x87ceeb,0x4ab8f0,Math.min(1,planeAlt/40)));
       setScore('🛫 Velocità: '+Math.floor(planeSpeed*14.4)+' km/h  ·  Quota: '+Math.floor(planeAlt*50)+' m');
       if(planeAlt>45){ stage='flying'; stageT=0; planeSpeed=55;
-        plane.position.set(0,0,0); planeX=0; planeY=0;
+        plane.position.set(0,0,0); planeX=0; planeY=0; tarmacVisGroup.visible=false; groundMeshes.forEach(o=>{o.material.opacity=0; o.material.depthWrite=false;});
         clouds.forEach(c=>{ c.position.set(rand(-70,70),rand(-10,10),rand(-100,0)); c.visible=true; });
         scene.background=new THREE.Color(0x3aa8e8); scene.fog=new THREE.Fog(0x3aa8e8,120,500);
         setInstr('✈️ ◀▶▲▼ per volare!'); showMsg('🌤️ In volo verso '+destLabel+'!'); setTimeout(()=>showMsg(''),2500); } }
@@ -3586,7 +3603,7 @@ function GameAereo(){
       setScore('✈️ → '+destLabel);
       if(stageT>18){ stage='landing'; stageT=0; starObjs.forEach(s=>world.remove(s)); starObjs.length=0;
         if(plane.userData.tail)plane.userData.tail.visible=true;
-        destGroup=buildDest(dest); destGroup.position.set(0,-55,-140); world.add(destGroup);
+        destGroup=buildDest(dest); destGroup.position.set(0,-55,-200); world.add(destGroup);
         setInstr('🛬 Atterraggio a '+destLabel+'!'); showMsg('🛬 '+destLabel+'!'); setTimeout(()=>showMsg(''),3500); } }
 
     else if(stage==='landing'){
@@ -3594,13 +3611,13 @@ function GameAereo(){
       plane.position.x=THREE.MathUtils.lerp(plane.position.x,planeX,.09); plane.position.y=THREE.MathUtils.lerp(plane.position.y,planeY,.09);
       plane.rotation.z=THREE.MathUtils.lerp(plane.rotation.z,0,.09); plane.rotation.x=THREE.MathUtils.lerp(plane.rotation.x,.04,.05);
       clouds.forEach(c=>{c.position.z+=18*dt; if(c.material.opacity>0)c.material.opacity=Math.max(0,c.material.opacity-dt*.35);});
-      if(destGroup){ const prog=Math.min(1,stageT/7); destGroup.position.y=THREE.MathUtils.lerp(-55,-2,prog); destGroup.position.z=THREE.MathUtils.lerp(-140,-30,prog); }
-      camera.position.lerp(new THREE.Vector3(22,18,28),.035); camera.lookAt(0,5,-18);
+      if(destGroup){ const prog=Math.min(1,stageT/7); destGroup.position.y=THREE.MathUtils.lerp(-55,-2,prog); destGroup.position.z=THREE.MathUtils.lerp(-200,-75,prog); }
+      camera.position.lerp(new THREE.Vector3(22,20,32),.035); camera.lookAt(0,5,-50);
       if(stageT>8){ stage='arrival'; stageT=0; if(plane.userData.gear)plane.userData.gear.visible=true; beep(500,.15,'sine'); setTimeout(()=>beep(650,.2,'sine'),150); setTimeout(()=>beep(800,.25,'sine'),300); setInstr('🎉 Benvenuto/a a '+destLabel+'!'); } }
 
     else if(stage==='arrival'){
       if(destGroup)destGroup.rotation.y=Math.sin(stageT*.28)*.06;
-      camera.position.lerp(new THREE.Vector3(Math.sin(stageT*.22)*16,13,22),.022); camera.lookAt(0,6,-18);
+      camera.position.lerp(new THREE.Vector3(Math.sin(stageT*.22)*18,16,28),.022); camera.lookAt(0,5,-50);
       setScore('🎉 Arrivati a '+destLabel+'!');
       if(stageT>4&&!won){ won=true; finishGame(28,'✈️ Atterrato a '+destLabel+'! Buon viaggio!'); } }
   }};
