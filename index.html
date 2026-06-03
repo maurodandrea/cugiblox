@@ -2840,7 +2840,6 @@ function GameCrociera(){
     g.position.set(55,0,-95); g.visible=false; world.add(g); return g;
   }
   const stopGroups=ROUTE_NAMES.map((_,i)=>buildStop(i));
-  const stopGroups=ROUTE_NAMES.map((_,i)=>buildStop(i));
 
   // ===== SISTEMA MULTI-PIANO =====
   // Piano 0=Ristorante (y=6.9), Piano 1=Cabine (y=9.7), Piano 2=Terrazza (y=15.5)
@@ -2848,152 +2847,184 @@ function GameCrociera(){
   const FLOOR_CAM_H=[11.0, 13.8, 20.0];
   const FLOOR_LOOK_Y=[7.3, 10.1, 16.2];
   const FLOOR_CAM_DIST=[8, 8, 10];
-  const FLOOR_XLIM=[5.5, 5.0, 6.0];
-  const FLOOR_ZLIM=[[9.5, 9.5],[11.5, 11.5],[15.5, 15.5]];
-  let curFloor=2, curFloorGroup=null, floorItems=[], stairTriggers=[];
+  const FLOOR_XLIM=[6.5, 4.5, 6.0];
+  const FLOOR_ZLIM=[[10.5,10.5],[11.5,11.5],[16.5,16.5]];
+  let curFloor=2, curFloorGroup=null, floorItems=[], triggers=[];
   let collected=0, won=false, t=0, rockT=0;
   const GOAL=12;
 
-  // Scala decorativa aggiunta a un gruppo
-  function addStairs(g, py, trigZ, dir, toFloor, lbl){
-    for(let si=0;si<6;si++){
-      const step=new THREE.Mesh(new THREE.BoxGeometry(3.2,.22,.55),M(0x8a8a9a));
-      step.position.set(0, py+.11+si*.25, trigZ+dir*(si+.5)*.42); g.add(step);
-    }
-    const sl=labelSprite(lbl,2.5); sl.position.set(0,py+2.4,trigZ); g.add(sl);
-    stairTriggers.push({z:trigZ, toFloor:toFloor, entryZ:-dir*2});
+  function seatPerson(g,x,y,z,col){
+    const bc=col||[0x3a6ab0,0xa03a3a,0x3aa03a,0xa08030,0x663388][Math.floor(Math.random()*5)];
+    const hd=new THREE.Mesh(new THREE.SphereGeometry(.15,8,7),M(0xffcc99)); hd.position.set(x,y+.84,z); g.add(hd);
+    const tr=new THREE.Mesh(new THREE.BoxGeometry(.34,.42,.26),M(bc)); tr.position.set(x,y+.58,z); g.add(tr);
+    const lg=new THREE.Mesh(new THREE.BoxGeometry(.32,.18,.46),M(0x223344)); lg.position.set(x,y+.31,z+.1); g.add(lg);
   }
 
-  // Muri solidi (aggiunge al solidWalls e visualmente al gruppo)
-  function addRoom(g, py, W, L){
-    const wm=new THREE.MeshStandardMaterial({color:0xf0ece4,roughness:.9});
+  function addStairs(g,py,trigZ,dir,toFloor,entryZ,lbl,goDown){
+    for(let si=0;si<8;si++){
+      const step=new THREE.Mesh(new THREE.BoxGeometry(3.4,.2,.5),M(0x7a7a8a));
+      step.position.set(0, py+.1+(goDown?-si*.22:si*.22), trigZ+dir*(si+.5)*.44); g.add(step);
+    }
+    [-1.55,1.55].forEach(rx=>{
+      for(let pi=0;pi<5;pi++){
+        const post=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.07),M(0xb0b0b0));
+        post.position.set(rx, py+.4+(goDown?-pi*.22:pi*.22), trigZ+dir*(pi+.5)*.88); g.add(post);
+      }
+      const rail=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,3.7),M(0xcccccc));
+      rail.rotation.x=Math.atan2(goDown?8*.22:-8*.22, dir*8*.44);
+      rail.position.set(rx, py+.9+(goDown?-.6:.6), trigZ+dir*1.8); g.add(rail);
+    });
+    const sl=labelSprite(lbl,2.5); sl.position.set(0,py+(goDown?1.4:2.5),trigZ); g.add(sl);
+    triggers.push({z:trigZ,x:0,xR:4,zR:2.5,toFloor,entryZ});
+  }
+
+  function addDoor(g,py,x,z,rotY,col,lbl,toFloor,entryZ){
+    const dg=new THREE.Group();
+    const jm=M(0x9a7a3a);
+    const j1=new THREE.Mesh(new THREE.BoxGeometry(.18,2.6,.18),jm); j1.position.set(-.95,py+1.3,0);
+    const j2=j1.clone(); j2.position.x=.95;
+    const top=new THREE.Mesh(new THREE.BoxGeometry(2.12,.28,.18),jm); top.position.set(0,py+2.62,0);
+    const pan=new THREE.Mesh(new THREE.BoxGeometry(1.72,2.42,.09),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.2,transparent:true,opacity:.82,side:THREE.DoubleSide}));
+    pan.position.set(0,py+1.21,0);
+    [[0,.58],[0,-.48]].forEach(([ddx,ddz])=>{ const pp=new THREE.Mesh(new THREE.BoxGeometry(1.28,.78,.05),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.12})); pp.position.set(ddx,py+1.18+ddz,.04); dg.add(pp); });
+    const knob=new THREE.Mesh(new THREE.SphereGeometry(.072,7,6),M(0xd4aa20)); knob.position.set(.65,py+1.22,.1);
+    dg.add(j1,j2,top,pan,knob); dg.position.set(x,0,z); if(rotY)dg.rotation.y=rotY;
+    g.add(dg);
+    const lb=labelSprite(lbl,2.8); lb.position.set(x,py+3.35,z); g.add(lb);
+    triggers.push({z,x,xR:2.5,zR:1.8,toFloor,entryZ});
+  }
+
+  function addRoom(g,py,W,L,col){
+    const wm=new THREE.MeshStandardMaterial({color:col||0xf0ece4,roughness:.88});
     const wN=new THREE.Mesh(new THREE.BoxGeometry(W,2.8,.22),wm); wN.position.set(0,py+1.4,-L/2); g.add(wN);
     const wS=new THREE.Mesh(new THREE.BoxGeometry(W,2.8,.22),wm); wS.position.set(0,py+1.4, L/2); g.add(wS);
     const wE=new THREE.Mesh(new THREE.BoxGeometry(.22,2.8,L+.44),wm); wE.position.set( W/2,py+1.4,0); g.add(wE);
     const wW=wE.clone(); wW.position.x=-W/2; g.add(wW);
     solidWalls.length=0;
-    solidWalls.push({x1:-W/2-.1, z1:-L/2-.1, x2: W/2+.1, z2:-L/2+.1});  // N
-    solidWalls.push({x1:-W/2-.1, z1: L/2-.1, x2: W/2+.1, z2: L/2+.1});  // S
-    solidWalls.push({x1:-W/2-.1, z1:-L/2,   x2:-W/2+.1, z2: L/2});       // W
-    solidWalls.push({x1: W/2-.1, z1:-L/2,   x2: W/2+.1, z2: L/2});       // E
+    solidWalls.push({x1:-W/2-.1,z1:-L/2-.1,x2:W/2+.1,z2:-L/2+.1});
+    solidWalls.push({x1:-W/2-.1,z1: L/2-.1,x2:W/2+.1,z2: L/2+.1});
+    solidWalls.push({x1:-W/2-.1,z1:-L/2,  x2:-W/2+.1,z2:L/2});
+    solidWalls.push({x1: W/2-.1,z1:-L/2,  x2: W/2+.1,z2:L/2});
   }
 
   function buildRestaurant(){
-    const g=new THREE.Group(); const py=FLOOR_Y[0]; const W=12, L=20;
-    // Pavimento caldo
-    const flr=new THREE.Mesh(new THREE.BoxGeometry(W,.2,L),new THREE.MeshStandardMaterial({color:0x8a5c3a,roughness:.85})); flr.position.set(0,py-.1,0); g.add(flr);
-    // Soffitto
-    const ceil=new THREE.Mesh(new THREE.BoxGeometry(W,.12,L),M(0xf5f0e0)); ceil.position.set(0,py+2.72,0); g.add(ceil);
-    // Pareti + muri solidi
-    addRoom(g, py, W, L);
-    // Finestre laterali
-    [-4,0,4].forEach(wz=>[-1,1].forEach(ws=>{ const win=new THREE.Mesh(new THREE.BoxGeometry(.15,1.1,1.8),new THREE.MeshBasicMaterial({color:0x9de0ff,transparent:true,opacity:.65})); win.position.set(ws*5.9,py+1.5,wz); g.add(win); }));
-    // Luci soffitto
-    for(let lz=-6;lz<=6;lz+=4){ const lt=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.07,10),new THREE.MeshStandardMaterial({color:0xfffce0,emissive:0xffee88,emissiveIntensity:.9})); lt.position.set(0,py+2.68,lz); g.add(lt); }
-    // Tavoli (3 file x 2 colonne)
-    [[- 3,-7],[3,-7],[-3,-1],[3,-1],[-3,5],[3,5]].forEach(([tx,tz],k)=>{
-      const tb=new THREE.Mesh(new THREE.CylinderGeometry(.75,.75,.07,12),M(0xfff8e8)); tb.position.set(tx,py+.8,tz); g.add(tb);
-      const leg=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.8,8),M(0x8a5a2a)); leg.position.set(tx,py+.4,tz); g.add(leg);
-      // Piatto sul tavolo
-      const pl=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.04,10),M(0xffffff)); pl.position.set(tx,py+.84,tz); g.add(pl);
-      const food=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),M([0xff7733,0xffcc44,0x55bb44,0xff5566,0xff7733,0xffcc44][k])); food.position.set(tx,py+.9,tz); g.add(food);
-      // 4 sedie
-      [[0,.9],[0,-.9],[.9,0],[-.9,0]].forEach(([cx,cz])=>{
-        const ch=new THREE.Mesh(new THREE.BoxGeometry(.55,.1,.5),M(0x8a5a2a)); ch.position.set(tx+cx,py+.44,tz+cz); g.add(ch);
-        const bk=new THREE.Mesh(new THREE.BoxGeometry(.55,.55,.08),M(0x8a5a2a)); bk.position.set(tx+cx,py+.73,tz+cz+(cz>0?.26:cz<0?-.26:0)); g.add(bk);
-      });
+    const g=new THREE.Group(); const py=FLOOR_Y[0]; const W=14,L=22;
+    for(let fi=0;fi<L;fi++){ const pl=new THREE.Mesh(new THREE.BoxGeometry(W,.18,.98),M(fi%2===0?0x9a6840:0x8a5c30)); pl.position.set(0,py-.09,-L/2+.5+fi); g.add(pl); }
+    const ceil=new THREE.Mesh(new THREE.BoxGeometry(W,.12,L),M(0xf8f4e8)); ceil.position.set(0,py+2.75,0); g.add(ceil);
+    addRoom(g,py,W,L,0xf2ebe0);
+    const cbase=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.55,8),M(0xd4aa30)); cbase.position.set(0,py+2.55,0); g.add(cbase);
+    const cring=new THREE.Mesh(new THREE.TorusGeometry(.7,.04,7,18),M(0xd4aa30)); cring.position.set(0,py+2.28,0); g.add(cring);
+    for(let li=0;li<8;li++){ const a=li/8*Math.PI*2; const bulb=new THREE.Mesh(new THREE.SphereGeometry(.075,6,5),new THREE.MeshStandardMaterial({color:0xfffce0,emissive:0xffee88,emissiveIntensity:1.1})); bulb.position.set(Math.cos(a)*.7,py+2.22,Math.sin(a)*.7); g.add(bulb); }
+    [-8,-4,0,4,8].forEach(lz=>[-1,1].forEach(ls=>{ const sc=new THREE.Mesh(new THREE.CylinderGeometry(.1,.13,.16,8),new THREE.MeshStandardMaterial({color:0xfffce0,emissive:0xffee88,emissiveIntensity:.85})); sc.position.set(ls*6.8,py+1.95,lz); g.add(sc); }));
+    for(let wz=-8;wz<=8;wz+=4){ [-1,1].forEach(ws=>{ const ph=new THREE.Mesh(new THREE.CircleGeometry(.38,18),new THREE.MeshBasicMaterial({color:0x9de0ff,transparent:true,opacity:.72})); ph.position.set(ws*6.9,py+1.6,wz); ph.rotation.y=ws>0?-Math.PI/2:Math.PI/2; g.add(ph); const ring=new THREE.Mesh(new THREE.TorusGeometry(.4,.05,8,18),M(0x556677)); ring.position.set(ws*6.85,py+1.6,wz); ring.rotation.y=ws>0?-Math.PI/2:Math.PI/2; g.add(ring); }); }
+    [[5.8,-9.5],[-5.8,-9.5],[5.8,9.5],[-5.8,9.5]].forEach(([px,pz])=>{ const pot=new THREE.Mesh(new THREE.CylinderGeometry(.28,.22,.48,10),M(0x885533)); pot.position.set(px,py+.24,pz); g.add(pot); for(let li=0;li<5;li++){ const leaf=new THREE.Mesh(new THREE.ConeGeometry(.26,.85,6),M(0x228822)); leaf.position.set(px+Math.cos(li/5*Math.PI*2)*.17,py+.85,pz+Math.sin(li/5*Math.PI*2)*.17); leaf.rotation.z=.62+li*.1; g.add(leaf); } });
+    const bs=labelSprite('\u{1F35D} Ristorante della Nave',4.5); bs.position.set(0,py+3.5,0); g.add(bs);
+    [[-4,-7],[4,-7],[-4,-1],[4,-1],[-4,5],[4,5]].forEach(([tx,tz],k)=>{
+      const cloth=new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,.04,14),M(0xfefefe)); cloth.position.set(tx,py+.82,tz); g.add(cloth);
+      const tleg=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,.82,8),M(0x7a4e22)); tleg.position.set(tx,py+.41,tz); g.add(tleg);
+      const cnd=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.24,6),M(0xfff8e0)); cnd.position.set(tx,py+.96,tz); g.add(cnd);
+      const flm=new THREE.Mesh(new THREE.SphereGeometry(.055,5,4),new THREE.MeshStandardMaterial({color:0xff8800,emissive:0xff6600,emissiveIntensity:1.0})); flm.position.set(tx,py+1.15,tz); g.add(flm);
+      [[.35,0],[-.35,0],[0,.35],[0,-.35]].forEach(([dx,dz])=>{ const plt=new THREE.Mesh(new THREE.CylinderGeometry(.19,.19,.03,10),M(0xffffff)); plt.position.set(tx+dx,py+.85,tz+dz); g.add(plt); });
+      [[.28,.2],[-.28,-.2]].forEach(([dx,dz])=>{ const gl=new THREE.Mesh(new THREE.CylinderGeometry(.055,.04,.2,8),new THREE.MeshBasicMaterial({color:0xaae0ff,transparent:true,opacity:.6})); gl.position.set(tx+dx,py+.93,tz+dz); g.add(gl); });
+      [[0,.88],[0,-.88],[.88,0],[-.88,0]].forEach(([cx,cz])=>{ const ch=new THREE.Mesh(new THREE.BoxGeometry(.52,.1,.48),M(0x7a4e22)); ch.position.set(tx+cx,py+.44,tz+cz); g.add(ch); const bk=new THREE.Mesh(new THREE.BoxGeometry(.52,.52,.08),M(0x7a4e22)); bk.position.set(tx+cx,py+.73,tz+cz+(cz>.01?.26:cz<-.01?-.26:0)); g.add(bk); });
+      [[0,.85],[0,-.85]].forEach(([px,pz])=>seatPerson(g,tx+px,py,tz+pz));
     });
-    // Bancone bar
-    const bar=new THREE.Mesh(new THREE.BoxGeometry(4,.9,.75),M(0x5a3a1a)); bar.position.set(0,py+.45,-8.5); g.add(bar);
-    const barTop=new THREE.Mesh(new THREE.BoxGeometry(4.1,.07,.85),M(0x8a6a2a)); barTop.position.set(0,py+.92,-8.5); g.add(barTop);
-    const bs=labelSprite('🍝 Ristorante della Nave',4.2); bs.position.set(0,py+3.5,0); g.add(bs);
-    // Items da raccogliere (4 piatti)
-    [[-2.5,-4],[2.5,-4],[-2.5,3],[2.5,3]].forEach(([ix,iz],i)=>{
-      const it=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.07,10),M(0xffffff)); it.position.set(ix,py+.88,iz); g.add(it);
-      const fd=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),M([0xff7733,0xffcc44,0x55bb44,0xff5566][i])); fd.position.set(ix,py+.95,iz); it.userData.top=fd; g.add(fd);
-      floorItems.push({m:it,extra:fd});
-    });
-    // Scala SU verso cabine (poppa nord)
-    addStairs(g, py, -8, -1, 1, '⬆️ Cabine');
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(6,.88,.7),M(0x4a2e0a)); bar.position.set(0,py+.44,-9.8); g.add(bar);
+    const bTop=new THREE.Mesh(new THREE.BoxGeometry(6.1,.07,.8),M(0x7a5822)); bTop.position.set(0,py+.91,-9.8); g.add(bTop);
+    const shelf=new THREE.Mesh(new THREE.BoxGeometry(5.5,.05,.45),M(0x7a5822)); shelf.position.set(0,py+1.78,-9.55); g.add(shelf);
+    for(let bi=-2.5;bi<=2.5;bi+=.65){ const btl=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,.36,8),M([0x88aa44,0xaa4422,0x2244aa][Math.abs(Math.round(bi))%3])); btl.position.set(bi,py+1.14,-9.52); g.add(btl); }
+    const mirror=new THREE.Mesh(new THREE.BoxGeometry(5.5,.02,1.75),new THREE.MeshBasicMaterial({color:0xcce8ff,transparent:true,opacity:.4})); mirror.rotation.x=Math.PI/2; mirror.position.set(0,py+1.18,-9.42); g.add(mirror);
+    seatPerson(g,0,py+.5,-9.2);
+    [[-3,-4],[3,-4],[-3,4],[3,4]].forEach(([ix,iz])=>{ const it=new THREE.Mesh(new THREE.DodecahedronGeometry(.25,0),new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffaa00,emissiveIntensity:.7})); it.position.set(ix,py+.88,iz); g.add(it); floorItems.push({m:it}); });
+    addDoor(g,py,-3.5,-L/2+.12,0,0x3a6ab0,'\u{1F6CF}\uFE0F Cabine',1,7);
+    addDoor(g,py,3.5,L/2-.12,Math.PI,0x44aa44,'\u{1F30A} Terrazza',2,8);
     world.add(g); return g;
   }
 
   function buildCabins(){
-    const g=new THREE.Group(); const py=FLOOR_Y[1]; const W=10, L=24;
-    // Pavimento corridoio blu navy
-    const flr=new THREE.Mesh(new THREE.BoxGeometry(W,.2,L),new THREE.MeshStandardMaterial({color:0x2a4060,roughness:.8})); flr.position.set(0,py-.1,0); g.add(flr);
+    const g=new THREE.Group(); const py=FLOOR_Y[1]; const W=10,L=24;
+    const carpet=new THREE.Mesh(new THREE.BoxGeometry(W,.18,L),new THREE.MeshStandardMaterial({color:0x1a2e50,roughness:.95})); carpet.position.set(0,py-.09,0); g.add(carpet);
+    for(let lz=-10;lz<=10;lz+=4){ const st=new THREE.Mesh(new THREE.BoxGeometry(W,.01,.08),M(0xd4aa30)); st.position.set(0,py+.01,lz); g.add(st); }
     const ceil=new THREE.Mesh(new THREE.BoxGeometry(W,.12,L),M(0xf0ece0)); ceil.position.set(0,py+2.72,0); g.add(ceil);
-    addRoom(g, py, W, L);
-    // Strisce decorative sul pavimento
-    for(let lz=-10;lz<=10;lz+=4){ const stripe=new THREE.Mesh(new THREE.BoxGeometry(W,.01,.12),M(0x4a6a9a)); stripe.position.set(0,py+.01,lz); g.add(stripe); }
-    // Luci corridoio
-    for(let lz=-9;lz<=9;lz+=4){ const lt=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.07,10),new THREE.MeshStandardMaterial({color:0xfffce0,emissive:0xffee88,emissiveIntensity:.85})); lt.position.set(0,py+2.68,lz); g.add(lt); }
-    // Porte cabine (5 per lato)
-    const doorCols=[0x3a6ab0,0xb03a3a,0x3ab03a,0xb0903a,0x7a3ab0];
+    addRoom(g,py,W,L,0xe8e4dc);
+    for(let lz=-10;lz<=10;lz+=4){ const lt=new THREE.Mesh(new THREE.BoxGeometry(W+.2,.09,.12),new THREE.MeshStandardMaterial({color:0xfffce0,emissive:0xffee88,emissiveIntensity:.75})); lt.position.set(0,py+2.65,lz); g.add(lt); }
+    [-1,1].forEach(end=>{ const ph=new THREE.Mesh(new THREE.CircleGeometry(.34,18),new THREE.MeshBasicMaterial({color:0x9de0ff,transparent:true,opacity:.75})); ph.position.set(0,py+1.6,end*11.8); ph.rotation.y=end>0?Math.PI:0; g.add(ph); const ring=new THREE.Mesh(new THREE.TorusGeometry(.36,.05,8,18),M(0x556677)); ring.position.set(0,py+1.6,end*11.8); ring.rotation.y=ph.rotation.y; g.add(ring); });
+    const dcols=[0x2855a8,0xa83228,0x28a032,0xa8883a,0x7a28a8];
     [-8,-4,0,4,8].forEach((dz,i)=>[-1,1].forEach(side=>{
-      // Cornice porta
-      const frame=new THREE.Mesh(new THREE.BoxGeometry(.2,2.2,.1),M(0xa0a0b0)); frame.position.set(side*4.9,py+1.1,dz); g.add(frame);
-      const door=new THREE.Mesh(new THREE.BoxGeometry(.12,2.0,.08),M(doorCols[i],.85)); door.position.set(side*4.89,py+1.0,dz); g.add(door);
-      // Maniglia
-      const kn=new THREE.Mesh(new THREE.SphereGeometry(.08,6,5),M(0xd4aa20)); kn.position.set(side*4.76,py+1.1,dz+.25); g.add(kn);
-      // Numero cabina
-      const numL=labelSprite((100+i*2+(side>0?1:0)).toString(),.9); numL.position.set(side*4.5,py+1.9,dz); g.add(numL);
+      const sx=side*4.2;
+      const cw=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.1),M(0xe0dcd4)); cw.position.set(sx,py+1.3,dz); g.add(cw);
+      const frT=new THREE.Mesh(new THREE.BoxGeometry(1.14,.26,.15),M(0x9a8060)); frT.position.set(sx,py+2.32,dz);
+      const frL=new THREE.Mesh(new THREE.BoxGeometry(.14,2.42,.15),M(0x9a8060)); frL.position.set(sx-.55,py+1.21,dz);
+      const frR=frL.clone(); frR.position.x=sx+.55; g.add(frT,frL,frR);
+      const door=new THREE.Mesh(new THREE.BoxGeometry(.92,2.22,.1),M(dcols[i])); door.position.set(sx,py+1.11,dz); g.add(door);
+      [[0,.55],[0,-.42]].forEach(([ddx,ddz])=>{ const pp=new THREE.Mesh(new THREE.BoxGeometry(.62,.52,.06),M(dcols[i])); pp.position.set(sx+ddx,py+1.15+ddz,dz+.03); g.add(pp); });
+      const kn=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.2,7),M(0xd8d8e0)); kn.rotation.z=Math.PI/2; kn.position.set(side>0?sx-.45:sx+.45,py+1.22,dz+.08); g.add(kn);
+      const numL=labelSprite((100+i*2+(side>0?1:0)).toString(),.95); numL.position.set(sx,py+2.1,dz); g.add(numL);
+      const bed=new THREE.Mesh(new THREE.BoxGeometry(.85,.14,1.7),M(0xfcfcfc)); bed.position.set(sx,py+.3,dz); g.add(bed);
+      const pillow=new THREE.Mesh(new THREE.BoxGeometry(.36,.1,.36),M(0xf0f0ff)); pillow.position.set(sx,py+.38,dz-.6); g.add(pillow);
     }));
-    // Items (stelle/bagagli)
-    [[-1,-8],[1,-3],[-2,2],[2,7]].forEach(([ix,iz])=>{
-      const st=new THREE.Mesh(new THREE.DodecahedronGeometry(.24,0),new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffaa00,emissiveIntensity:.55})); st.position.set(ix,py+.3,iz); g.add(st); floorItems.push({m:st});
-    });
-    const cs=labelSprite('🛏️ Cabine',3); cs.position.set(0,py+3.5,0); g.add(cs);
-    // Scala GIU' verso ristorante (nord)
-    addStairs(g, py, -10, -1, 0, '⬇️ Ristorante');
-    // Scala SU verso terrazza (sud)
-    addStairs(g, py,  10,  1, 2, '⬆️ Terrazza');
+    const ext=new THREE.Mesh(new THREE.CylinderGeometry(.1,.12,.55,10),M(0xdd2222)); ext.position.set(-4.5,py+1.1,0); g.add(ext);
+    const extT=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.14,8),M(0x222222)); extT.position.set(-4.5,py+1.45,0); g.add(extT);
+    const extLbl=labelSprite('\u{1F9EF}',1.2); extLbl.position.set(-4.5,py+1.9,0); g.add(extLbl);
+    const lifeRing=new THREE.Mesh(new THREE.TorusGeometry(.27,.07,8,16),M(0xff4444)); lifeRing.position.set(4.45,py+1.5,-5); lifeRing.rotation.y=Math.PI/2; g.add(lifeRing);
+    for(let seg=0;seg<4;seg++){ const arc=new THREE.Mesh(new THREE.TorusGeometry(.27,.072,8,4,Math.PI/2),M(0xffffff)); arc.rotation.y=Math.PI/2; arc.rotation.z=seg*Math.PI/2; arc.position.set(4.45,py+1.5,-5); g.add(arc); }
+    [[-1,-8],[1,-3],[-2,3],[2,8]].forEach(([ix,iz])=>{ const bag=new THREE.Mesh(new THREE.BoxGeometry(.38,.28,.22),new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffaa00,emissiveIntensity:.6})); bag.position.set(ix,py+.15,iz); g.add(bag); floorItems.push({m:bag}); });
+    const cs=labelSprite('\u{1F6CF}\uFE0F Cabine',3.2); cs.position.set(0,py+3.5,0); g.add(cs);
+    addDoor(g,py,3.5,L/2-.12,Math.PI,0xff9944,'\u{1F35D} Ristorante',0,-7);
     world.add(g); return g;
   }
 
   function buildTerrace(){
     const g=new THREE.Group(); const py=FLOOR_Y[2];
-    // Pavimento terrazza (più grande)
-    const deck=new THREE.Mesh(new THREE.BoxGeometry(13,.2,34),new THREE.MeshStandardMaterial({color:0xe8e4d0,roughness:.75})); deck.position.set(0,py-.1,0); g.add(deck);
-    // Ringhiere come muri solidi
+    for(let fi=0;fi<34;fi++){ const plk=new THREE.Mesh(new THREE.BoxGeometry(13,.18,.98),M(fi%2===0?0xd4a870:0xbf9455)); plk.position.set(0,py-.09,-17+.5+fi); g.add(plk); }
     solidWalls.length=0;
-    solidWalls.push({x1:-6.4,z1:-17.5,x2:6.4,z2:-17.3}); // N
-    solidWalls.push({x1:-6.4,z1: 17.3,x2:6.4,z2: 17.5}); // S
-    solidWalls.push({x1:-6.4,z1:-17.5,x2:-6.2,z2:17.5}); // W
-    solidWalls.push({x1: 6.2,z1:-17.5,x2: 6.4,z2:17.5}); // E
-    // Ringhiere visive
-    [-6.3,6.3].forEach(rx=>{ const r1=new THREE.Mesh(new THREE.BoxGeometry(.08,.08,34.2),M(0xcccccc)); r1.position.set(rx,py+1.1,0); g.add(r1); const r2=r1.clone(); r2.position.y=py+.55; g.add(r2); });
-    [-17.2,17.2].forEach(rz=>{ const r=new THREE.Mesh(new THREE.BoxGeometry(13.2,.08,.08),M(0xcccccc)); r.position.set(0,py+1.1,rz); g.add(r); const r2=r.clone(); r2.position.y=py+.55; g.add(r2); });
-    for(let rz=-16;rz<=16;rz+=3){ [-6.3,6.3].forEach(rx=>{ const post=cyl(.06,.06,1.15,0xcccccc); post.position.set(rx,py+.62,rz); g.add(post); }); }
-    // Piscina
-    const pool=new THREE.Mesh(new THREE.BoxGeometry(5,.2,7),M(0x2295d0,.15)); pool.position.set(0,py,5); g.add(pool);
-    const poolW=new THREE.Mesh(new THREE.PlaneGeometry(4.6,6.6),new THREE.MeshStandardMaterial({color:0x40b8f0,transparent:true,opacity:.78,roughness:.1})); poolW.rotation.x=-Math.PI/2; poolW.position.set(0,py+.01,5); g.add(poolW);
-    // Sedie sdraio
-    [[-4.5,12],[4.5,12],[-4.5,-10],[4.5,-10],[- 4.5,1],[4.5,1]].forEach(([sx,sz])=>{ const ch=new THREE.Mesh(new THREE.BoxGeometry(.55,.12,1.9),M(0x3399ff)); ch.position.set(sx,py+.1,sz); g.add(ch); });
-    // Bar
-    const bar=new THREE.Mesh(new THREE.BoxGeometry(3.5,.9,.7),M(0x5a3a1a)); bar.position.set(0,py+.45,-12); g.add(bar);
-    const barTop2=new THREE.Mesh(new THREE.BoxGeometry(3.6,.07,.8),M(0x8a6a2a)); barTop2.position.set(0,py+.92,-12); g.add(barTop2);
-    const ts=labelSprite('🌊 Terrazza · Bar 🍹',3.2); ts.position.set(0,py+2.2,0); g.add(ts);
-    // Items (fiches)
-    const chipCols=[0xff4444,0x4444ff,0x44ff44,0xffaa00];
-    [[-3.5,-7],[3.5,-7],[-3.5,12],[3.5,12]].forEach(([ix,iz],i)=>{
-      const c=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.12,12),M(chipCols[i])); c.position.set(ix,py+.15,iz); g.add(c); floorItems.push({m:c});
+    solidWalls.push({x1:-6.4,z1:-17.3,x2:6.4,z2:-17.1});
+    solidWalls.push({x1:-6.4,z1: 17.1,x2:6.4,z2: 17.3});
+    solidWalls.push({x1:-6.4,z1:-17.3,x2:-6.2,z2:17.3});
+    solidWalls.push({x1: 6.2,z1:-17.3,x2: 6.4,z2:17.3});
+    [-6.3,6.3].forEach(rx=>{ const rl=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,34.2),M(0xd4aa30)); rl.position.set(rx,py+1.1,0); g.add(rl); const rl2=rl.clone(); rl2.position.y=py+.55; g.add(rl2); });
+    [-17.1,17.1].forEach(rz=>{ const rl=new THREE.Mesh(new THREE.BoxGeometry(13.2,.07,.07),M(0xd4aa30)); rl.position.set(0,py+1.1,rz); g.add(rl); const rl2=rl.clone(); rl2.position.y=py+.55; g.add(rl2); });
+    for(let rz=-16;rz<=16;rz+=2){ [-6.3,6.3].forEach(rx=>{ const post=cyl(.055,.055,1.15,0xd4aa30); post.position.set(rx,py+.62,rz); g.add(post); }); }
+    const pb=new THREE.Mesh(new THREE.BoxGeometry(5.8,.22,7.8),M(0xfefefe)); pb.position.set(0,py-.02,4); g.add(pb);
+    const pool=new THREE.Mesh(new THREE.BoxGeometry(5,.18,7),M(0x1880c0)); pool.position.set(0,py-.02,4); g.add(pool);
+    const pw=new THREE.Mesh(new THREE.PlaneGeometry(4.7,6.7),new THREE.MeshStandardMaterial({color:0x40c8f8,transparent:true,opacity:.82,roughness:.06})); pw.rotation.x=-Math.PI/2; pw.position.set(0,py+.02,4); g.add(pw);
+    [[2.8,1],[-2.8,1],[2.8,7],[-2.8,7]].forEach(([px,pz])=>{ const trunk=cyl(.08,.12,2.2,0x9a7040); trunk.position.set(px,py+1.1,pz); trunk.rotation.z=px>0?.14:-.14; g.add(trunk); for(let li=0;li<5;li++){ const leaf=new THREE.Mesh(new THREE.ConeGeometry(.2,.8,5),M(0x2a8822)); const a=li/5*Math.PI*2; leaf.position.set(px+Math.cos(a)*.45,py+2.4,pz+Math.sin(a)*.45); leaf.rotation.z=.78; leaf.rotation.y=a; g.add(leaf); } });
+    [[-4.5,11],[4.5,11],[-4.5,-9],[4.5,-9],[-4.5,-1],[4.5,-1]].forEach(([sx,sz],si)=>{
+      const col3=[0x3399ff,0xff6633,0x33aa44][si%3];
+      const ch=new THREE.Mesh(new THREE.BoxGeometry(.56,.1,1.95),M(col3)); ch.position.set(sx,py+.1,sz); g.add(ch);
+      const bk=new THREE.Mesh(new THREE.BoxGeometry(.56,.52,.08),M(col3)); bk.position.set(sx,py+.37,sz-.95); bk.rotation.x=Math.PI/8; g.add(bk);
+      const p2=new THREE.Mesh(new THREE.BoxGeometry(.34,.11,1.55),M(0xffcc99)); p2.position.set(sx,py+.17,sz+.1); g.add(p2);
+      const pole2=cyl(.04,.04,1.75,0xd4aa30); pole2.position.set(sx+(sx>0?.38:-.38),py+.9,sz); g.add(pole2);
+      const umb=new THREE.Mesh(new THREE.ConeGeometry(.95,.32,12),new THREE.MeshStandardMaterial({color:col3,transparent:true,opacity:.85,side:THREE.DoubleSide})); umb.position.set(sx+(sx>0?.38:-.38),py+1.82,sz); g.add(umb);
     });
-    // Scala GIU' verso cabine (prua sud)
-    addStairs(g, py, 14, 1, 1, '⬇️ Cabine');
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(4,.88,.7),M(0x7a5a22)); bar.position.set(0,py+.44,-12); g.add(bar);
+    const bTop=new THREE.Mesh(new THREE.BoxGeometry(4.1,.07,.8),M(0xa08030)); bTop.position.set(0,py+.91,-12); g.add(bTop);
+    for(let bi=-1.5;bi<=1.5;bi+=.65){ const btl=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,.35,8),M([0xaacc44,0xcc4422][Math.abs(Math.round(bi))%2])); btl.position.set(bi,py+1.14,-11.65); g.add(btl); }
+    const ts=labelSprite('\u{1F30A} Terrazza \u00B7 Bar \u{1F379}',3.2); ts.position.set(0,py+2.3,0); g.add(ts);
+    [[-3.5,-6],[3.5,-6],[-3.5,11],[3.5,11]].forEach(([ix,iz],i)=>{ const fc=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.12,12),new THREE.MeshStandardMaterial({color:[0xff4444,0x4444ff,0x44ff44,0xffaa00][i],emissive:[0xff4444,0x4444ff,0x44ff44,0xffaa00][i],emissiveIntensity:.4})); fc.position.set(ix,py+.15,iz); g.add(fc); floorItems.push({m:fc}); });
+    addStairs(g,py,13,1,0,6,'\u2B07\uFE0F Ristorante',true);
     world.add(g); return g;
   }
 
-  function changeFloor(newFloor, entryZ){
+  function changeFloor(newFloor,entryZ){
     if(curFloorGroup){ world.remove(curFloorGroup); }
-    floorItems=[]; stairTriggers=[];
+    floorItems=[]; triggers=[];
     curFloor=newFloor;
     if(curFloor===0) curFloorGroup=buildRestaurant();
     else if(curFloor===1) curFloorGroup=buildCabins();
     else curFloorGroup=buildTerrace();
-    player.position.set(0, FLOOR_Y[curFloor], entryZ||0);
-    const flrNames=['🍝 Ristorante','🛏️ Cabine','🌊 Terrazza'];
-    setInstr(flrNames[curFloor]+' · '+['⬆️ Scala cabine a prua','⬇️ Ristorante (prua) · ⬆️ Terrazza (poppa)','⬇️ Scala cabine a poppa'][curFloor]+' · Raccogli ★!');
+    player.position.set(0,FLOOR_Y[curFloor],entryZ||0);
+    const flrNames=[
+      '\u{1F35D} Ristorante',
+      '\u{1F6CF}\uFE0F Cabine',
+      '\u{1F30A} Terrazza'
+    ];
+    const flrInstr=[
+      'Porta \u{1F6CF}\uFE0F Cabine (nord) \u00B7 Porta \u{1F30A} Terrazza (sud)',
+      'Porta \u{1F35D} Ristorante (sud)',
+      'Scale \u2B07\uFE0F Ristorante (poppa)'
+    ];
+    setInstr(flrNames[curFloor]+' \u00B7 '+flrInstr[curFloor]+' \u00B7 Raccogli \u2605!');
   }
 
   const player=buildCousin(hero); player.position.set(0,FLOOR_Y[2],0); world.add(player);
@@ -3023,9 +3054,10 @@ function GameCrociera(){
       if(dx*dx+dz*dz<1.8){ collected++; beep(660+collected*40,.09);
         if(it.extra)curFloorGroup.remove(it.extra); curFloorGroup.remove(it.m); floorItems.splice(i,1);
         setScore('🚢 Crociera · '+collected+'/'+GOAL+' ★'); } });
-    for(const st of stairTriggers){
-      const dz=player.position.z-st.z;
-      if(Math.abs(dz)<2.5&&Math.abs(player.position.x)<4){ beep(520,.12,'sine'); changeFloor(st.toFloor, st.entryZ); break; }
+    for(const tr of triggers){
+      const dz=player.position.z-tr.z;
+      const dx=player.position.x-(tr.x||0);
+      if(Math.abs(dz)<(tr.zR||2.5)&&Math.abs(dx)<(tr.xR||4)){ beep(520,.12,'sine'); changeFloor(tr.toFloor,tr.entryZ); break; }
     }
     if(collected>=GOAL&&!won){ won=true; finishGame(30,'⚓ Crociera Mediterranea completata!'); }
   }};
