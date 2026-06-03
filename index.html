@@ -2917,16 +2917,15 @@ function GameAereo(){
   // ── TARMAC VISIBLE ELEMENTS (hidden until tarmac stage) ──
   const tarmacVisGroup=new THREE.Group(); tarmacVisGroup.visible=false; world.add(tarmacVisGroup);
   { const m=new THREE.Mesh(new THREE.BoxGeometry(58,9,18),M(0xe0ddd5)); m.position.set(0,4.5,47); tarmacVisGroup.add(m); }
-  // Vetrate facciata principale (lato pista, z≈38) — pannelli ampi e ben visibili
-  { const gfMat=new THREE.MeshStandardMaterial({color:0x7ac8e8,transparent:true,opacity:.8,metalness:.1,roughness:.05,emissive:0x2288bb,emissiveIntensity:.45,side:THREE.DoubleSide});
-    // Tre grandi pannelli vetrati
-    [-18,0,18].forEach(px=>{ const gf=new THREE.Mesh(new THREE.BoxGeometry(11,7,.18),gfMat); gf.position.set(px,3.8,38.15); tarmacVisGroup.add(gf); });
-    // Montanti verticali in alluminio
-    for(let gi=-3;gi<=3;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.28,7.4,.28),new THREE.MeshStandardMaterial({color:0x99aabb,metalness:.8,roughness:.2})); bar.position.set(gi*9,3.8,38.2); tarmacVisGroup.add(bar); }
+  // Vetrata facciata sud — MeshBasicMaterial (indipendente dalla luce, sempre visibile)
+  { const gfMat=new THREE.MeshBasicMaterial({color:0x4ab8e8,transparent:true,opacity:0.72,side:THREE.DoubleSide,depthWrite:false});
+    const gfFull=new THREE.Mesh(new THREE.PlaneGeometry(56,8),gfMat); gfFull.position.set(0,4.4,37.92); gfFull.renderOrder=2; tarmacVisGroup.add(gfFull);
+    // Montanti verticali
+    for(let gi=-3;gi<=3;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.32,8.4,.2),new THREE.MeshBasicMaterial({color:0xaabbc8})); bar.position.set(gi*9.3,4.4,38.0); bar.renderOrder=3; tarmacVisGroup.add(bar); }
     // Montanti orizzontali
-    for(let fi=0;fi<4;fi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(56,.2,.28),new THREE.MeshStandardMaterial({color:0x99aabb,metalness:.8,roughness:.2})); bar.position.set(0,.5+fi*2.1,38.2); tarmacVisGroup.add(bar); }
-    // Fascia piena sopra la vetrata
-    const fascia=new THREE.Mesh(new THREE.BoxGeometry(58,1.4,.3),M(0xd0cec8)); fascia.position.set(0,8.1,38.15); tarmacVisGroup.add(fascia); }
+    [0.05,2.8,5.6,8.0].forEach(fy=>{ const bar=new THREE.Mesh(new THREE.BoxGeometry(56.4,.22,.2),new THREE.MeshBasicMaterial({color:0xaabbc8})); bar.position.set(0,fy,38.0); bar.renderOrder=3; tarmacVisGroup.add(bar); });
+    // Fascia piena sopra
+    const fascia=new THREE.Mesh(new THREE.BoxGeometry(58,1.2,.3),new THREE.MeshBasicMaterial({color:0xd0cec8})); fascia.position.set(0,8.7,38.0); tarmacVisGroup.add(fascia); }
   // Grande insegna aeroporto
   { const sign=new THREE.Mesh(new THREE.BoxGeometry(28,1.6,.22),new THREE.MeshStandardMaterial({color:0x1a4a8a,emissive:0x0a2a5a,emissiveIntensity:.7})); sign.position.set(0,8.2,38.1); tarmacVisGroup.add(sign);
     const _sc=document.createElement('canvas'); _sc.width=512; _sc.height=96; const _sx=_sc.getContext('2d'); _sx.fillStyle='rgba(10,42,90,.85)'; _sx.fillRect(0,0,512,96); _sx.fillStyle='#ffffff'; _sx.font='bold 34px sans-serif'; _sx.textAlign='center'; _sx.textBaseline='middle'; _sx.fillText('✈  AEROPORTO DI BARI',256,52); const _st=new THREE.CanvasTexture(_sc); const signL=new THREE.Sprite(new THREE.SpriteMaterial({map:_st,transparent:true,depthTest:false})); signL.scale.set(9,9*96/512,1); signL.position.set(0,8.25,38.35); tarmacVisGroup.add(signL); }
@@ -2937,13 +2936,16 @@ function GameAereo(){
   { const m=new THREE.Mesh(new THREE.BoxGeometry(3.5,1.4,1.8),M(0xffcc00)); m.position.set(-9,.7,14); tarmacVisGroup.add(m); }
 
   const clouds=[]; for(let i=0;i<10;i++){ const cl2=new THREE.Sprite(new THREE.SpriteMaterial({map:cloudTexture(),transparent:true,opacity:.9,depthWrite:false,fog:false})); cl2.position.set(rand(-150,150),rand(30,70),rand(-150,150)); cl2.scale.set(rand(28,50),rand(13,20),1); cl2.visible=false; world.add(cl2); clouds.push(cl2); }
-  const plane=buildPlane3D(0x0044aa); plane.position.set(0,0,-23); plane.rotation.y=Math.PI/2; world.add(plane);
+  const plane=buildPlane3D(0x0044aa); plane.position.set(0,0,-23); plane.rotation.y=Math.PI/2; plane.visible=false; world.add(plane);
 
   // Boarding circle + stairs (hidden until tarmac)
   const gateM=new THREE.Mesh(new THREE.CylinderGeometry(2,2,.14,20),new THREE.MeshStandardMaterial({color:0x2ecc71,emissive:0x1a9f4a,emissiveIntensity:.6})); gateM.position.set(0,.07,-6); gateM.visible=false; world.add(gateM);
   const gateL=labelSprite('✈️ Sali su aereo',5); gateL.position.set(0,4.5,-6); gateL.visible=false; world.add(gateL);
   const stairsG=new THREE.Group(); stairsG.visible=false;
-  for(let si=0;si<5;si++){ const step=new THREE.Mesh(new THREE.BoxGeometry(2,.25,.5),M(0x888899)); step.position.set(-3.5,.25+si*.38,si*.45-5.8); stairsG.add(step); }
+  // Scale dirette al lato del velivolo (fusoliera a x≈1.4, z≈-10)
+  for(let si=0;si<6;si++){ const step=new THREE.Mesh(new THREE.BoxGeometry(.55,.28,2.6),M(0x888899)); step.position.set(3.4-si*0.32,.14+si*.3,-10); stairsG.add(step); }
+  // Supporto verticale
+  const pole=new THREE.Mesh(new THREE.BoxGeometry(.1,2,.1),M(0x778899)); pole.position.set(3.45,1,-9); stairsG.add(pole);
   world.add(stairsG);
 
   // ── DESTINATIONS LIST ──
@@ -3322,7 +3324,7 @@ function GameAereo(){
           stage='tarmac'; stageT=0; beep(600,.1,'sine'); setTimeout(()=>beep(800,.12,'sine'),110);
           terminalGroup.visible=false;
           termCrowd.forEach(c=>world.remove(c)); termCrowd.length=0;
-          tarmacVisGroup.visible=true;
+          tarmacVisGroup.visible=true; plane.visible=true;
           groundMeshes.forEach(o=>{o.material.opacity=1; o.material.depthWrite=true;});
           gateM.visible=true; gateL.visible=true; stairsG.visible=true;
           player.position.set(0,0,34); player.rotation.y=Math.PI;
