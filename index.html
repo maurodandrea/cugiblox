@@ -195,6 +195,7 @@ let danzaOv=null;
 let total = parseInt(localStorage.getItem('cugini3d_total')||'0',10);
 let nickname = localStorage.getItem('cugini3d_nick')||'';
 let _savedHash = localStorage.getItem('cugini3d_hash')||'';
+let solidWalls = [];
 
 const _sb = window.supabase.createClient(
   'https://dppugotdorntundojuir.supabase.co',
@@ -282,7 +283,7 @@ function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=inner
 addEventListener('resize',resize); resize();
 const M=(c,r=0.85)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:0.04});
 function applyTheme(){ const c=CITIES[city]; scene.background=new THREE.Color(c.sky); scene.fog=new THREE.Fog(c.sky,55,180); }
-function clearWorld(){ stopMusic(); if(danzaOv){danzaOv.remove();danzaOv=null;} for(let i=world.children.length-1;i>=0;i--){ const o=world.children[i];
+function clearWorld(){ solidWalls.length=0; stopMusic(); if(danzaOv){danzaOv.remove();danzaOv=null;} for(let i=world.children.length-1;i>=0;i--){ const o=world.children[i];
   o.traverse(n=>{ if(n.geometry)n.geometry.dispose(); if(n.material){(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map&&!m.map.__keep)m.map.dispose(); m.dispose&&m.dispose(); });} }); world.remove(o); } }
 function addGround2(col){ const g=new THREE.Mesh(new THREE.PlaneGeometry(500,500),M(col,.95)); g.rotation.x=-Math.PI/2; g.receiveShadow=true; world.add(g); return g; }
 function skyTexture(top,bot){ const c=document.createElement('canvas'); c.width=16;c.height=160; const x=c.getContext('2d'); const g=x.createLinearGradient(0,0,0,160); g.addColorStop(0,top); g.addColorStop(.55,bot); g.addColorStop(1,'#ffffff'); x.fillStyle=g; x.fillRect(0,0,16,160); return new THREE.CanvasTexture(c); }
@@ -301,6 +302,7 @@ function groundTexture(city){ const c=document.createElement('canvas'); c.width=
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(50,50); return t; }
 function addGroundTex(city){ const m=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({map:groundTexture(city),roughness:.95})); m.rotation.x=-Math.PI/2; m.receiveShadow=true; world.add(m); return m; }
 function B(w,h,d,c,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; world.add(m); return m; }
+function Bw(w,h,d,c,x,y,z){ const m=B(w,h,d,c,x,y,z); solidWalls.push({x1:x-w/2,z1:z-d/2,x2:x+w/2,z2:z+d/2}); return m; }
 function rand(a,b){ return a+Math.random()*(b-a); }
 let shakeT=0; function shake(){ shakeT=0.3; }
 
@@ -388,6 +390,16 @@ function thirdPersonWalk(player,dt,speed){ let moved=false;
   if(keys['ArrowLeft']) player.rotation.y+=dt*2.6; if(keys['ArrowRight']) player.rotation.y-=dt*2.6;
   let f=0; if(keys['ArrowUp'])f=1; else if(keys['ArrowDown'])f=-0.6;
   if(f){ const h=player.rotation.y; player.position.x+=Math.sin(h)*speed*f*dt; player.position.z+=Math.cos(h)*speed*f*dt; moved=true; } return moved; }
+function pushOutWalls(pos,r){
+  for(const w of solidWalls){
+    const cx=Math.max(w.x1,Math.min(w.x2,pos.x)), cz=Math.max(w.z1,Math.min(w.z2,pos.z));
+    const dx=pos.x-cx, dz=pos.z-cz, dsq=dx*dx+dz*dz;
+    if(dsq<r*r){
+      if(dsq>0){ const d=Math.sqrt(dsq); pos.x=cx+dx*(r/d); pos.z=cz+dz*(r/d); }
+      else{ const dl=pos.x-w.x1,dr=w.x2-pos.x,db=pos.z-w.z1,df=w.z2-pos.z; const m=Math.min(dl,dr,db,df); if(m===dl)pos.x=w.x1-r; else if(m===dr)pos.x=w.x2+r; else if(m===db)pos.z=w.z1-r; else pos.z=w.z2+r; }
+    }
+  }
+}
 function followCam(player,dist,height,lookY){ const h=player.rotation.y;
   const cx=player.position.x-Math.sin(h)*dist, cz=player.position.z-Math.cos(h)*dist;
   camera.position.lerp(new THREE.Vector3(cx,height,cz),0.12); camera.lookAt(player.position.x,lookY||1.2,player.position.z); }
@@ -928,7 +940,7 @@ function walkCollect(th){
       } else for(const r of rides){ if(Math.hypot(player.position.x-r.x,player.position.z-r.z)<1.3){ riding=r; rideT=r.dur; beep(700,.1); setInstr('🛝 AZIONE per scendere'); break; } }
     }
     const moved=thirdPersonWalk(player,dt,5); walkAnim(player,(moved&&!carried)?t*9:0);
-    const hw=th.maxWalk!==undefined?th.maxWalk:half+1; player.position.x=THREE.MathUtils.clamp(player.position.x,-hw,hw); player.position.z=THREE.MathUtils.clamp(player.position.z,-hw,hw);
+    const hw=th.maxWalk!==undefined?th.maxWalk:half+1; player.position.x=THREE.MathUtils.clamp(player.position.x,-hw,hw); player.position.z=THREE.MathUtils.clamp(player.position.z,-hw,hw); pushOutWalls(player.position,0.45);
     followCam(player,7,5.6,1);
     if(th.tables&&!carried){ let nearTable=false; for(const [tx,tz] of th.tables){ if(Math.hypot(player.position.x-tx,player.position.z-tz)<1.6){ nearTable=true; break; } } if(nearTable&&hit('Space')){ seated=!seated; if(!seated){player.position.y=0;player.userData.legs[0].rotation.x=0;player.userData.legs[1].rotation.x=0;} beep(seated?500:400,.07); } else if(seated&&!nearTable){seated=false;player.position.y=0;player.userData.legs[0].rotation.x=0;player.userData.legs[1].rotation.x=0;} if(seated){player.userData.legs[0].rotation.x=-1.3;player.userData.legs[1].rotation.x=-1.3;player.position.y=THREE.MathUtils.lerp(player.position.y,.55,.2);} }
     if(th.furniture){ let pose=null; for(const fr of th.furniture){ if(Math.hypot(player.position.x-fr.x,player.position.z-fr.z)<1.7){ pose=fr.type; break; } }
@@ -979,14 +991,14 @@ function walkCollect(th){
 }
 const THEMES = {
   casa:{emoji:'🧸',ground:0xc8a070,size:16,goal:7,time:55,deliver:true,drop:[0,0],dropLabel:'🧺 Scatolone',exitDoor:[0,8],furniture:[{type:'bed',x:-5.5,z:-5},{type:'sofa',x:3.5,z:-5.5}],instr:'Riordina · avvicinati al letto per sdraiarti, al divano per sederti · 🚪 esci',win:'Cameretta in ordine! 🏠',
-    decor(){ B(16,4,.3,0xf0e6d2,0,2,-8); B(.3,4,16,0xf0e6d2,-8,2,0); B(.3,4,16,0xf0e6d2,8,2,0); B(6,4,.3,0xf0e6d2,-5,2,8); B(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(1.1,.18,.75,0xf5eedd,-6.2,1.04,-6.6); B(1.1,.18,.75,0xf5eedd,-4.8,1.04,-6.6); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5);
+    decor(){ Bw(16,4,.3,0xf0e6d2,0,2,-8); Bw(.3,4,16,0xf0e6d2,-8,2,0); Bw(.3,4,16,0xf0e6d2,8,2,0); Bw(6,4,.3,0xf0e6d2,-5,2,8); Bw(6,4,.3,0xf0e6d2,5,2,8); B(16,1.3,.3,0xf0e6d2,0,3.35,8); B(3,1,4.5,0x8e6fc0,-5.5,.5,-5); B(1.1,.18,.75,0xf5eedd,-6.2,1.04,-6.6); B(1.1,.18,.75,0xf5eedd,-4.8,1.04,-6.6); B(2.5,1.2,1.5,0x9c6b3f,5.5,.6,-5.5);
       // === PARETE CAMERA DA LETTO (chiude metà sinistra) ===
-      B(.3,4,6.5,0xf0e6d2,0,2,-4.75);           // parete laterale destra (x=0)
-      B(4.5,4,.3,0xf0e6d2,-5.75,2,-1.5);         // parete frontale sinistra
+      Bw(.3,4,6.5,0xf0e6d2,0,2,-4.75);           // parete laterale destra (x=0)
+      Bw(4.5,4,.3,0xf0e6d2,-5.75,2,-1.5);         // parete frontale sinistra
       B(.22,4,.22,0x9c6b3f,-3.5,2,-1.5);         // pilastro porta sx
       B(.22,4,.22,0x9c6b3f,-1.0,2,-1.5);         // pilastro porta dx
       B(2.5,.6,.32,0xd4c8a0,-2.25,3.7,-1.5);     // architrave porta
-      B(1.0,4,.3,0xf0e6d2,-.5,2,-1.5);           // parete frontale destra
+      Bw(1.0,4,.3,0xf0e6d2,-.5,2,-1.5);           // parete frontale destra
       { const brl=labelSprite('🛏️ Camera',1.6); brl.position.set(-4.5,2.8,-5); world.add(brl); }
       B(2,1.4,.12,0x9fd6ee,-3,2.2,-7.84); B(2,1.4,.12,0x9fd6ee,3,2.2,-7.84); B(.12,1.4,2,0x9fd6ee,-7.84,2.2,-2); B(.12,1.4,2,0x9fd6ee,7.84,2.2,2);   // finestre
       B(2.8,.5,1.1,0x4a6fa5,3.5,.4,-5.5); B(2.8,.7,.25,0x4a6fa5,3.5,.85,-5.1);  // divano vicino TV
@@ -1054,7 +1066,7 @@ const THEMES = {
       if(oc.length>4) A.push(aNPC(oc[4],-1,0,2.3,'talk',P));
       return A; }},
   scuola:{emoji:'📚',ground:0xd8c8a0,size:18,goal:8,time:60,deliver:true,drop:[0,-7],dropLabel:'📕 Cattedra',instr:'Raccogli un libro e portalo in cattedra!',win:'Tutti i libri a posto! 📚',
-    decor(){ B(18,4,.3,0xeae0c8,0,2,-9); B(6,2.5,.2,0x224422,0,2,-8.8); B(3,1.1,1.2,0x9c6b3f,0,.55,-7); for(let r=0;r<3;r++)for(let c=0;c<3;c++){ B(1.6,.9,1,0xa6794a,-4+c*4,.45,0+r*3); }
+    decor(){ Bw(18,4,.3,0xeae0c8,0,2,-9); B(6,2.5,.2,0x224422,0,2,-8.8); Bw(3,1.1,1.2,0x9c6b3f,0,.55,-7); for(let r=0;r<3;r++)for(let c=0;c<3;c++){ Bw(1.6,.9,1,0xa6794a,-4+c*4,.45,0+r*3); }
       // maestra seduta alla cattedra
       B(.8,.5,.7,0x6a4a2a,0,.25,-7.9); const fem=['letizia','giorgia','eleonora','eleonora'].find(i=>i!==hero)||otherChar(); const teach=buildCousin(fem); teach.position.set(0,.5,-7.9); teach.userData.legs[0].rotation.x=-1.3; teach.userData.legs[1].rotation.x=-1.3; world.add(teach); },
     item(){ const b=new THREE.Mesh(new THREE.BoxGeometry(.6,.18,.45),M(TC[Math.floor(Math.random()*TC.length)],.5)); b.position.y=.2; return b; },
@@ -1102,7 +1114,7 @@ const THEMES = {
   bar:{emoji:'🍹',ground:0xb0a8c8,size:16,goal:7,time:50,deliver:true,drop:[0,-6],dropLabel:'🍹 Bancone',instr:'Raccogli un bicchiere e portalo al bancone! 🎵',win:'Servizio perfetto! 🍹',music:true,
     decor(){ B(8,1.1,1.4,0x5a3a2a,0,.55,-6); for(let i=0;i<4;i++){ const st=cyl(.3,.3,.9,0x333333); st.position.set(-3+i*2,.45,-4.4); st.castShadow=true; world.add(st); }
       B(.9,1.5,.6,0xb0306a,7,.75,-5); B(.7,.4,.5,0x222,7,1.65,-4.7); for(let i=0;i<3;i++){ const note=labelSprite('🎵',.7); note.position.set(7,2.4+i*.1,-4.6); world.add(note); }  // jukebox
-      B(8,2,.3,0x4a2f24,0,1.5,-7.4);                                              // parete dietro
+      Bw(8,2,.3,0x4a2f24,0,1.5,-7.4);                                              // parete dietro
       for(let i=0;i<14;i++){ const bo=cyl(.06,.06,.45,[0x2f8f4a,0xe04030,0xffd24a,0x6bd0ff][i%4]); bo.position.set(-3.4+i*.5,1.6,-7.2); world.add(bo); }  // bottiglie sullo scaffale
       // macchina caffè sul bancone (corpo+pannello+display+gruppi+cannello vapore+vassoio)
       B(1.0,.9,.6,0x8a8a8a,-3,1.52,-6.4); B(.88,.28,.07,0x111111,-3,1.78,-6.1); B(.36,.15,.04,0x00ccff,-3.1,1.83,-6.1);
@@ -2905,6 +2917,16 @@ function GameAereo(){
   // ── TARMAC VISIBLE ELEMENTS (hidden until tarmac stage) ──
   const tarmacVisGroup=new THREE.Group(); tarmacVisGroup.visible=false; world.add(tarmacVisGroup);
   { const m=new THREE.Mesh(new THREE.BoxGeometry(58,9,18),M(0xe0ddd5)); m.position.set(0,4.5,47); tarmacVisGroup.add(m); }
+  // Vetrate facciata principale (lato pista, z≈38)
+  { const gfMat=new THREE.MeshStandardMaterial({color:0x88c8e8,transparent:true,opacity:.62,metalness:.25,roughness:.1,side:THREE.DoubleSide});
+    const gf=new THREE.Mesh(new THREE.BoxGeometry(40,7,.14),gfMat); gf.position.set(0,4,38.1); tarmacVisGroup.add(gf);
+    // montanti verticali vetrata
+    for(let gi=-5;gi<=5;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.2,7,.16),M(0x8899aa)); bar.position.set(gi*4,4,38.2); tarmacVisGroup.add(bar); }
+    // montanti orizzontali
+    for(let gi=0;gi<3;gi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(40,.15,.16),M(0x8899aa)); bar.position.set(0,1.5+gi*2,38.2); tarmacVisGroup.add(bar); } }
+  // Grande insegna aeroporto
+  { const sign=new THREE.Mesh(new THREE.BoxGeometry(22,1.6,.2),new THREE.MeshStandardMaterial({color:0x1a4a8a,emissive:0x0a2a5a,emissiveIntensity:.6})); sign.position.set(0,8.2,38.1); tarmacVisGroup.add(sign);
+    const signL=labelSprite('✈  AEROPORTO DI BARI',4); signL.position.set(0,8.2,38.2); tarmacVisGroup.add(signL); }
   { const m=new THREE.Mesh(new THREE.BoxGeometry(4,16,4),M(0xd8e2ee)); m.position.set(-32,8,47); tarmacVisGroup.add(m); }
   { const m=new THREE.Mesh(new THREE.BoxGeometry(6,2.8,6),new THREE.MeshStandardMaterial({color:0x6bd0ff,transparent:true,opacity:.7})); m.position.set(-32,16.8,47); tarmacVisGroup.add(m); }
   { const m=buildPlane3D(0xcc2222); m.position.set(-22,0,22); m.rotation.y=Math.PI/2; m.scale.setScalar(.76); tarmacVisGroup.add(m); }
@@ -2944,9 +2966,27 @@ function GameAereo(){
   function buildLungomare(){
     const g=new THREE.Group();
     const sea=new THREE.Mesh(new THREE.PlaneGeometry(300,120),new THREE.MeshStandardMaterial({color:0x1a7abf,roughness:.1,transparent:true,opacity:.9})); sea.rotation.x=-Math.PI/2; sea.position.set(0,-.05,-50); g.add(sea);
-    const prom=new THREE.Mesh(new THREE.BoxGeometry(120,.18,28),new THREE.MeshStandardMaterial({color:0xd8cdb8,roughness:.7})); prom.position.set(0,.09,8); g.add(prom);
-    const road=new THREE.Mesh(new THREE.BoxGeometry(120,.12,10),M(0x444444)); road.position.set(0,.06,22); g.add(road);
-    for(let i=-3;i<=3;i++){ const st=new THREE.Mesh(new THREE.BoxGeometry(2.5,.02,1),M(0xffffff)); st.position.set(i*8,.14,22); g.add(st); }
+    // Mattonelle grigio chiaro sul marciapiede
+    const tileC=document.createElement('canvas'); tileC.width=128; tileC.height=128;
+    const tg=tileC.getContext('2d'); tg.fillStyle='#d2d0cc'; tg.fillRect(0,0,128,128);
+    tg.strokeStyle='#b8b6b2'; tg.lineWidth=1.5;
+    for(let ti=0;ti<=128;ti+=16){ tg.beginPath(); tg.moveTo(ti,0); tg.lineTo(ti,128); tg.stroke(); tg.beginPath(); tg.moveTo(0,ti); tg.lineTo(128,ti); tg.stroke(); }
+    const tileTex=new THREE.CanvasTexture(tileC); tileTex.wrapS=tileTex.wrapT=THREE.RepeatWrapping; tileTex.repeat.set(30,7);
+    const prom=new THREE.Mesh(new THREE.BoxGeometry(120,.18,28),new THREE.MeshStandardMaterial({map:tileTex,roughness:.65})); prom.position.set(0,.09,8); g.add(prom);
+    const road=new THREE.Mesh(new THREE.BoxGeometry(120,.12,12),M(0x3a3d44)); road.position.set(0,.06,22); g.add(road);
+    for(let i=-6;i<=6;i++){ const st=new THREE.Mesh(new THREE.BoxGeometry(2.5,.02,1),M(0xffffff)); st.position.set(i*8,.14,22); g.add(st); }
+    // Marciapiede lato opposto
+    const sideTile=tileTex.clone(); sideTile.repeat.set(30,2);
+    const swk2=new THREE.Mesh(new THREE.BoxGeometry(120,.12,4),new THREE.MeshStandardMaterial({map:tileTex,roughness:.65})); swk2.position.set(0,.06,29); g.add(swk2);
+    // Hotel e edifici sul fondo strada
+    const hotelC=[0xd8e4f0,0xcad4e8,0xe0d8cc];
+    [[0,22,35],[25,18,36],[-25,18,36],[45,14,36],[-45,14,36]].forEach(([hx,hh,hz],k)=>{
+      const hb=new THREE.Mesh(new THREE.BoxGeometry(18,hh,10),M(hotelC[k%3])); hb.position.set(hx,hh/2,hz); g.add(hb);
+      // finestre
+      for(let fl=0;fl<Math.floor(hh/3);fl++) for(let wc=-2;wc<=2;wc++){
+        const wn=new THREE.Mesh(new THREE.BoxGeometry(2.2,1.4,.1),new THREE.MeshStandardMaterial({color:0x9fd0e8,transparent:true,opacity:.75})); wn.position.set(hx+wc*3.2,1.8+fl*3,hz-5.1); g.add(wn); }
+    });
+    const hotelSign=labelSprite('🏨 Hotel Adriatico',3.5); hotelSign.position.set(0,25,34); g.add(hotelSign);
     const muretto=new THREE.Mesh(new THREE.BoxGeometry(120,.9,.38),M(0xc8b890)); muretto.position.set(0,.45,-6); g.add(muretto);
     // Panchine
     for(let i=-4;i<=4;i+=2){
@@ -2959,7 +2999,7 @@ function GameAereo(){
       const pole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,5,8),M(0x555566)); pole.position.set(i*10,2.5,4); g.add(pole);
       const lamp=new THREE.Mesh(new THREE.SphereGeometry(.28,8,6),new THREE.MeshStandardMaterial({color:0xfffce0,emissive:0xffee88,emissiveIntensity:.9})); lamp.position.set(i*10,5.15,4); g.add(lamp);
     }
-    // Bari Vecchia (edifici di pietra con archi)
+    // Bari Vecchia
     const bvC=[0xd2a96e,0xc8996a,0xdbb878,0xc09060,0xd8b88a];
     [[-38,12,-35],[-28,9,-32],[-18,14,-38],[-8,10,-34],[2,16,-36],[12,11,-33],[22,13,-37],[32,9,-32],[42,12,-35]].forEach(([bx,bh,bz],i)=>{
       const bl=new THREE.Mesh(new THREE.BoxGeometry(7,bh,6),M(bvC[i%5])); bl.position.set(bx,bh/2,bz); g.add(bl);
@@ -2973,12 +3013,30 @@ function GameAereo(){
     const pDome=new THREE.Mesh(new THREE.SphereGeometry(3.5,12,8,0,Math.PI*2,0,Math.PI/2),M(0xb8a060)); pDome.position.set(0,10.6,0); petr.add(pDome);
     const pSign=labelSprite('🎭 Teatro Petruzzelli',3.2); pSign.position.set(0,13,5.5); petr.add(pSign);
     petr.position.set(20,0,-22); g.add(petr);
-    // Porta AEROPORTO
-    const dFrame=new THREE.Mesh(new THREE.BoxGeometry(4.6,5.5,.3),M(0xd0ccc0)); dFrame.position.set(-30,2.75,12); g.add(dFrame);
-    const dMesh=new THREE.Mesh(new THREE.BoxGeometry(3.4,4.8,.16),new THREE.MeshStandardMaterial({color:0x4488cc,emissive:0x2255aa,emissiveIntensity:.65,transparent:true,opacity:.82,side:THREE.DoubleSide})); dMesh.position.set(-30,2.4,12.1); g.add(dMesh);
-    const dLbl=labelSprite('✈️ AEROPORTO',4.2); dLbl.position.set(-30,6.8,12); g.add(dLbl);
-    const signB=new THREE.Mesh(new THREE.BoxGeometry(8,1.8,.18),M(0x1a5fd0)); signB.position.set(-30,5,11.8); g.add(signB);
-    g.userData.airDoorX=-30; g.userData.airDoorZ=12;
+    // === INGRESSO METRO / AEROPORTO ===
+    const mx=-30, mz=12;
+    // Tettoia in acciaio
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(8,.22,5),new THREE.MeshStandardMaterial({color:0x223355,metalness:.7,roughness:.3})); roof.position.set(mx,4.4,mz); g.add(roof);
+    const roofEdge=new THREE.Mesh(new THREE.BoxGeometry(8,.1,5.1),new THREE.MeshStandardMaterial({color:0x334466,metalness:.8})); roofEdge.position.set(mx,4.52,mz); g.add(roofEdge);
+    // Colonne in acciaio
+    [[-3.5,mz-2],[3.5,mz-2],[-3.5,mz+2],[3.5,mz+2]].forEach(([cx,cz])=>{
+      const col=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,4.4),new THREE.MeshStandardMaterial({color:0x445566,metalness:.85})); col.position.set(cx,2.2,cz); g.add(col); });
+    // Vetrate laterali
+    [-2,2].forEach(side=>{
+      const glf=new THREE.Mesh(new THREE.BoxGeometry(.06,3.8,4.5),new THREE.MeshStandardMaterial({color:0x88ccee,transparent:true,opacity:.55,side:THREE.DoubleSide})); glf.position.set(mx+side*3.5,1.9,mz); g.add(glf);
+      for(let fi=0;fi<3;fi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,4.5),new THREE.MeshStandardMaterial({color:0x334466,metalness:.8})); bar.position.set(mx+side*3.5,1+fi*1.2,mz); g.add(bar); } });
+    // Porta centrale a vetro
+    const dGlass=new THREE.Mesh(new THREE.BoxGeometry(4.5,3.8,.06),new THREE.MeshStandardMaterial({color:0xaaddee,transparent:true,opacity:.65,side:THREE.DoubleSide})); dGlass.position.set(mx,1.9,mz-.05); g.add(dGlass);
+    // Telaio porta
+    const dfr=new THREE.Mesh(new THREE.BoxGeometry(4.8,.12,0.1),new THREE.MeshStandardMaterial({color:0x223355,metalness:.8})); dfr.position.set(mx,3.8,mz); g.add(dfr);
+    // Pannello segnaletica metro
+    const mSign=new THREE.Mesh(new THREE.BoxGeometry(6,1.2,.14),new THREE.MeshStandardMaterial({color:0xcc0000,emissive:0x880000,emissiveIntensity:.4})); mSign.position.set(mx,4.0,mz-.08); g.add(mSign);
+    const mLbl=labelSprite('M  AEROPORTO  ✈️',3.8); mLbl.position.set(mx,4.1,mz); g.add(mLbl);
+    // Gradini di accesso
+    for(let si=0;si<3;si++){ const step=new THREE.Mesh(new THREE.BoxGeometry(4.6,.12,0.55),M(0xc0bcb4)); step.position.set(mx,.12+si*.12,mz+1.8-si*.55); g.add(step); }
+    // Strisce gialle a terra
+    const yLine=new THREE.Mesh(new THREE.BoxGeometry(4.6,.02,.18),M(0xffd700)); yLine.position.set(mx,.11,mz+2.2); g.add(yLine);
+    g.userData.airDoorX=mx; g.userData.airDoorZ=mz;
     return g;
   }
 
@@ -3017,14 +3075,30 @@ function GameAereo(){
     DEST_LIST.forEach((d,i)=>{
       const x=-45.5+i*7;
       const col=DOOR_COLORS[i];
-      // Thick colored frame
-      const frm=new THREE.Mesh(new THREE.BoxGeometry(5.5,7,.35),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.2})); frm.position.set(x,3.5,59.85); g.add(frm);
-      // Door panel (solid bright color, no transparency)
-      const dm=new THREE.Mesh(new THREE.BoxGeometry(4.2,5.8,.22),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.45,side:THREE.DoubleSide})); dm.position.set(x,2.9,60.1); g.add(dm);
-      // Country label centered on door
-      const dl=labelSprite(d.label,3.4); dl.position.set(x,3.0,60.5); g.add(dl);
-      // Number plate at top of frame
-      const numL=labelSprite(String(i+1).padStart(2,'0'),1.2); numL.position.set(x,6.8,60.2); g.add(numL);
+      const tg=new THREE.Group(); g.add(tg);
+      // Tunnel corridoio (jet bridge visivo)
+      const tunnel=new THREE.Mesh(new THREE.BoxGeometry(5.2,6.5,6),new THREE.MeshStandardMaterial({color:0xf0eeea,roughness:.6,side:THREE.BackSide})); tunnel.position.set(x,3.25,63); tg.add(tunnel);
+      // Soffitto tunnel con luce
+      const tCeil=new THREE.Mesh(new THREE.BoxGeometry(5.2,.18,6),new THREE.MeshStandardMaterial({color:0xfff8ee,emissive:0xfff0cc,emissiveIntensity:.6})); tCeil.position.set(x,6.6,63); tg.add(tCeil);
+      // Pavimento tunnel
+      const tFloor=new THREE.Mesh(new THREE.BoxGeometry(5.2,.08,6),M(0xd8d4cc)); tFloor.position.set(x,.04,63); tg.add(tFloor);
+      // Strisce colorate sui muri (branded per destinazione)
+      [-2.55,2.55].forEach(ox=>{ const strip=new THREE.Mesh(new THREE.BoxGeometry(.08,5.5,6),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.25})); strip.position.set(x+ox,3.25,63); tg.add(strip); });
+      // Vetrate laterali
+      [-2.4,2.4].forEach(ox=>{ const gp=new THREE.Mesh(new THREE.BoxGeometry(.06,4,5.5),new THREE.MeshStandardMaterial({color:0xaaddee,transparent:true,opacity:.45,side:THREE.DoubleSide})); gp.position.set(x+ox,2.5,63); tg.add(gp);
+        for(let fi=0;fi<3;fi++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,5.5),M(0xaaaaaa)); bar.position.set(x+ox,1.2+fi*1.2,63); tg.add(bar); } });
+      // Cornice gate (portale d'ingresso)
+      const frm=new THREE.Mesh(new THREE.BoxGeometry(5.5,.3,6),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3})); frm.position.set(x,6.55,63); tg.add(frm);
+      const frmL=new THREE.Mesh(new THREE.BoxGeometry(.3,6.5,.3),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3})); frmL.position.set(x-2.55,3.25,60); tg.add(frmL);
+      const frmR=frmL.clone(); frmR.position.x=x+2.55; tg.add(frmR);
+      const frmTop=new THREE.Mesh(new THREE.BoxGeometry(5.5,.3,.3),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3})); frmTop.position.set(x,6.55,60); tg.add(frmTop);
+      // Pannello gate con numero
+      const numPan=new THREE.Mesh(new THREE.BoxGeometry(4.8,1.1,.12),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.5})); numPan.position.set(x,6.1,60.1); tg.add(numPan);
+      const numL2=labelSprite('GATE '+String(i+1).padStart(2,'0'),2.2); numL2.position.set(x,6.1,60.2); tg.add(numL2);
+      // Porta scorrevole (pannello trasparente)
+      const dm=new THREE.Mesh(new THREE.BoxGeometry(4.8,5.8,.08),new THREE.MeshStandardMaterial({color:0xcceeee,transparent:true,opacity:.35,side:THREE.DoubleSide})); dm.position.set(x,2.9,60.1); tg.add(dm);
+      // Etichetta destinazione
+      const dl=labelSprite(d.label,3.2); dl.position.set(x,4.0,60.4); tg.add(dl);
       destDoors.push({mesh:dm,id:d.id,label:d.label,x,z:60.0});
     });
     return g;
@@ -3200,7 +3274,14 @@ function GameAereo(){
         stage='terminal'; stageT=0; beep(520,.1,'sine');
         world.remove(lungomareGroup);
         terminalGroup.visible=true;
-        for(let i=0;i<6;i++){ const c=buildCousin(otherCousins()[i%4]); c.position.set(rand(-43,43),.0,rand(42,57)); c.userData.spd=(Math.random()<.5?1:-1)*rand(.7,1.5); world.add(c); termCrowd.push(c); }
+        for(let i=0;i<12;i++){
+          const c=buildCousin(otherCousins()[i%4]); c.position.set(rand(-43,43),.0,rand(42,57));
+          c.userData.spd=(Math.random()<.5?1:-1)*rand(.7,1.5);
+          c.userData.spdZ=(Math.random()<.3?(Math.random()<.5?1:-1)*rand(.3,.8):0);
+          if(i<3){ // pettorina gialla per addetti
+            const vest=new THREE.Mesh(new THREE.BoxGeometry(.46,.52,.06),new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xcc9900,emissiveIntensity:.3})); vest.position.set(0,.8,.16); c.add(vest);
+            const vstr=new THREE.Mesh(new THREE.BoxGeometry(.06,.52,.06),M(0xdd8800)); vstr.position.set(0,.8,.18); c.add(vstr); }
+          world.add(c); termCrowd.push(c); }
         player.position.set(0,0,42); player.rotation.y=0;
         setInstr('🏢 Hall aeroporto! Scegli una porta di destinazione! 🚪');
         setScore('✈️ Scegli la tua destinazione!');
@@ -3213,7 +3294,11 @@ function GameAereo(){
       player.position.x=THREE.MathUtils.clamp(player.position.x,-45,45);
       player.position.z=THREE.MathUtils.clamp(player.position.z,40,59.5);
       player.position.y=0; walkAnim(player,moved?t*9:0); followCam(player,9,5.5,1.5);
-      termCrowd.forEach((c,i)=>{ c.position.x+=c.userData.spd*dt; if(c.position.x>44){c.position.x=44;c.userData.spd*=-1;c.rotation.y=-Math.PI/2;} else if(c.position.x<-44){c.position.x=-44;c.userData.spd*=-1;c.rotation.y=Math.PI/2;} walkAnim(c,t*7+i); });
+      termCrowd.forEach((c,i)=>{ c.position.x+=c.userData.spd*dt; c.position.z+=(c.userData.spdZ||0)*dt;
+        if(c.position.x>44){c.position.x=44;c.userData.spd*=-1;} else if(c.position.x<-44){c.position.x=-44;c.userData.spd*=-1;}
+        if(c.position.z>58){c.position.z=58;if(c.userData.spdZ)c.userData.spdZ*=-1;} else if(c.position.z<42){c.position.z=42;if(c.userData.spdZ)c.userData.spdZ*=-1;}
+        const ang=Math.atan2(c.userData.spd,c.userData.spdZ||0.001); c.rotation.y=c.userData.spd<0?Math.PI/2:-Math.PI/2;
+        walkAnim(c,t*7+i); });
       destDoors.forEach((dd,i)=>{ dd.mesh.material.emissiveIntensity=.35+Math.sin(t*2.2+i*.4)*.28; });
       for(const dd of destDoors){
         const ddx=player.position.x-dd.x, ddz=player.position.z-dd.z;
@@ -3450,7 +3535,7 @@ function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.r
 function hudOn(){ document.getElementById('hud').classList.add('on'); if(isTouch) document.getElementById('pad').classList.add('on'); }
 const DRIVE_PAD=['guida','acquapark_slide','bici'], WALK_PAD=['casa','scuola','bar','ristorante','color_hotel','parco','piazzetta','colosseo','cavallo','mare','acquapark','giostre','giostre_salt','acquapark_onde','crociera','aereo'];
 function padFor(gid){ return gid==='moto'?'race':DRIVE_PAD.indexOf(gid)>=0?'drive':WALK_PAD.indexOf(gid)>=0?'walk':''; }
-const HUB_PARENT={};
+const HUB_PARENT={aereo:'aereo'};
 let currentGid=null;
 function enterHub(){ titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad('race'); gameOver=false; mode='hub'; activeGame=Hub(); show(null); hudOn(); }
 function startGame(gid){ currentGid=gid; titleActive=false; clearWorld(); showMsg(''); showPower(false); setPad(padFor(gid)); gameOver=false; mode='game';
