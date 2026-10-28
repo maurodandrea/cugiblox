@@ -371,6 +371,16 @@
   .cphoto.big img{max-height:300px;border-radius:20px;}
   .cphoto span{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:14px;}
   .lcimg{width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;cursor:zoom-in;}
+  .aibox{display:flex;gap:12px;align-items:center;padding:12px 14px;margin:-4px 0 14px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid var(--line);}
+  .cphoto+.aibox{margin-top:8px;}
+  .aibox.ok{background:linear-gradient(150deg,rgba(47,224,207,.16),rgba(59,140,255,.08));border-color:rgba(47,224,207,.4);animation:up .4s both;}
+  .aibox.err{background:rgba(255,181,71,.1);border-color:rgba(255,181,71,.35);}
+  .aispin{width:30px;height:30px;flex:none;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:var(--acc);animation:sp 1s linear infinite;}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .aigrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 8px;}
+  .aigrid div{background:rgba(0,10,30,.3);border-radius:12px;padding:8px 6px;text-align:center;}
+  .aigrid b{display:block;font-size:15px;}
+  .aigrid span{font-size:10.5px;color:var(--mut);}
   /* confetti, celebrazione, benvenuto */
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:3000;overflow:hidden;}
   .confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:fall 2.4s cubic-bezier(.2,.6,.4,1) forwards;}
@@ -1023,6 +1033,7 @@ let DRAFT=null;
 function openEntry(id){
   const e=id?JSON.parse(JSON.stringify(S.diary.find(x=>x.id===id))):null;
   const now=new Date();now.setMinutes(0,0,0);
+  for(const k in ENTRYAI)delete ENTRYAI[k];
   DRAFT=e||{id:null,start:isoLocal(new Date(now.getTime()-3*3600e3)),end:isoLocal(now),spot:S.active,mode:S.mode,tech:TECH[S.mode][0],bait:'',catches:[],note:'',photo:null};
   drawEntry();
 }
@@ -1039,8 +1050,8 @@ function drawEntry(){
     <div><input list="spl" value="${esc(c.sp)}" placeholder="Specie" onchange="DRAFT.catches[${i}].sp=this.value;drawEntry()"></div>
     <div class="row"><input type="number" step="0.01" min="0" value="${c.w??''}" placeholder="kg" onchange="DRAFT.catches[${i}].w=this.value"><input type="number" step="1" min="0" value="${c.l??''}" placeholder="cm" onchange="DRAFT.catches[${i}].l=this.value;drawEntry()"></div></div>
     <div class="row small" style="margin-top:6px"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" ${c.rel?'checked':''} onchange="DRAFT.catches[${i}].rel=this.checked"> Rilasciato</label>
-    <span style="margin-left:auto;color:var(--bad);cursor:pointer" onclick="DRAFT.catches.splice(${i},1);drawEntry()">Rimuovi</span></div>
-    ${c.photo?`<div class="cphoto"><img src="${c.photo}" alt="" onclick="viewPhoto(DRAFT.catches[${i}].photo)"><span onclick="DRAFT.catches[${i}].photo=null;drawEntry()">✕</span></div>`:photoPicker(`pickCatchPhoto(this,${i})`,'Foto del pesce')}${sizeWarn(c)}${(c.w===''||c.w==null)&&c.l&&estW(c.sp,c.l)?`<div class="small" style="margin-top:4px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(estW(c.sp,c.l))} kg · <u style="cursor:pointer" onclick="DRAFT.catches[${i}].w=${estW(c.sp,c.l).toFixed(2)};drawEntry()">usa questo valore</u></div>`:''}</div>`).join('')}
+    <span style="margin-left:auto;color:var(--bad);cursor:pointer" onclick="DRAFT.catches.splice(${i},1);for(const k in ENTRYAI)delete ENTRYAI[k];drawEntry()">Rimuovi</span></div>
+    ${c.photo?`<div class="cphoto"><img src="${c.photo}" alt="" onclick="viewPhoto(DRAFT.catches[${i}].photo)"><span onclick="DRAFT.catches[${i}].photo=null;delete ENTRYAI[${i}];drawEntry()">✕</span></div>${ENTRYAI[i]?aiCard(ENTRYAI[i],i):aiKey()?`<div class="small" style="margin-top:6px"><u style="cursor:pointer;color:var(--acc)" onclick="entryAnalyze(${i})">🤖 Riconosci specie e misura da questa foto</u></div>`:''}`:photoPicker(`pickCatchPhoto(this,${i})`,aiKey()?'Foto · riconoscimento auto':'Foto del pesce')}${sizeWarn(c)}${(c.w===''||c.w==null)&&c.l&&estW(c.sp,c.l)?`<div class="small" style="margin-top:4px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(estW(c.sp,c.l))} kg · <u style="cursor:pointer" onclick="DRAFT.catches[${i}].w=${estW(c.sp,c.l).toFixed(2)};drawEntry()">usa questo valore</u></div>`:''}</div>`).join('')}
   <datalist id="spl">${spN.map(n=>`<option value="${n}">`).join('')}</datalist>
   <button class="btn ghost full" style="margin-top:8px" onclick="DRAFT.catches.push({sp:'',w:'',l:'',rel:false});drawEntry()">＋ Aggiungi cattura</button>
   <label>Foto dell'uscita</label>${e.photo?`<div class="cphoto"><img src="${e.photo}" alt="" onclick="viewPhoto(DRAFT.photo)"><span onclick="DRAFT.photo=null;drawEntry()">✕</span></div>`:photoPicker('pickPhoto(this)','Scatta una foto')}
@@ -1059,14 +1070,16 @@ function readPhoto(inp,max=640){
   return new Promise(res=>{
     const f=inp.files&&inp.files[0];inp.value='';if(!f)return res(null);
     const url=URL.createObjectURL(f),img=new Image();
-    img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',.68));};
+    const scaled=(m,q)=>{const k=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q);};
+    // la versione grande serve solo al riconoscimento e non viene salvata
+    img.onload=()=>{readPhoto.big=scaled(1280,.85);const sm=scaled(max,.68);URL.revokeObjectURL(url);res(sm);};
     img.onerror=()=>{URL.revokeObjectURL(url);toast('Foto non leggibile');res(null);};
     img.src=url;
   });
 }
 async function pickPhoto(inp){const d=await readPhoto(inp);if(d){DRAFT.photo=d;drawEntry();}}
-async function pickCatchPhoto(inp,i){const d=await readPhoto(inp);if(d){DRAFT.catches[i].photo=d;drawEntry();}}
+async function pickCatchPhoto(inp,i){const d=await readPhoto(inp);if(d){DRAFT.catches[i].photo=d;delete ENTRYAI[i];drawEntry();if(aiKey())entryAnalyze(i,readPhoto.big);}}
 const entryPhoto=e=>e.photo||(e.catches||[]).find(c=>c.photo)?.photo||null;
 function viewPhoto(src,cap){openSheet(`<img src="${src}" style="width:100%;border-radius:20px;display:block" alt="">${cap?`<p style="margin-top:10px;text-align:center"><b>${cap}</b></p>`:''}<button class="btn ghost full" style="margin-top:12px" onclick="closeSheet()">Chiudi</button>`);}
 function photoPicker(fn,label){return `<div class="snap"><label class="snapbtn">📸 ${label}<input type="file" accept="image/*" capture="environment" onchange="${fn}"></label><label class="snapalt">🖼️ Galleria<input type="file" accept="image/*" onchange="${fn}"></label></div>`;}
@@ -1153,8 +1166,13 @@ function vAI(v){
   <div class="card"><h3>In stagione a ${now.toLocaleDateString('it-IT',{month:'long'})}</h3>
     ${inSeason.length?inSeason.map(s=>`<div class="species"><div class="ico">🐟</div><div><b>${s.n}</b> <i class="small mut">${s.s}</i><div class="small">🪱 ${s.b}</div>${s.sz?`<div class="small mut">Misura minima indicativa: ${s.sz} cm</div>`:''}</div></div>`).join(''):'<div class="mut">Nessuna specie di punta in questo periodo.</div>'}
   </div>
-  <div class="card"><h3>Riconosci la specie</h3>
-    <p class="small mut">Seleziona le caratteristiche del pesce che hai catturato.</p>
+  <div class="card"><h3>Riconosci dalla foto</h3>
+    ${ASSIST?`<div class="cphoto big"><img src="${ASSIST.photo}" alt="" onclick="viewPhoto(ASSIST.photo)"><span onclick="ASSIST=null;render()">✕</span></div>${aiCard(ASSIST.st,'assist')}`
+      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">🔍</span><b>Che pesce è?</b><small>${aiKey()?'Fotografalo: specie, misura e peso stimati da Claude':'Richiede la chiave API (Impostazioni)'}</small></label>
+        <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 0">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="assistSnap(this)"></label>`}
+  </div>
+  <div class="card"><h3>Riconosci per caratteristiche</h3>
+    <p class="small mut">Funziona anche senza internet: seleziona le caratteristiche del pesce.</p>
     <label>Forma</label><div class="chips">${shapes.map(x=>`<span class="chip ${AIQ.sh===x?'on':''}" onclick="AIQ.sh=AIQ.sh==='${x}'?null:'${x}';render()">${x}</span>`).join('')}</div>
     <label>Colore dominante</label><div class="chips">${cols.map(x=>`<span class="chip ${AIQ.c===x?'on':''}" onclick="AIQ.c=AIQ.c==='${x}'?null:'${x}';render()">${x}</span>`).join('')}</div>
     <label>Segni particolari</label><div class="chips">${traits.map(x=>`<span class="chip ${AIQ.t.includes(x)?'on':''}" onclick="togTrait('${x.replace(/'/g,"\\'")}')">${x}</span>`).join('')}</div>
@@ -1238,7 +1256,7 @@ function weatherAlerts(X){
 
 /* ===================== Sessione live ===================== */
 let LIVEDRAFT=null,LIVEQ={sp:'',w:'',l:'',rel:false,photo:null};
-async function liveSnap(inp){const d=await readPhoto(inp);if(d){LIVEQ.photo=d;render();toast(LIVEQ.sp?'Foto pronta: tocca «Segna la cattura»':'Foto pronta: scegli la specie');}}
+async function liveSnap(inp){const d=await readPhoto(inp);if(d){LIVEQ.photo=d;LIVEQ.big=readPhoto.big;LIVEAI=null;if(aiKey())liveAnalyze();else{LIVEAI={err:'Attiva il riconoscimento automatico: inserisci la chiave API nelle Impostazioni'};render();}}}
 function fabTap(){if(S.live)go('live');else startLive();}
 function startLive(){LIVEDRAFT={spot:S.active,mode:S.mode,tech:TECH[S.mode][0],bait:''};drawStart();}
 function drawStart(){
@@ -1270,8 +1288,8 @@ function vLive(v){
     <div class="live-stats"><div><b>${L.catches.length}</b><span>catture</span></div><div><b>${fmt1(kg)}</b><span>kg</span></div><div><b>${idx}</b><span>indice ora</span></div></div>${WAVES}
   </section>
   <div class="card"><h3>Registra una cattura</h3>
-    ${LIVEQ.photo?`<div class="cphoto big"><img src="${LIVEQ.photo}" alt="" onclick="viewPhoto(LIVEQ.photo)"><span onclick="LIVEQ.photo=null;render()">✕</span></div>`
-      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>Si apre la fotocamera · facoltativo</small></label>
+    ${LIVEQ.photo?`<div class="cphoto big"><img src="${LIVEQ.photo}" alt="" onclick="viewPhoto(LIVEQ.photo)"><span onclick="LIVEQ.photo=null;LIVEQ.big=null;LIVEAI=null;render()">✕</span></div>${aiCard(LIVEAI,'live')}`
+      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>${aiKey()?'Riconosco specie, misura e peso in automatico':'Si apre la fotocamera · facoltativo'}</small></label>
         <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 12px">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="liveSnap(this)"></label>`}
     <div class="chips">${chips.map(n=>`<span class="chip ${LIVEQ.sp===n?'on':''}" onclick="LIVEQ.sp='${n.replace(/'/g,"\\'")}';render()">${esc(n)}</span>`).join('')}</div>
     <label>Specie</label><input list="spl2" value="${esc(LIVEQ.sp)}" oninput="LIVEQ.sp=this.value" placeholder="Scegli sopra o scrivi">
@@ -1289,13 +1307,14 @@ function vLive(v){
 function liveCatch(){
   const q=LIVEQ,sp=(q.sp||'').trim();if(!sp){toast('Scegli la specie');return;}
   let w=q.w===''?null:+q.w;if(w==null&&q.l){const e=estW(sp,q.l);if(e)w=Math.round(e*100)/100;}
-  S.live.catches.push({sp,w,l:q.l===''?null:+q.l,rel:q.rel,photo:q.photo||null,t:Date.now()});
+  S.live.catches.push({sp,w,l:q.l===''?null:+q.l,rel:q.rel,photo:q.photo||null,ai:q.ai||null,t:Date.now()});LIVEAI=null;
   if(!LS.set('live',S.live)&&q.photo){S.live.catches[S.live.catches.length-1].photo=null;LS.set('live',S.live);toast('Memoria piena: cattura salvata senza foto');}
   LIVEQ={sp,w:'',l:'',rel:false,photo:null};confetti();toast('Cattura registrata! 🐟');render();
 }
 function endLive(){
   const L=S.live;
-  DRAFT={id:null,start:isoLocal(new Date(L.start)),end:isoLocal(new Date()),spot:L.spot,mode:L.mode,tech:L.tech,bait:L.bait||'',catches:L.catches.map(c=>({sp:c.sp,w:c.w??'',l:c.l??'',rel:!!c.rel,photo:c.photo||null})),note:'',photo:null,fromLive:true};
+  DRAFT={id:null,start:isoLocal(new Date(L.start)),end:isoLocal(new Date()),spot:L.spot,mode:L.mode,tech:L.tech,bait:L.bait||'',catches:L.catches.map(c=>({sp:c.sp,w:c.w??'',l:c.l??'',rel:!!c.rel,photo:c.photo||null,ai:c.ai||null})),note:'',photo:null,fromLive:true};
+  for(const k in ENTRYAI)delete ENTRYAI[k];
   drawEntry();
 }
 function cancelLive(){if(!confirm('Annullare la sessione? Le catture registrate andranno perse.'))return;S.live=null;LS.set('live',null);go('home');}
@@ -1490,6 +1509,12 @@ function vSettings(v){
     <div class="kv"><span>Spazio usato sul dispositivo</span><b>${fmt0(bytes/1024)} KB</b></div>
     <p class="small mut" style="margin:10px 0">I dati restano solo su questo dispositivo. Esporta un backup per non perderli o per spostarli su un altro telefono.</p>
     <div class="row" style="gap:8px"><button class="btn ghost" style="flex:1" onclick="exportData()">⬇️ Esporta</button><label class="btn ghost" style="flex:1;text-align:center;margin:0;color:var(--txt);font-size:14px">⬆️ Importa<input type="file" accept="application/json" style="display:none" onchange="importData(this)"></label></div></div>
+  <div class="card"><h3>🤖 Riconoscimento automatico</h3>
+    <p class="small" style="margin-bottom:8px">Dalla foto della cattura Claude riconosce la specie e stima lunghezza e peso. Serve una chiave API Anthropic personale: la crei su <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--acc)">console.anthropic.com</a>.</p>
+    <label>Chiave API</label><input id="akey" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(aiKey())}">
+    <div class="row" style="gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="saveKey()">Salva</button>${aiKey()?'<button class="btn ghost" style="flex:1" onclick="testKey()">Verifica</button>':''}</div>
+    <div id="akeyst" class="small" style="margin-top:8px">${aiKey()?'<span style="color:var(--ok)">● Riconoscimento attivo</span>':'<span class="mut">○ Non attivo</span>'}</div>
+    <p class="small mut" style="margin-top:8px">La chiave resta solo su questo dispositivo. Ogni foto analizzata viene inviata ad Anthropic e costa pochi centesimi sul tuo account API. Le misure dalla foto sono stime: con una mano, un metro o il mulinello vicino al pesce sono molto più precise.</p></div>
   <div class="card"><h3>App</h3>
     <button class="btn ghost full" style="margin-bottom:8px" onclick="welcome()">👋 Rivedi l'introduzione</button>
     ${standalone()?'':'<button class="btn ghost full" style="margin-bottom:8px" onclick="installApp()">📲 Installa sulla schermata Home</button>'}
@@ -1562,6 +1587,144 @@ async function shareEntry(id){
   const file=new File([blob],'lenza-cattura.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'La mia uscita di pesca'});return;}catch(err){if(err.name==='AbortError')return;}}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='lenza-cattura.png';a.click();toast('Immagine scaricata');
+}
+
+/* ===================== Riconoscimento con Claude (visione) ===================== */
+// Chiave API dell'utente, salvata solo su questo dispositivo; la foto viene inviata direttamente ad Anthropic.
+const AI_MODEL='claude-opus-5-5';
+const SDK_URL='https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.133.0/+esm';
+let AIC=null;
+const aiKey=()=>LS.get('apikey','');
+async function aiClient(){
+  const key=aiKey();if(!key)throw new Error('nokey');
+  if(!AIC||AIC.key!==key){const {default:Anthropic}=await import(SDK_URL);AIC={key,c:new Anthropic({apiKey:key,dangerouslyAllowBrowser:true})};}
+  return AIC.c;
+}
+const FISH_SCHEMA={type:'object',additionalProperties:false,
+  required:['is_fish','species','scientific_name','confidence','alternatives','length_cm','length_min_cm','length_max_cm','weight_kg','size_reference','size_confidence','notes'],
+  properties:{
+    is_fish:{type:'boolean',description:'true se nella foto c\'è un pesce o un cefalopode catturato'},
+    species:{type:'string',description:'Nome comune italiano della specie'},
+    scientific_name:{type:'string'},
+    confidence:{type:'number',description:'Sicurezza sulla specie, da 0 a 1'},
+    alternatives:{type:'array',description:'Fino a 3 specie alternative plausibili',items:{type:'object',additionalProperties:false,required:['species','confidence'],properties:{species:{type:'string'},confidence:{type:'number'}}}},
+    length_cm:{type:'number',description:'Lunghezza totale stimata, dalla punta del muso alla fine della coda'},
+    length_min_cm:{type:'number'},length_max_cm:{type:'number'},
+    weight_kg:{type:'number',description:'Peso stimato'},
+    size_reference:{type:'string',description:'Oggetto usato come riferimento per la misura, oppure "nessuno"'},
+    size_confidence:{type:'string',enum:['alta','media','bassa']},
+    notes:{type:'string',description:'Una o due frasi utili per il pescatore, in italiano'}
+  }};
+function aiPrompt(mode){
+  const names=SPECIES.map(s=>`${s.n} (${s.s})`).join(', ');
+  const sp=activeSpot();
+  return `Sei un esperto di ittiologia e di pesca sportiva in Italia. Analizza la foto di una cattura.
+Contesto: ambiente "${MODES[mode]?.d||''}", spot "${sp?.name||''}" (lat ${sp?.lat?.toFixed(2)}, lon ${sp?.lon?.toFixed(2)}), mese ${new Date().toLocaleDateString('it-IT',{month:'long'})}.
+1. Identifica la specie. Se corrisponde, usa esattamente uno di questi nomi: ${names}. Altrimenti usa il nome comune italiano più diffuso. Indica fino a 3 alternative plausibili.
+2. Stima la lunghezza totale in cm usando i riferimenti visibili: mano adulta (palmo largo circa 8,5 cm, mano lunga circa 19 cm), dita, mulinello, canna, scarpe, metro o tavoletta di misura, piastrelle, ecc. Indica quale riferimento hai usato. Senza riferimenti affidabili allarga l'intervallo e metti size_confidence "bassa".
+3. Stima il peso in kg coerente con specie e lunghezza.
+Se nella foto non c'è un pesce, metti is_fish a false e valori 0 o stringhe vuote. Sii onesto sull'incertezza.`;
+}
+async function analyzeFish(dataUrl,mode){
+  const client=await aiClient();
+  const resp=await client.beta.messages.create({
+    model:AI_MODEL,max_tokens:16000,
+    betas:['server-side-fallback-2026-07-01'],fallbacks:'default',
+    output_config:{effort:'medium',format:{type:'json_schema',schema:FISH_SCHEMA}},
+    messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:dataUrl.split(',')[1]}},
+      {type:'text',text:aiPrompt(mode)}
+    ]}]
+  });
+  if(resp.stop_reason==='refusal')throw new Error('refusal');
+  const txt=resp.content.find(b=>b.type==='text')?.text;
+  if(!txt)throw new Error('empty');
+  const r=JSON.parse(txt);
+  // Se conosciamo la relazione lunghezza-peso della specie, il peso viene da lì (più coerente)
+  const lw=estW(r.species,r.length_cm);
+  r.weight_final=lw?Math.round(lw*100)/100:Math.round(r.weight_kg*100)/100;
+  r.weight_src=lw?'formula':'ai';
+  return r;
+}
+function aiErrMsg(e){
+  if(e.message==='nokey')return 'Inserisci la chiave API nelle Impostazioni';
+  if(e.message==='refusal')return 'Il modello non ha potuto analizzare questa foto';
+  const st=e.status;
+  if(st===401)return 'Chiave API non valida';
+  if(st===429)return 'Troppe richieste: riprova tra poco';
+  if(st===400&&/credit|balance/i.test(e.message||''))return 'Credito API esaurito';
+  if(st>=500)return 'Servizio momentaneamente non disponibile';
+  if(!navigator.onLine)return 'Sei offline: il riconoscimento richiede internet';
+  return 'Riconoscimento non riuscito';
+}
+function aiCard(st,target){
+  // st: {loading, err, r}; target: 'live' o indice cattura
+  if(!st)return '';
+  if(st.loading)return `<div class="aibox"><div class="aispin"></div><div><b>Riconosco il pesce…</b><div class="small mut">Specie, misura e peso dalla foto</div></div></div>`;
+  if(st.err)return `<div class="aibox err"><span style="font-size:22px">⚠️</span><div style="flex:1"><b>${esc(st.err)}</b>${st.err.includes('chiave')||st.err.includes('Impostazioni')?`<div class="small"><a href="#settings" style="color:var(--acc)">Vai alle Impostazioni</a></div>`:`<div class="small"><u style="cursor:pointer" onclick="aiRetry('${target}')">Riprova</u></div>`}</div></div>`;
+  const r=st.r;if(!r)return '';
+  if(!r.is_fish)return `<div class="aibox err"><span style="font-size:22px">🤔</span><div><b>Non vedo un pesce nella foto</b><div class="small mut">${esc(r.notes)}</div></div></div>`;
+  const pc=Math.round(r.confidence*100),col=pc>=80?'var(--ok)':pc>=55?'var(--acc2)':'var(--bad)';
+  return `<div class="aibox ok"><div style="flex:1;min-width:0">
+    <div class="small mut" style="text-transform:uppercase;letter-spacing:1px;font-weight:700">🤖 Riconosciuto da Claude</div>
+    <div style="font-size:19px;font-weight:800;margin-top:2px">${esc(r.species)} <span class="pill" style="background:${col}22;color:${col}">${pc}%</span></div>
+    <div class="small mut"><i>${esc(r.scientific_name)}</i></div>
+    <div class="aigrid"><div><b>${fmt0(r.length_cm)} cm</b><span>${fmt0(r.length_min_cm)}–${fmt0(r.length_max_cm)} cm</span></div><div><b>${fmt1(r.weight_final)} kg</b><span>${r.weight_src==='formula'?'da lunghezza':'stima AI'}</span></div><div><b>${esc(r.size_confidence)}</b><span>affidabilità misura</span></div></div>
+    <div class="small mut">📏 Riferimento: ${esc(r.size_reference||'nessuno')}</div>
+    ${r.alternatives?.length?`<div class="small" style="margin-top:6px">Oppure: ${r.alternatives.map(a=>`<span class="chip" style="padding:3px 9px;font-size:12px" onclick="aiPick('${target}','${esc(a.species).replace(/'/g,"\\'")}')">${esc(a.species)} ${Math.round(a.confidence*100)}%</span>`).join(' ')}</div>`:''}
+    ${r.notes?`<div class="small" style="margin-top:6px">💡 ${esc(r.notes)}</div>`:''}
+  </div></div>`;
+}
+/* Sessione live */
+let LIVEAI=null;
+async function liveAnalyze(){
+  if(!LIVEQ.photo)return;
+  if(!aiKey()){LIVEAI={err:'Attiva il riconoscimento automatico: inserisci la chiave API nelle Impostazioni'};render();return;}
+  const big=LIVEQ.big||LIVEQ.photo;LIVEAI={loading:true};render();
+  try{
+    const r=await analyzeFish(big,S.live?.mode||S.mode);LIVEAI={r};
+    if(r.is_fish){LIVEQ.sp=r.species;LIVEQ.l=String(Math.round(r.length_cm));LIVEQ.w=String(r.weight_final);LIVEQ.ai={conf:r.confidence,ref:r.size_reference,range:[r.length_min_cm,r.length_max_cm]};toast('🐟 '+r.species+' · '+fmt1(r.weight_final)+' kg');}
+  }catch(e){LIVEAI={err:aiErrMsg(e)};}
+  if(S.tab==='live')render();
+}
+/* Modulo uscita: indice della cattura */
+const ENTRYAI={};
+async function entryAnalyze(i,big){
+  const c=DRAFT.catches[i];if(!c?.photo||!aiKey())return;
+  ENTRYAI[i]={loading:true};drawEntry();
+  try{
+    const r=await analyzeFish(big||c.photo,DRAFT.mode);ENTRYAI[i]={r};
+    if(r.is_fish&&DRAFT.catches[i]===c){c.sp=r.species;c.l=Math.round(r.length_cm);c.w=r.weight_final;c.ai={conf:r.confidence,ref:r.size_reference,range:[r.length_min_cm,r.length_max_cm]};}
+  }catch(e){ENTRYAI[i]={err:aiErrMsg(e)};}
+  if(document.getElementById('sheet').classList.contains('on')&&DRAFT)drawEntry();
+}
+function aiRetry(t){if(t==='live')liveAnalyze();else if(t==='assist')assistAnalyze();else entryAnalyze(+t);}
+function aiPick(t,sp){
+  const len=t==='live'?+LIVEQ.l:t==='assist'?null:+DRAFT.catches[+t].l;
+  const w=len?estW(sp,len):null;
+  if(t==='live'){LIVEQ.sp=sp;if(w)LIVEQ.w=String(Math.round(w*100)/100);render();}
+  else if(t==='assist'){toast(sp);}
+  else{const c=DRAFT.catches[+t];c.sp=sp;if(w)c.w=Math.round(w*100)/100;drawEntry();}
+}
+/* Assistente: riconoscimento al volo, senza registrare */
+let ASSIST=null;
+async function assistSnap(inp){const d=await readPhoto(inp);if(!d)return;ASSIST={photo:d,big:readPhoto.big};assistAnalyze();}
+async function assistAnalyze(){
+  if(!ASSIST)return;if(!aiKey()){ASSIST.st={err:'Inserisci la chiave API nelle Impostazioni'};render();return;}
+  ASSIST.st={loading:true};render();
+  try{ASSIST.st={r:await analyzeFish(ASSIST.big||ASSIST.photo,S.mode)};}catch(e){ASSIST.st={err:aiErrMsg(e)};}
+  if(S.tab==='ai')render();
+}
+/* Impostazioni */
+function saveKey(){
+  const v=document.getElementById('akey').value.trim();
+  if(v&&!/^sk-ant-/.test(v)){toast('La chiave deve iniziare con sk-ant-');return;}
+  LS.set('apikey',v);AIC=null;toast(v?'Chiave salvata su questo dispositivo':'Chiave rimossa');render();
+}
+async function testKey(){
+  const el=document.getElementById('akeyst');el.textContent='Verifico…';
+  try{const c=await aiClient();await c.models.retrieve(AI_MODEL);el.innerHTML='<span style="color:var(--ok)">✓ Chiave valida, riconoscimento attivo</span>';}
+  catch(e){el.innerHTML=`<span style="color:var(--bad)">✗ ${esc(aiErrMsg(e))}</span>`;}
 }
 
 /* ===================== Sheet ===================== */
