@@ -355,6 +355,22 @@
   .dcard{display:flex;gap:12px;align-items:center;}
   .dcard .ph{width:64px;height:64px;border-radius:18px;flex:none;overflow:hidden;display:grid;place-items:center;font-size:28px;background:linear-gradient(135deg,rgba(47,224,207,.2),rgba(59,140,255,.15));}
   .dcard .ph img{width:100%;height:100%;object-fit:cover;}
+  .shoot{display:flex;flex-direction:column;align-items:center;gap:4px;padding:22px 12px;margin-bottom:14px;border-radius:22px;border:2px dashed rgba(47,224,207,.5);background:linear-gradient(160deg,rgba(47,224,207,.12),rgba(59,140,255,.06));cursor:pointer;text-align:center;transition:transform .15s;}
+  .shoot:active{transform:scale(.98);}
+  .shoot input,.snap input,.snapalt input{display:none;}
+  .shoot .cam{width:64px;height:64px;border-radius:22px;display:grid;place-items:center;font-size:32px;background:var(--grad);box-shadow:0 10px 24px -8px rgba(47,224,207,.9);margin-bottom:6px;}
+  .shoot b{font-size:16px;}
+  .shoot small{font-size:12px;color:var(--mut);}
+  .snap{display:flex;gap:8px;margin-top:8px;}
+  .snapbtn{flex:1;text-align:center;padding:10px;border-radius:14px;background:rgba(47,224,207,.12);border:1px solid rgba(47,224,207,.35);color:var(--acc);font-weight:700;font-size:13px;cursor:pointer;}
+  .snapalt{color:var(--mut);font-size:13px;cursor:pointer;padding:10px 6px;}
+  .snap .snapalt{border-radius:14px;border:1px solid var(--line);text-align:center;padding:10px 12px;}
+  .cphoto{position:relative;margin-top:8px;}
+  .cphoto img{width:100%;max-height:220px;object-fit:cover;border-radius:16px;display:block;cursor:zoom-in;}
+  .cphoto.big{margin:0 0 14px;}
+  .cphoto.big img{max-height:300px;border-radius:20px;}
+  .cphoto span{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:14px;}
+  .lcimg{width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;cursor:zoom-in;}
   /* confetti, celebrazione, benvenuto */
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:3000;overflow:hidden;}
   .confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:fall 2.4s cubic-bezier(.2,.6,.4,1) forwards;}
@@ -995,7 +1011,7 @@ function drawDList(){
     if(mk!==last){h+=`<div class="mhead">${mk}</div>`;last=mk;}
     const sp=S.spots.find(s=>s.id===e.spot),kg=(e.catches||[]).reduce((a,c)=>a+(+c.w||0),0),ix=e.cond?.idx;
     h+=`<div class="card" onclick="openEntry('${e.id}')" style="cursor:pointer;padding:12px"><div class="dcard">
-      <div class="ph">${e.photo?`<img src="${e.photo}" alt="">`:(e.catches?.length?'🐟':'🎣')}</div>
+      <div class="ph">${entryPhoto(e)?`<img src="${entryPhoto(e)}" alt="">`:(e.catches?.length?'🐟':'🎣')}</div>
       <div style="flex:1;min-width:0"><b style="text-transform:capitalize">${d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})} · ${hhmm(d)}</b>
       <div class="small mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(sp?.name||'Spot eliminato')} · ${MODES[e.mode]?.e||''} ${esc(e.tech||'')}</div>
       <div class="small" style="margin-top:3px">${e.catches?.length?`🐟 ${e.catches.length} · ${kg?fmt1(kg)+' kg · ':''}${esc([...new Set(e.catches.map(c=>c.sp))].join(', '))}`:'<span class="mut">Cappotto</span>'}</div></div>
@@ -1023,10 +1039,11 @@ function drawEntry(){
     <div><input list="spl" value="${esc(c.sp)}" placeholder="Specie" onchange="DRAFT.catches[${i}].sp=this.value;drawEntry()"></div>
     <div class="row"><input type="number" step="0.01" min="0" value="${c.w??''}" placeholder="kg" onchange="DRAFT.catches[${i}].w=this.value"><input type="number" step="1" min="0" value="${c.l??''}" placeholder="cm" onchange="DRAFT.catches[${i}].l=this.value;drawEntry()"></div></div>
     <div class="row small" style="margin-top:6px"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" ${c.rel?'checked':''} onchange="DRAFT.catches[${i}].rel=this.checked"> Rilasciato</label>
-    <span style="margin-left:auto;color:var(--bad);cursor:pointer" onclick="DRAFT.catches.splice(${i},1);drawEntry()">Rimuovi</span></div>${sizeWarn(c)}${(c.w===''||c.w==null)&&c.l&&estW(c.sp,c.l)?`<div class="small" style="margin-top:4px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(estW(c.sp,c.l))} kg · <u style="cursor:pointer" onclick="DRAFT.catches[${i}].w=${estW(c.sp,c.l).toFixed(2)};drawEntry()">usa questo valore</u></div>`:''}</div>`).join('')}
+    <span style="margin-left:auto;color:var(--bad);cursor:pointer" onclick="DRAFT.catches.splice(${i},1);drawEntry()">Rimuovi</span></div>
+    ${c.photo?`<div class="cphoto"><img src="${c.photo}" alt="" onclick="viewPhoto(DRAFT.catches[${i}].photo)"><span onclick="DRAFT.catches[${i}].photo=null;drawEntry()">✕</span></div>`:photoPicker(`pickCatchPhoto(this,${i})`,'Foto del pesce')}${sizeWarn(c)}${(c.w===''||c.w==null)&&c.l&&estW(c.sp,c.l)?`<div class="small" style="margin-top:4px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(estW(c.sp,c.l))} kg · <u style="cursor:pointer" onclick="DRAFT.catches[${i}].w=${estW(c.sp,c.l).toFixed(2)};drawEntry()">usa questo valore</u></div>`:''}</div>`).join('')}
   <datalist id="spl">${spN.map(n=>`<option value="${n}">`).join('')}</datalist>
   <button class="btn ghost full" style="margin-top:8px" onclick="DRAFT.catches.push({sp:'',w:'',l:'',rel:false});drawEntry()">＋ Aggiungi cattura</button>
-  <label>Foto</label>${e.photo?`<img src="${e.photo}" style="max-width:100%;border-radius:12px;margin-bottom:6px"><br><span class="small" style="color:var(--bad);cursor:pointer" onclick="DRAFT.photo=null;drawEntry()">Rimuovi foto</span>`:`<input type="file" accept="image/*" onchange="pickPhoto(this)">`}
+  <label>Foto dell'uscita</label>${e.photo?`<div class="cphoto"><img src="${e.photo}" alt="" onclick="viewPhoto(DRAFT.photo)"><span onclick="DRAFT.photo=null;drawEntry()">✕</span></div>`:photoPicker('pickPhoto(this)','Scatta una foto')}
   <label>Note</label><textarea onchange="DRAFT.note=this.value" placeholder="Com'è andata?">${esc(e.note)}</textarea>
   ${e.cond?`<p class="small mut" style="margin-top:8px">Condizioni registrate: vento ${fmt0(e.cond.ws)} km/h, ${e.cond.wave!=null?'onda '+fmt1(e.cond.wave)+' m, ':''}pressione ${fmt0(e.cond.p)} hPa, ${esc(e.cond.moon||'')}</p>`:''}
   ${e.id?`<button class="btn ghost full" style="margin-top:14px" onclick="shareEntry('${e.id}')">📤 Crea cartolina da condividere</button>`:''}
@@ -1037,11 +1054,22 @@ function sizeWarn(c){
   if(s&&s.sz&&c.l&&+c.l<s.sz&&!c.rel) return `<div class="small" style="color:var(--acc2);margin-top:4px">⚠️ Sotto la misura minima indicativa (${s.sz} cm): va rilasciato.</div>`;
   return '';
 }
-function pickPhoto(inp){
-  const f=inp.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,480/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);DRAFT.photo=c.toDataURL('image/jpeg',.7);drawEntry();};img.src=r.result;};
-  r.readAsDataURL(f);
+/* Foto ridimensionate (lato lungo 640 px) per stare nella memoria del dispositivo */
+function readPhoto(inp,max=640){
+  return new Promise(res=>{
+    const f=inp.files&&inp.files[0];inp.value='';if(!f)return res(null);
+    const url=URL.createObjectURL(f),img=new Image();
+    img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',.68));};
+    img.onerror=()=>{URL.revokeObjectURL(url);toast('Foto non leggibile');res(null);};
+    img.src=url;
+  });
 }
+async function pickPhoto(inp){const d=await readPhoto(inp);if(d){DRAFT.photo=d;drawEntry();}}
+async function pickCatchPhoto(inp,i){const d=await readPhoto(inp);if(d){DRAFT.catches[i].photo=d;drawEntry();}}
+const entryPhoto=e=>e.photo||(e.catches||[]).find(c=>c.photo)?.photo||null;
+function viewPhoto(src,cap){openSheet(`<img src="${src}" style="width:100%;border-radius:20px;display:block" alt="">${cap?`<p style="margin-top:10px;text-align:center"><b>${cap}</b></p>`:''}<button class="btn ghost full" style="margin-top:12px" onclick="closeSheet()">Chiudi</button>`);}
+function photoPicker(fn,label){return `<div class="snap"><label class="snapbtn">📸 ${label}<input type="file" accept="image/*" capture="environment" onchange="${fn}"></label><label class="snapalt">🖼️ Galleria<input type="file" accept="image/*" onchange="${fn}"></label></div>`;}
 function snapshot(e){
   const st=parseLocal(e.start),ph=moonPhase(st),sp=S.spots.find(s=>s.id===e.spot);
   const cond={moon:ph.name,illum:ph.illum};
@@ -1209,7 +1237,8 @@ function weatherAlerts(X){
 }
 
 /* ===================== Sessione live ===================== */
-let LIVEDRAFT=null,LIVEQ={sp:'',w:'',l:'',rel:false};
+let LIVEDRAFT=null,LIVEQ={sp:'',w:'',l:'',rel:false,photo:null};
+async function liveSnap(inp){const d=await readPhoto(inp);if(d){LIVEQ.photo=d;render();toast(LIVEQ.sp?'Foto pronta: tocca «Segna la cattura»':'Foto pronta: scegli la specie');}}
 function fabTap(){if(S.live)go('live');else startLive();}
 function startLive(){LIVEDRAFT={spot:S.active,mode:S.mode,tech:TECH[S.mode][0],bait:''};drawStart();}
 function drawStart(){
@@ -1223,7 +1252,7 @@ function drawStart(){
 }
 function beginLive(){
   if(!S.spots.length){toast('Aggiungi prima uno spot');closeSheet();go('spot');return;}
-  S.live={...LIVEDRAFT,start:Date.now(),catches:[]};LS.set('live',S.live);LIVEQ={sp:'',w:'',l:'',rel:false};
+  S.live={...LIVEDRAFT,start:Date.now(),catches:[]};LS.set('live',S.live);LIVEQ={sp:'',w:'',l:'',rel:false,photo:null};
   closeSheet();toast('Buona pesca! 🎣');go('live');
 }
 function vLive(v){
@@ -1241,6 +1270,9 @@ function vLive(v){
     <div class="live-stats"><div><b>${L.catches.length}</b><span>catture</span></div><div><b>${fmt1(kg)}</b><span>kg</span></div><div><b>${idx}</b><span>indice ora</span></div></div>${WAVES}
   </section>
   <div class="card"><h3>Registra una cattura</h3>
+    ${LIVEQ.photo?`<div class="cphoto big"><img src="${LIVEQ.photo}" alt="" onclick="viewPhoto(LIVEQ.photo)"><span onclick="LIVEQ.photo=null;render()">✕</span></div>`
+      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>Si apre la fotocamera · facoltativo</small></label>
+        <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 12px">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="liveSnap(this)"></label>`}
     <div class="chips">${chips.map(n=>`<span class="chip ${LIVEQ.sp===n?'on':''}" onclick="LIVEQ.sp='${n.replace(/'/g,"\\'")}';render()">${esc(n)}</span>`).join('')}</div>
     <label>Specie</label><input list="spl2" value="${esc(LIVEQ.sp)}" oninput="LIVEQ.sp=this.value" placeholder="Scegli sopra o scrivi">
     <datalist id="spl2">${SPECIES.map(s=>`<option value="${s.n}">`).join('')}</datalist>
@@ -1249,20 +1281,21 @@ function vLive(v){
     ${est?`<div class="small" style="margin-top:6px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(est)} kg</div>`:''}
     ${sizeWarn({sp:LIVEQ.sp,l:LIVEQ.l,rel:LIVEQ.rel})}
     <div class="toggle ${LIVEQ.rel?'on':''}" onclick="LIVEQ.rel=!LIVEQ.rel;render()"><i></i>Rilasciato</div>
-    <button class="btn full fish" style="margin-top:16px" onclick="liveCatch()">🐟 Pesce!</button>
+    <button class="btn full fish" style="margin-top:16px" onclick="liveCatch()">🐟 Segna la cattura${LIVEQ.photo?' con foto':''}</button>
   </div>
-  ${L.catches.length?`<div class="card"><h3>Catture della sessione</h3>${L.catches.map((c,i)=>`<div class="lc"><span class="tm">${hhmm(new Date(c.t))}</span><div><b>${esc(c.sp)}</b><div class="small mut">${[c.w?fmt1(c.w)+' kg':'',c.l?c.l+' cm':'',c.rel?'rilasciato':''].filter(Boolean).join(' · ')||'—'}</div></div><span class="x" onclick="S.live.catches.splice(${i},1);LS.set('live',S.live);render()">✕</span></div>`).join('')}</div>`:''}
+  ${L.catches.length?`<div class="card"><h3>Catture della sessione</h3>${L.catches.map((c,i)=>`<div class="lc"><span class="tm">${hhmm(new Date(c.t))}</span>${c.photo?`<img class="lcimg" src="${c.photo}" alt="" onclick="viewPhoto(S.live.catches[${i}].photo)">`:''}<div><b>${esc(c.sp)}</b><div class="small mut">${[c.w?fmt1(c.w)+' kg':'',c.l?c.l+' cm':'',c.rel?'rilasciato':''].filter(Boolean).join(' · ')||'—'}</div></div><span class="x" onclick="S.live.catches.splice(${i},1);LS.set('live',S.live);render()">✕</span></div>`).join('')}</div>`:''}
   <div class="row" style="gap:8px"><button class="btn danger" style="flex:1" onclick="cancelLive()">Annulla</button><button class="btn" style="flex:2" onclick="endLive()">Termina e salva</button></div>`;
 }
 function liveCatch(){
   const q=LIVEQ,sp=(q.sp||'').trim();if(!sp){toast('Scegli la specie');return;}
   let w=q.w===''?null:+q.w;if(w==null&&q.l){const e=estW(sp,q.l);if(e)w=Math.round(e*100)/100;}
-  S.live.catches.push({sp,w,l:q.l===''?null:+q.l,rel:q.rel,t:Date.now()});LS.set('live',S.live);
-  LIVEQ={sp,w:'',l:'',rel:false};confetti();toast('Cattura registrata! 🐟');render();
+  S.live.catches.push({sp,w,l:q.l===''?null:+q.l,rel:q.rel,photo:q.photo||null,t:Date.now()});
+  if(!LS.set('live',S.live)&&q.photo){S.live.catches[S.live.catches.length-1].photo=null;LS.set('live',S.live);toast('Memoria piena: cattura salvata senza foto');}
+  LIVEQ={sp,w:'',l:'',rel:false,photo:null};confetti();toast('Cattura registrata! 🐟');render();
 }
 function endLive(){
   const L=S.live;
-  DRAFT={id:null,start:isoLocal(new Date(L.start)),end:isoLocal(new Date()),spot:L.spot,mode:L.mode,tech:L.tech,bait:L.bait||'',catches:L.catches.map(c=>({sp:c.sp,w:c.w??'',l:c.l??'',rel:!!c.rel})),note:'',photo:null,fromLive:true};
+  DRAFT={id:null,start:isoLocal(new Date(L.start)),end:isoLocal(new Date()),spot:L.spot,mode:L.mode,tech:L.tech,bait:L.bait||'',catches:L.catches.map(c=>({sp:c.sp,w:c.w??'',l:c.l??'',rel:!!c.rel,photo:c.photo||null})),note:'',photo:null,fromLive:true};
   drawEntry();
 }
 function cancelLive(){if(!confirm('Annullare la sessione? Le catture registrate andranno perse.'))return;S.live=null;LS.set('live',null);go('home');}
@@ -1502,8 +1535,9 @@ async function shareEntry(id){
   let bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0f4a7a');bg.addColorStop(.55,'#072a4d');bg.addColorStop(1,'#020a15');g.fillStyle=bg;g.fillRect(0,0,W,H);
   const glow=g.createRadialGradient(W*.2,80,10,W*.2,80,600);glow.addColorStop(0,'rgba(47,224,207,.35)');glow.addColorStop(1,'rgba(47,224,207,0)');g.fillStyle=glow;g.fillRect(0,0,W,H);
   const px=60,py=60,pw=W-120,ph=720;
-  if(e.photo){
-    const img=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=e.photo;});
+  const best0=(e.catches||[]).slice().sort((a,b)=>(+b.w||0)-(+a.w||0))[0],pic=best0?.photo||entryPhoto(e);
+  if(pic){
+    const img=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=pic;});
     if(img){g.save();rrect(g,px,py,pw,ph,48);g.clip();const k=Math.max(pw/img.width,ph/img.height);g.drawImage(img,px+(pw-img.width*k)/2,py+(ph-img.height*k)/2,img.width*k,img.height*k);
       const sh=g.createLinearGradient(0,py+ph-260,0,py+ph);sh.addColorStop(0,'rgba(2,10,21,0)');sh.addColorStop(1,'rgba(2,10,21,.7)');g.fillStyle=sh;g.fillRect(px,py,pw,ph);g.restore();}
   }else{
