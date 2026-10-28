@@ -1641,19 +1641,35 @@ async function session(){
   return SESS;
 }
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
-function toTensor(img,how,mean,std){
-  const c=document.createElement('canvas');c.width=c.height=224;const g=c.getContext('2d');g.imageSmoothingQuality='high';
-  const w=img.naturalWidth,h=img.naturalHeight;
-  if(how==='pad'){g.fillStyle=`rgb(${mean.map(x=>Math.round(x*255)).join(',')})`;g.fillRect(0,0,224,224);const k=224/Math.max(w,h);g.drawImage(img,(224-w*k)/2,(224-h*k)/2,w*k,h*k);}
-  else{const k=224/Math.min(w,h);g.drawImage(img,(224-w*k)/2,(224-h*k)/2,w*k,h*k);}
-  const px=g.getImageData(0,0,224,224).data,out=new Float32Array(3*224*224);
-  for(let i=0;i<224*224;i++)for(let ch=0;ch<3;ch++)out[ch*50176+i]=(px[i*4+ch]/255-mean[ch])/std[ch];
+/* Ridimensionamento bicubico con antialias, identico a quello usato per tarare il modello (PIL) */
+function resampleRGBA(src,sw,sh,dw,dh){
+  const cub=x=>{x=Math.abs(x);const a=-.5;return x<1?((a+2)*x-(a+3))*x*x+1:x<2?(((x-5)*x+8)*x-4)*a:0;};
+  const coeffs=(inS,outS)=>{const sc=inS/outS,fs=Math.max(sc,1),sup=2*fs,ss=1/fs,out=[];
+    for(let i=0;i<outS;i++){const c=(i+.5)*sc;let x0=Math.max(Math.floor(c-sup+.5),0),x1=Math.min(Math.floor(c+sup+.5),inS);const w=[];let t=0;
+      for(let x=x0;x<x1;x++){const v=cub((x-c+.5)*ss);w.push(v);t+=v;}out.push([x0,w.map(v=>t?v/t:0)]);}return out;};
+  const pass=(inp,iw,ih,ow,horiz)=>{const oh=horiz?ih:ow,owid=horiz?ow:iw,cf=coeffs(horiz?iw:ih,horiz?ow:ow),out=new Uint8ClampedArray(owid*(horiz?ih:ow)*4);
+    if(horiz){for(let y=0;y<ih;y++)for(let x=0;x<ow;x++){const [x0,w]=cf[x];let r=0,g=0,b=0;for(let k=0;k<w.length;k++){const o=(y*iw+x0+k)*4;r+=inp[o]*w[k];g+=inp[o+1]*w[k];b+=inp[o+2]*w[k];}const q=(y*ow+x)*4;out[q]=Math.round(r);out[q+1]=Math.round(g);out[q+2]=Math.round(b);out[q+3]=255;}}
+    else{for(let y=0;y<ow;y++){const [y0,w]=cf[y];for(let x=0;x<iw;x++){let r=0,g=0,b=0;for(let k=0;k<w.length;k++){const o=((y0+k)*iw+x)*4;r+=inp[o]*w[k];g+=inp[o+1]*w[k];b+=inp[o+2]*w[k];}const q=(y*iw+x)*4;out[q]=Math.round(r);out[q+1]=Math.round(g);out[q+2]=Math.round(b);out[q+3]=255;}}}
+    return out;};
+  const h=pass(src,sw,sh,dw,true);return pass(h,dw,sh,dh,false);
+}
+function imgPixels(img){const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const g=c.getContext('2d');g.drawImage(img,0,0);return g.getImageData(0,0,c.width,c.height).data;}
+function toTensor(img,how,mean,std,px0){
+  const w=img.naturalWidth,h=img.naturalHeight,src=px0||imgPixels(img),out=new Float32Array(3*224*224);
+  let buf,bw,bh,ox=0,oy=0;
+  if(how==='pad'){const k=224/Math.max(w,h);bw=Math.max(1,Math.round(w*k));bh=Math.max(1,Math.round(h*k));buf=resampleRGBA(src,w,h,bw,bh);ox=(224-bw)>>1;oy=(224-bh)>>1;}
+  else{const k=224/Math.min(w,h);bw=Math.max(224,Math.round(w*k));bh=Math.max(224,Math.round(h*k));buf=resampleRGBA(src,w,h,bw,bh);ox=-((bw-224)>>1);oy=-((bh-224)>>1);}
+  const fill=mean.map(x=>Math.floor(x*255));
+  for(let y=0;y<224;y++)for(let x=0;x<224;x++){
+    const sx=x-ox,sy=y-oy,inside=sx>=0&&sy>=0&&sx<bw&&sy<bh,o=(sy*bw+sx)*4,i=y*224+x;
+    for(let ch=0;ch<3;ch++){const v=inside?buf[o+ch]:fill[ch];out[ch*50176+i]=(v/255-mean[ch])/std[ch];}
+  }
   return out;
 }
 async function embedPhoto(src){
-  const F=await fishData(),s=await session(),img=await loadImg(src),e=new Float32Array(F.dim);
+  const F=await fishData(),s=await session(),img=await loadImg(src),e=new Float32Array(F.dim),px=imgPixels(img);
   for(const how of F.prep){
-    const x=toTensor(img,how,F.mean,F.std),o=await s.run({pixels:new ort.Tensor('float32',x,[1,3,224,224])});
+    const x=toTensor(img,how,F.mean,F.std,px),o=await s.run({pixels:new ort.Tensor('float32',x,[1,3,224,224])});
     const v=o.embedding.data;for(let i=0;i<F.dim;i++)e[i]+=v[i];
   }
   let n=0;for(let i=0;i<F.dim;i++)n+=e[i]*e[i];n=Math.sqrt(n);for(let i=0;i<F.dim;i++)e[i]/=n;
