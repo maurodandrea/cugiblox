@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#071a2c">
+<meta name="theme-color" content="#030d1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lenza">
+<meta name="description" content="Indice di pesca, meteo e mare, spot, diario e statistiche.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Lenza · Indice di Pesca</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -68,6 +75,8 @@
   .card h3::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--grad);box-shadow:0 0 10px var(--acc);}
   .row{display:flex;gap:10px;align-items:center;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .grid2>*{min-width:0;}
+  input[type=datetime-local]{min-width:0;font-size:14px;padding:12px 8px;}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .tile{position:relative;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:18px;padding:12px;}
   .tile .k{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.9px;font-weight:600;}
@@ -217,6 +226,153 @@
   .leaflet-popup-content a{color:var(--acc);}
   .leaflet-bar a{background:#0e2a48;color:#fff;border-color:rgba(255,255,255,.1);}
   svg text{font-family:'Outfit',sans-serif;}
+  /* ---------- v3: nuove funzioni ---------- */
+  nav{align-items:flex-end;}
+  nav .fab{flex:1.15;position:relative;margin-top:-26px;background:none;padding:0 0 4px;}
+  nav .fab .fb{width:58px;height:58px;border-radius:20px;display:grid;place-items:center;background:var(--grad);color:#03282a;box-shadow:0 12px 26px -8px rgba(47,224,207,.9),0 0 0 5px rgba(3,13,26,.9);transition:transform .2s;}
+  nav .fab .fb svg{width:28px;height:28px;}
+  nav .fab:active .fb{transform:scale(.92);}
+  nav .fab.live .fb{background:linear-gradient(135deg,#ff6b7a,#ff9a5a);box-shadow:0 12px 26px -8px rgba(255,107,122,.9),0 0 0 5px rgba(3,13,26,.9);animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{50%{box-shadow:0 12px 30px -4px rgba(255,107,122,1),0 0 0 5px rgba(3,13,26,.9)}}
+  nav .fab em{font-style:normal;margin-top:4px;color:var(--txt);}
+  .rec{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff4d5e;box-shadow:0 0 0 0 rgba(255,77,94,.7);animation:recp 1.4s infinite;}
+  @keyframes recp{70%{box-shadow:0 0 0 9px rgba(255,77,94,0)}100%{box-shadow:0 0 0 0 rgba(255,77,94,0)}}
+  .subhead{display:flex;align-items:center;gap:12px;margin:2px 0 16px;}
+  .subhead .back{width:42px;height:42px;flex:none;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--txt);font-size:26px;line-height:1;cursor:pointer;display:grid;place-items:center;padding-bottom:3px;}
+  .subhead h2{font-size:24px;letter-spacing:-.5px;line-height:1.1;}
+  .subhead p{font-size:13px;color:var(--mut);}
+  .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+  .quick button{background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:20px;color:var(--txt);font:600 12px 'Outfit',sans-serif;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform .15s;}
+  .quick button:active{transform:scale(.95);}
+  .quick button span{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:21px;background:rgba(47,224,207,.12);}
+  .quick button:nth-child(2) span{background:rgba(59,140,255,.16);}
+  .quick button:nth-child(3) span{background:rgba(190,150,255,.16);}
+  .quick button:nth-child(4) span{background:rgba(255,181,71,.15);}
+  .alert{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:18px;margin-bottom:14px;background:linear-gradient(135deg,rgba(255,107,122,.18),rgba(255,154,90,.1));border:1px solid rgba(255,107,122,.35);font-size:13.5px;}
+  .alert .ai{font-size:22px;line-height:1;}
+  .alert b{display:block;font-size:14px;}
+  .hstrip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+  .hstrip::-webkit-scrollbar{display:none;}
+  .hcell{min-width:56px;flex:none;text-align:center;padding:10px 4px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);}
+  .hcell.now{background:linear-gradient(180deg,rgba(47,224,207,.2),rgba(59,140,255,.06));border-color:rgba(47,224,207,.5);}
+  .hcell span{font-size:11.5px;color:var(--mut);font-weight:600;}
+  .hcell .wi{font-size:20px;margin:3px 0;}
+  .hcell b{font-size:14px;}
+  .hcell .ib{width:8px;height:44px;margin:6px auto 3px;border-radius:5px;background:rgba(255,255,255,.08);display:flex;align-items:flex-end;overflow:hidden;}
+  .hcell .ib i{display:block;width:100%;border-radius:5px;}
+  .hcell em{font-style:normal;font-size:12px;font-weight:700;}
+  /* hub */
+  .profile{display:flex;align-items:center;gap:16px;}
+  .lvl{position:relative;width:92px;height:92px;flex:none;}
+  .lvl svg{width:100%;height:100%;transform:rotate(-90deg);}
+  .lvl b{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-weight:800;}
+  .lvl small{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:9px;letter-spacing:1px;color:var(--mut);text-transform:uppercase;font-weight:700;}
+  .profile h2{font-size:22px;letter-spacing:-.4px;}
+  .xpbar{height:8px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0 4px;}
+  .xpbar div{height:100%;background:var(--grad);border-radius:6px;animation:grow 1.2s cubic-bezier(.2,.8,.2,1) both;transform-origin:left;}
+  .minis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px;text-align:center;}
+  .minis b{display:block;font-size:18px;}
+  .minis span{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;}
+  .hub{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .hub button{position:relative;overflow:hidden;text-align:left;border:1px solid var(--line);border-radius:22px;padding:16px 14px;color:var(--txt);cursor:pointer;font-family:'Outfit',sans-serif;min-height:118px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;box-shadow:var(--shadow);transition:transform .15s;}
+  .hub button:active{transform:scale(.97);}
+  .hub button .he{position:absolute;top:12px;left:14px;font-size:30px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.3));}
+  .hub button b{font-size:15.5px;}
+  .hub button span{font-size:12px;opacity:.75;}
+  .hub button::after{content:'';position:absolute;right:-30px;top:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07);}
+  /* trofei */
+  .badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .bdg{text-align:center;padding:14px 6px 12px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);}
+  .bdg .bi{width:60px;height:60px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:radial-gradient(circle at 30% 25%,#fff6c9,#ffb547 45%,#c86b12 100%);box-shadow:0 8px 20px -6px rgba(255,181,71,.8),inset 0 -4px 8px rgba(0,0,0,.25);}
+  .bdg b{display:block;font-size:13px;line-height:1.2;}
+  .bdg span{font-size:11px;color:var(--mut);line-height:1.25;display:block;margin-top:3px;}
+  .bdg.off .bi{background:rgba(255,255,255,.07);box-shadow:none;filter:grayscale(1);opacity:.45;}
+  .bdg.off b{color:var(--mut);}
+  /* calendario */
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .calhead b{font-size:18px;text-transform:capitalize;}
+  .calhead button{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--txt);font-size:20px;cursor:pointer;}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal .wd{text-align:center;font-size:11px;color:var(--mut);font-weight:700;padding-bottom:4px;}
+  .cal .cd{position:relative;aspect-ratio:1/1.18;border-radius:12px;background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;border:1px solid transparent;font-size:13px;font-weight:600;}
+  .cal .cd .m{font-size:14px;line-height:1;}
+  .cal .cd .sb{position:absolute;left:6px;right:6px;bottom:4px;height:3px;border-radius:3px;}
+  .cal .cd.today{border-color:rgba(255,255,255,.5);}
+  .cal .cd.sel{background:linear-gradient(180deg,rgba(47,224,207,.28),rgba(59,140,255,.12));border-color:var(--acc);}
+  .cal .cd .dot{position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--acc2);}
+  .cal .cd.fc::before{content:'';position:absolute;top:4px;left:5px;width:5px;height:5px;border-radius:50%;background:var(--acc);}
+  /* live */
+  .live-hero{position:relative;overflow:hidden;isolation:isolate;border-radius:30px;padding:20px 18px 24px;margin-bottom:14px;text-align:center;background:radial-gradient(120% 90% at 50% 0%,#14507f,#0a2c52 55%,#071d38);border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 50px -18px rgba(0,0,0,.7);}
+  .live-badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:1.5px;padding:6px 12px;border-radius:999px;background:rgba(255,77,94,.16);color:#ff8a96;border:1px solid rgba(255,77,94,.35);}
+  .live-time{font-size:62px;font-weight:200;letter-spacing:-1px;font-variant-numeric:tabular-nums;margin:8px 0 2px;text-shadow:0 0 30px rgba(47,224,207,.35);}
+  .live-sub{font-size:14px;opacity:.85;}
+  .live-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;position:relative;z-index:2;}
+  .live-stats div{background:rgba(0,10,30,.3);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:10px 4px;backdrop-filter:blur(8px);}
+  .live-stats b{display:block;font-size:24px;}
+  .live-stats span{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.6px;}
+  .live-hero .waves{position:absolute;left:0;right:0;bottom:0;height:90px;z-index:-1;}
+  .live-hero .waves use{animation:wave 7s linear infinite;}
+  .live-hero .waves use:nth-child(2){animation-duration:11s;animation-direction:reverse;}
+  .btn.fish{font-size:19px;padding:18px;border-radius:20px;letter-spacing:.3px;}
+  .lc{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .lc:last-child{border-bottom:0;}
+  .lc .tm{font-size:12px;color:var(--mut);width:42px;}
+  .lc .x{margin-left:auto;color:var(--bad);cursor:pointer;padding:4px 8px;}
+  .toggle{display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer;font-size:14px;}
+  .toggle i{width:44px;height:26px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;transition:.2s;flex:none;}
+  .toggle i::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;}
+  .toggle.on i{background:var(--acc);}
+  .toggle.on i::after{left:21px;}
+  /* confronto */
+  .rank{display:flex;align-items:center;gap:12px;}
+  .rank .md{font-size:26px;width:34px;text-align:center;flex:none;}
+  .rank .t{flex:1;min-width:0;}
+  .rank .t b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rank .ring-num{width:54px;height:54px;margin:0;}
+  .rank .ring-num b{font-size:16px;}
+  .seg2{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line);margin-bottom:14px;}
+  .seg2 button{border:0;border-radius:12px;padding:9px;background:none;color:var(--mut);font:700 13px 'Outfit',sans-serif;cursor:pointer;}
+  .seg2 button.on{background:var(--grad);color:#03282a;}
+  .seg3{grid-template-columns:repeat(3,1fr);}
+  /* guida */
+  details.acc{border-bottom:1px solid var(--line);}
+  details.acc:last-child{border-bottom:0;}
+  details.acc summary{list-style:none;cursor:pointer;padding:13px 0;display:flex;align-items:center;gap:12px;font-weight:600;}
+  details.acc summary::-webkit-details-marker{display:none;}
+  details.acc summary::after{content:'›';margin-left:auto;font-size:22px;color:var(--mut);transition:transform .2s;}
+  details.acc[open] summary::after{transform:rotate(90deg);}
+  details.acc summary .ico{width:38px;height:38px;font-size:18px;}
+  details.acc summary small{display:block;font-weight:400;color:var(--mut);font-size:12px;}
+  details.acc ol{margin:0 0 14px 20px;font-size:14px;color:#d7e6f5;}
+  details.acc ol li{margin:5px 0;padding-left:4px;}
+  details.acc p{font-size:14px;color:#d7e6f5;margin:0 0 12px;}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(47,224,207,.14);color:var(--acc);margin:0 4px 4px 0;}
+  /* diario */
+  .mhead{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mut);font-weight:700;margin:16px 4px 8px;}
+  .search{position:relative;margin-bottom:10px;}
+  .search input{padding-left:40px;}
+  .search::before{content:'🔎';position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.7;}
+  .dcard{display:flex;gap:12px;align-items:center;}
+  .dcard .ph{width:64px;height:64px;border-radius:18px;flex:none;overflow:hidden;display:grid;place-items:center;font-size:28px;background:linear-gradient(135deg,rgba(47,224,207,.2),rgba(59,140,255,.15));}
+  .dcard .ph img{width:100%;height:100%;object-fit:cover;}
+  /* confetti, celebrazione, benvenuto */
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:3000;overflow:hidden;}
+  .confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:fall 2.4s cubic-bezier(.2,.6,.4,1) forwards;}
+  @keyframes fall{to{transform:translate(var(--dx),105vh) rotate(var(--r));opacity:.9}}
+  .celebrate{text-align:center;padding:10px 4px 4px;}
+  .celebrate .bi{width:110px;height:110px;margin:6px auto 14px;border-radius:50%;display:grid;place-items:center;font-size:54px;background:radial-gradient(circle at 30% 25%,#fff6c9,#ffb547 45%,#c86b12 100%);box-shadow:0 14px 40px -8px rgba(255,181,71,.9);animation:popin .6s cubic-bezier(.3,1.6,.5,1) both;}
+  @keyframes popin{from{transform:scale(.2) rotate(-30deg);opacity:0}}
+  .celebrate h2{font-size:26px;}
+  .celebrate p{margin:4px 0 18px;}
+  .welcome{text-align:center;padding:6px 2px 2px;}
+  .welcome .wl{width:84px;height:84px;margin:4px auto 14px;border-radius:26px;background:var(--grad);display:grid;place-items:center;box-shadow:0 16px 40px -10px rgba(47,224,207,.9);animation:popin .7s cubic-bezier(.3,1.6,.5,1) both;}
+  .welcome .wl svg{width:46px;height:46px;}
+  .welcome h2{font-size:28px;letter-spacing:-.6px;}
+  .welcome .feat{text-align:left;margin:18px 0;display:grid;gap:10px;}
+  .welcome .feat div{display:flex;gap:12px;align-items:center;font-size:14px;}
+  .welcome .feat span{width:40px;height:40px;flex:none;border-radius:13px;display:grid;place-items:center;font-size:19px;background:rgba(255,255,255,.07);}
+  .kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .kv:last-child{border-bottom:0;}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -243,8 +399,7 @@ const MODES = {
   river:{n:'River',e:'🌊',d:'Fiumi e acque correnti'}
 };
 const TABS = [
-  {id:'home',e:'🏠',n:'Home'},{id:'meteo',e:'🌦️',n:'Meteo'},{id:'spot',e:'📍',n:'Spot'},
-  {id:'diario',e:'📓',n:'Diario'},{id:'stats',e:'📊',n:'Statistiche'},{id:'ai',e:'🤖',n:'Assistente'}
+  {id:'home',n:'Home'},{id:'meteo',n:'Meteo'},{id:'spot',n:'Spot'},{id:'fab'},{id:'diario',n:'Diario'},{id:'altro',n:'Altro'}
 ];
 const TECH = {
   coast:['Surfcasting','Spinning','Bolognese','Beach ledgering','Eging','Rockfishing','Canna fissa'],
@@ -295,6 +450,9 @@ const ICON={
   coast:'<path d="M2 19c2 0 2-1.4 4-1.4s2 1.4 4 1.4 2-1.4 4-1.4 2 1.4 4 1.4 2-1.4 4-1.4"/><path d="M13 15 9.5 6"/><path d="M4.5 9.4a7 7 0 0 1 13.2-5z"/>',
   sea:'<path d="M2 20c2 0 2-1.4 4-1.4s2 1.4 4 1.4 2-1.4 4-1.4 2 1.4 4 1.4 2-1.4 4-1.4"/><path d="M4 14h16l-2.5 3.5h-11z"/><path d="M11 14V3l6 8h-6"/>',
   lake:'<path d="M2 20c2 0 2-1.4 4-1.4s2 1.4 4 1.4 2-1.4 4-1.4 2 1.4 4 1.4 2-1.4 4-1.4"/><path d="m2 15 6-9 4 5.5 3-3.5 7 7"/>',
+  altro:'<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  fish:'<path d="M7 12c2.8-4 6-6 9.5-6 2.8 0 4.8 2.6 5.5 6-.7 3.4-2.7 6-5.5 6-3.5 0-6.7-2-9.5-6z"/><path d="M7 12 2 7.5v9z"/><circle cx="17.5" cy="10.8" r="1.1" fill="currentColor"/>',
   river:'<path d="M2 7c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/><path d="M2 12.5c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/><path d="M2 18c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/>'
 };
 const svgI=(k,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
@@ -311,6 +469,7 @@ const S = {
   active:LS.get('active',null),
   diary:LS.get('diary',[]),
   day:0,
+  live:LS.get('live',null),
   wx:null, wxErr:false, loading:false
 };
 if(!S.spots){S.spots=[{id:uid(),name:'Lido di Ostia',lat:41.7275,lon:12.2772,mode:'coast',note:'Spot di esempio: aggiungi i tuoi dalla mappa'}];LS.set('spots',S.spots);}
@@ -394,22 +553,29 @@ async function getJSON(u,ms=9000){
   try{const r=await fetch(u,{signal:ac.signal});const j=await r.json();if(!r.ok||j.error||!j.hourly)throw new Error('bad');return j;}
   finally{clearTimeout(t);}
 }
-async function loadWeather(force){
-  const sp=activeSpot(); if(!sp)return;
-  const key='wx_'+sp.lat.toFixed(3)+'_'+sp.lon.toFixed(3);
-  const c=LS.get(key,null);
-  if(!force&&c&&Date.now()-c.ts<3600e3){S.wx=build(c.w,c.m,sp);S.wxErr=c.sim;render();return;}
-  S.loading=true;render();
+const wxKey=sp=>'wx_'+sp.lat.toFixed(3)+'_'+sp.lon.toFixed(3);
+async function fetchRaw(sp,force){
+  const key=wxKey(sp),c=LS.get(key,null);
+  if(!force&&c&&Date.now()-c.ts<3600e3)return c;
   const tz='&timezone=auto&past_days=1&forecast_days=7';
   const wu=`https://api.open-meteo.com/v1/forecast?latitude=${sp.lat}&longitude=${sp.lon}&hourly=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,precipitation,weather_code&daily=sunrise,sunset,weather_code,temperature_2m_max,temperature_2m_min${tz}`;
   const mu=`https://marine-api.open-meteo.com/v1/marine?latitude=${sp.lat}&longitude=${sp.lon}&hourly=wave_height,wave_direction,wave_period,sea_surface_temperature,sea_level_height_msl${tz}`;
   let w=null,m=null,sim=false;
-  try{w=await getJSON(wu);}catch(e){w=null;}
-  try{m=await getJSON(mu);if(!m.hourly.wave_height.some(x=>x!=null))m=null;}catch(e){m=null;}
-  if(!w){w=simulate(sp);sim=true;}
-  LS.set(key,{ts:sim?Date.now()-3300e3:Date.now(),w,m,sim});
-  S.wx=build(w,m,sp);S.wxErr=sim;S.loading=false;render();
+  const [rw,rm]=await Promise.allSettled([getJSON(wu),getJSON(mu)]);
+  if(rw.status==='fulfilled')w=rw.value;
+  if(rm.status==='fulfilled'&&rm.value.hourly.wave_height.some(x=>x!=null))m=rm.value;
+  if(!w){if(c&&!c.sim)return c;w=simulate(sp);sim=true;}
+  const r={ts:sim?Date.now()-3300e3:Date.now(),w,m,sim};LS.set(key,r);return r;
 }
+async function loadWeather(force){
+  const sp=activeSpot();if(!sp)return;
+  const c=LS.get(wxKey(sp),null),fresh=!force&&c&&Date.now()-c.ts<3600e3;
+  if(!fresh){S.loading=true;if(WXTABS.includes(S.tab))render();}
+  const r=await fetchRaw(sp,force);
+  S.wx=build(r.w,r.m,sp,S.mode);S.wxErr=r.sim;S.loading=false;
+  if(WXTABS.includes(S.tab))render();
+}
+const WXTABS=['home','meteo','ai','live','cal'];
 /* Dati di riserva quando il servizio meteo non risponde */
 function simulate(sp){
   const t0=new Date();t0.setHours(0,0,0,0);t0.setDate(t0.getDate()-1);
@@ -439,7 +605,7 @@ function simulate(sp){
 function isoLocal(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 function parseLocal(s){const [a,b='00:00']=s.split('T');const [y,mo,da]=a.split('-').map(Number);const [h,mi]=b.split(':').map(Number);return new Date(y,mo-1,da,h,mi);}
 
-function build(w,m,sp){
+function build(w,m,sp,mode=S.mode){
   const H=w.hourly,hours=[],mIdx={};
   if(m&&m.hourly) m.hourly.time.forEach((t,i)=>mIdx[t]=i);
   for(let i=0;i<H.time.length;i++){
@@ -453,8 +619,8 @@ function build(w,m,sp){
   }
   const days=w.daily.time.map((d,i)=>({date:parseLocal(d),sr:parseLocal(w.daily.sunrise[i]),ss:parseLocal(w.daily.sunset[i]),code:w.daily.weather_code[i],tmax:w.daily.temperature_2m_max[i],tmin:w.daily.temperature_2m_min[i]}));
   const sol={};days.forEach(d=>{sol[d.date.toDateString()]=solunar(d.date,sp.lat,sp.lon);});
-  const X={hours,days,sol,marine:!!m};
-  hours.forEach((h,i)=>{h.idx=fishIndex(X,i,S.mode);});
+  const X={hours,days,sol,marine:!!m,face:sp.face??null};
+  hours.forEach((h,i)=>{h.idx=fishIndex(X,i,mode);});
   const today=new Date();today.setHours(0,0,0,0);
   X.fdays=days.filter(d=>d.date>=today).slice(0,7);
   return X;
@@ -462,8 +628,8 @@ function build(w,m,sp){
 
 /* ===================== Indice di Pesca ===================== */
 const WEIGHTS={
-  coast:{press:16,wind:12,wave:20,sol:14,moon:8,light:14,cloud:5,rain:5,sst:6},
-  sea:{press:16,wind:20,wave:18,sol:14,moon:8,light:12,cloud:4,rain:4,sst:4},
+  coast:{press:16,wind:12,wave:20,sol:14,moon:8,light:14,cloud:5,rain:5,sst:6,expo:6},
+  sea:{press:16,wind:20,wave:18,sol:14,moon:8,light:12,cloud:4,rain:4,sst:4,expo:6},
   lake:{press:24,wind:12,wave:0,sol:16,moon:8,light:18,cloud:10,rain:8,sst:4},
   river:{press:20,wind:8,wave:0,sol:12,moon:6,light:18,cloud:10,rain:20,sst:6}
 };
@@ -477,6 +643,12 @@ function factors(X,i,mode){
   else if(mode==='sea') f.wind= ws<=10?1: ws<=18?.75: ws<=28?.35:.05;
   else if(mode==='lake') f.wind= ws<3?.6: ws<=15?1: ws<=25?.6:.3;
   else f.wind= ws<=20?1: ws<=35?.6:.3;
+  if(X.face!=null&&h.wd!=null&&(mode==='coast'||mode==='sea')){
+    const diff=Math.abs(((h.wd-X.face)%360+540)%360-180);
+    h.expo=diff<=60?'mare':diff>=120?'terra':'traverso';
+    if(mode==='coast') f.expo= h.expo==='mare'?(ws>=6&&ws<=28?1:ws>35?.4:.75): h.expo==='terra'?.7:.85;
+    else f.expo= h.expo==='terra'&&ws>15?.3:.9;
+  }
   if(h.wave==null) f.wave=null;
   else if(mode==='coast') f.wave= h.wave<0.15?.45: h.wave<0.4?.75: h.wave<=1.3?1: h.wave<=2?.55:.2;
   else f.wave= h.wave<=0.5?1: h.wave<=1?.75: h.wave<=1.6?.35:.05;
@@ -560,16 +732,21 @@ function bestWindows(X,date,n=3){
 }
 
 /* ===================== Render ===================== */
-function go(t){S.tab=t;window.scrollTo(0,0);render();}
+const PAGES=['home','meteo','spot','diario','altro','stats','ai','live','trofei','cal','compare','guide','settings'];
+const SUBS=['stats','ai','trofei','cal','compare','guide','settings'];
+function go(t){if(location.hash.slice(1)!==t)location.hash=t;else{S.tab=t;window.scrollTo(0,0);render();}}
+window.addEventListener('hashchange',()=>{const t=location.hash.slice(1)||'home';if(!PAGES.includes(t))return;closeSheet();S.tab=t;window.scrollTo(0,0);render();});
 function setMode(m){S.mode=m;LS.set('mode',m);if(S.wx)loadWeather();render();}
 function render(){
   document.getElementById('spotName').textContent=activeSpot()?.name||'Nessuno spot';
   const mk=Object.keys(MODES),mi=mk.indexOf(S.mode);
   document.getElementById('modes').innerHTML=`<div class="slider" style="transform:translateX(calc(${mi*100}% + ${mi*4}px))"></div>`+mk.map(k=>`<button class="mode ${S.mode===k?'on':''}" onclick="setMode('${k}')">${svgI(k,2)}${MODES[k].n}</button>`).join('');
-  document.getElementById('nav').innerHTML=TABS.map(t=>`<button class="${S.tab===t.id?'on':''}" onclick="go('${t.id}')">${svgI(t.id)}${t.n}</button>`).join('');
+  document.getElementById('modes').style.display=['home','meteo','spot','ai'].includes(S.tab)?'':'none';
+  document.getElementById('nav').innerHTML=TABS.map(t=>t.id==='fab'?`<button class="fab ${S.live?'live':''}" onclick="fabTap()" aria-label="Sessione di pesca"><span class="fb">${svgI(S.live?'fish':'plus',2.4)}</span><em>${S.live?'In pesca':'Pesca'}</em></button>`
+    :`<button class="${S.tab===t.id||(t.id==='altro'&&SUBS.includes(S.tab))?'on':''}" onclick="go('${t.id}')">${svgI(t.id)}${t.n}</button>`).join('');
   const v=document.getElementById('view');
   if(S.tab!=='spot'&&MAP){MAP.remove();MAP=null;}
-  ({home:vHome,meteo:vMeteo,spot:vSpot,diario:vDiario,stats:vStats,ai:vAI})[S.tab](v);
+  ({home:vHome,meteo:vMeteo,spot:vSpot,diario:vDiario,stats:vStats,ai:vAI,altro:vAltro,live:vLive,trofei:vTrofei,cal:vCal,compare:vCompare,guide:vGuide,settings:vSettings}[S.tab]||vHome)(v);
   countUp(v);
 }
 function countUp(root){
@@ -630,6 +807,10 @@ function vHome(v){
       <div><div class="ic">${ph.e}</div><b>${Math.round(ph.illum*100)}%</b><span>luna</span></div>
     </div>${WAVES}
   </section>
+  ${S.live?`<div class="alert" style="background:linear-gradient(135deg,rgba(47,224,207,.18),rgba(59,140,255,.1));border-color:rgba(47,224,207,.4);cursor:pointer" onclick="go('live')"><span class="ai"><span class="rec"></span></span><div><b>Sessione in corso · <span id="liveT">${durStr(Date.now()-S.live.start)}</span></b>${S.live.catches.length} catture finora · tocca per aprire</div></div>`:''}
+  ${weatherAlerts(X).map(a=>`<div class="alert"><span class="ai">${a[0]}</span><div><b>${a[1]}</b>${a[2]}</div></div>`).join('')}
+  <div class="quick">${[['compare','🧭','Dove pescare'],['ai','🤖','Consigli'],['cal','🌙','Calendario'],['guide','🪢','Nodi']].map(([t,e,n])=>`<button onclick="go('${t}')"><span>${e}</span>${n}</button>`).join('')}</div>
+  <div class="card"><h3>Prossime ore</h3><div class="hstrip">${X.hours.slice(Math.max(0,i),Math.max(0,i)+18).map((x,k)=>`<div class="hcell ${k?'':'now'}"><span>${k?pad(x.t.getHours()):'Ora'}</span><div class="wi">${wmo(x.code)[0]}</div><b>${fmt0(x.temp)}°</b><div class="ib"><i style="height:${x.idx}%;background:${idxColor(x.idx)}"></i></div><em style="color:${idxColor(x.idx)}">${x.idx}</em></div>`).join('')}</div></div>
   <div class="card"><h3>Finestre migliori oggi</h3>
     ${wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
   </div>
@@ -640,7 +821,7 @@ function vHome(v){
   </div>
   <div class="card"><h3>Condizioni attuali</h3><div class="grid3">
     <div class="tile"><div class="k">Meteo</div><div class="v">${wmo(h.code)[0]} ${fmt0(h.temp)}°</div><div class="s">${wmo(h.code)[1]}</div></div>
-    <div class="tile"><div class="k">Vento</div><div class="v">${arrow(h.wd)} ${fmt0(h.ws)}</div><div class="s">km/h ${dirName(h.wd)} · ${windName(h.wd)}</div></div>
+    <div class="tile"><div class="k">Vento</div><div class="v">${arrow(h.wd)} ${fmt0(h.ws)}</div><div class="s">km/h ${dirName(h.wd)} · ${windName(h.wd)}${h.expo?` · ${h.expo==='traverso'?'al traverso':'di '+h.expo}`:''}</div></div>
     <div class="tile"><div class="k">Pressione</div><div class="v">${fmt0(h.p)}</div><div class="s">hPa ${h.dp>0.6?'↗ in salita':h.dp<-0.6?'↘ in calo':'→ stabile'}</div></div>
     ${h.wave!=null?`<div class="tile"><div class="k">Mare</div><div class="v">${fmt1(h.wave)} m</div><div class="s">${seaState(h.wave)} · ${fmt0(h.wper)} s</div></div>
     <div class="tile"><div class="k">Temp. acqua</div><div class="v">${fmt1(h.sst)}°</div><div class="s">superficie</div></div>`:`<div class="tile"><div class="k">Nuvole</div><div class="v">${fmt0(h.cc)}%</div><div class="s">copertura</div></div>
@@ -650,12 +831,12 @@ function vHome(v){
   <div class="card"><h3>Prossimi giorni</h3><div class="days">
     ${X.fdays.map((d,k)=>{const sc=dayScore(X,d.date);return `<div class="day" onclick="S.day=${k};go('meteo')"><div class="d">${k?dayName(d.date):'Oggi'}</div><div class="ic">${wmo(d.code)[0]}</div>${miniRing(sc)}<div class="small mut">${fmt0(d.tmax)}°/${fmt0(d.tmin)}°</div></div>`;}).join('')}
   </div></div>
-  <button class="btn full" onclick="openEntry()">＋ Registra un'uscita</button>`;
+  <div class="row" style="gap:8px"><button class="btn ghost" style="flex:1" onclick="openEntry()">＋ Registra uscita</button><button class="btn" style="flex:1" onclick="fabTap()">🎣 ${S.live?'Sessione live':'Inizia a pescare'}</button></div>`;
 }
 function seaState(w){return w<0.1?'calmo':w<0.5?'poco mosso':w<1.25?'mosso':w<2.5?'molto mosso':w<4?'agitato':'grosso';}
 function explain(h){
   const f=h.f||{},good=[],bad=[];
-  const L={press:'pressione',wind:'vento',wave:'moto ondoso',sol:'periodo solunare',moon:'fase lunare',light:'luce',cloud:'nuvolosità',rain:'pioggia',sst:'temperatura',tide:'marea'};
+  const L={press:'pressione',wind:'vento',wave:'moto ondoso',sol:'periodo solunare',moon:'fase lunare',light:'luce',cloud:'nuvolosità',rain:'pioggia',sst:'temperatura',tide:'marea',expo:'esposizione al vento'};
   for(const k in L){if(f[k]==null)continue;if(f[k]>=.95)good.push(L[k]);else if(f[k]<=.45)bad.push(L[k]);}
   let s='';
   if(good.length)s+='A favore: '+good.slice(0,3).join(', ')+'. ';
@@ -666,7 +847,7 @@ function timeline(sol,D){
   const day0=D?new Date(D.date):new Date();day0.setHours(0,0,0,0);
   const pct=t=>clamp((t-day0)/864e5*100,0,100);
   let seg='';
-  if(D){[D.sr,D.ss].forEach(t=>{const a=pct(new Date(t.getTime()-3600e3)),b=pct(new Date(t.getTime()+3600e3));seg+=`<div class="seg" style="left:${a}%;width:${b-a}%;background:#ffb54755"></div>`;});}
+  if(D&&D.sr&&D.ss){[D.sr,D.ss].forEach(t=>{const a=pct(new Date(t.getTime()-3600e3)),b=pct(new Date(t.getTime()+3600e3));seg+=`<div class="seg" style="left:${a}%;width:${b-a}%;background:#ffb54755"></div>`;});}
   sol.forEach(s=>{const a=pct(s.from),b=pct(s.to);seg+=`<div class="seg" style="left:${a}%;width:${b-a}%;background:${s.type==='major'?'var(--acc)':'#2fd4c466'}"></div>`;});
   const now=new Date(),np=(now-day0)/864e5*100;
   if(np>=0&&np<=100)seg+=`<div class="now" style="left:${np}%"></div>`;
@@ -737,7 +918,7 @@ function vSpot(v){
   <p class="small mut" style="margin:-4px 0 12px">Tocca la mappa per salvare un nuovo spot.</p>
   <div class="card"><h3>I miei spot (${S.spots.length})</h3><div class="list">
   ${S.spots.length?S.spots.map(s=>{const n=S.diary.filter(e=>e.spot===s.id).length;return `<div class="it"><div class="ico">${MODES[s.mode]?.e||'📍'}</div>
-    <div class="t" onclick="MAP&&MAP.setView([${s.lat},${s.lon}],14)"><b>${esc(s.name)} ${s.id===S.active?'<span class="pill" style="background:#2fd4c422;color:var(--acc)">attivo</span>':''}</b><span class="small mut">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)} · ${n} uscite${s.note?' · '+esc(s.note):''}</span></div>
+    <div class="t" onclick="MAP&&MAP.setView([${s.lat},${s.lon}],14)"><b>${esc(s.name)} ${s.id===S.active?'<span class="pill" style="background:#2fd4c422;color:var(--acc)">attivo</span>':''}</b><span class="small mut">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)} · ${n} uscite${s.face!=null?' · mare a '+DIRS[s.face/22.5]:''}${s.note?' · '+esc(s.note):''}</span></div>
     ${s.id!==S.active?`<button class="btn ghost" onclick="useSpot('${s.id}')">Usa</button>`:''}<button class="btn ghost" onclick="editSpot('${s.id}')">✏️</button></div>`;}).join(''):'<div class="empty"><div>🗺️</div>Nessuno spot salvato</div>'}
   </div></div>`;
   setTimeout(initMap,0);
@@ -755,17 +936,19 @@ function initMap(){
 }
 function useSpot(id){S.active=id;LS.set('active',id);const sp=activeSpot();if(sp.mode&&sp.mode!==S.mode){S.mode=sp.mode;LS.set('mode',sp.mode);}S.wx=null;loadWeather();toast('Spot attivo: '+sp.name);go('home');}
 function editSpot(id,lat,lon){
-  const s=id?S.spots.find(x=>x.id===id):{name:'',lat,lon,mode:S.mode,note:''};
+  const s=id?S.spots.find(x=>x.id===id):{name:'',lat,lon,mode:S.mode,note:'',face:null};
   openSheet(`<h2>${id?'Modifica spot':'Nuovo spot'}</h2><p class="small mut">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}</p>
     <label>Nome</label><input id="spN" value="${esc(s.name)}" placeholder="Es. Scogliera del faro">
     <label>Tipo</label><select id="spM">${Object.entries(MODES).map(([k,m])=>`<option value="${k}" ${s.mode===k?'selected':''}>${m.e} ${m.n} – ${m.d}</option>`).join('')}</select>
+    <label>Il mare / l'acqua è verso</label><select id="spF"><option value="">Non specificato</option>${['N','NE','E','SE','S','SO','O','NO'].map((d,k)=>`<option value="${k*45}" ${s.face===k*45?'selected':''}>${d} (${['Tramontana','Grecale','Levante','Scirocco','Ostro','Libeccio','Ponente','Maestrale'][k]})</option>`).join('')}</select>
+    <p class="small mut" style="margin-top:4px">Serve a capire se il vento soffia dal mare o da terra e a calcolare meglio l'indice.</p>
     <label>Note</label><textarea id="spT" placeholder="Fondale, accesso, esche che funzionano…">${esc(s.note)}</textarea>
     <div class="row" style="margin-top:14px">${id?`<button class="btn danger" onclick="delSpot('${id}')">Elimina</button>`:''}<button class="btn ghost" style="margin-left:auto" onclick="closeSheet()">Annulla</button><button class="btn" onclick="saveSpot('${id||''}',${s.lat},${s.lon})">Salva</button></div>`);
 }
 function saveSpot(id,lat,lon){
-  const name=document.getElementById('spN').value.trim()||'Spot senza nome',mode=document.getElementById('spM').value,note=document.getElementById('spT').value.trim();
-  if(id){Object.assign(S.spots.find(s=>s.id===id),{name,mode,note});}
-  else{const s={id:uid(),name,lat,lon,mode,note};S.spots.push(s);if(S.spots.length===1)S.active=s.id;}
+  const name=document.getElementById('spN').value.trim()||'Spot senza nome',mode=document.getElementById('spM').value,note=document.getElementById('spT').value.trim(),fv=document.getElementById('spF').value,face=fv===''?null:+fv;
+  if(id){Object.assign(S.spots.find(s=>s.id===id),{name,mode,note,face});if(id===S.active){S.wx=null;loadWeather();}COMP.rows=null;}
+  else{const s={id:uid(),name,lat,lon,mode,note,face};COMP.rows=null;S.spots.push(s);if(S.spots.length===1)S.active=s.id;}
   LS.set('spots',S.spots);LS.set('active',S.active);closeSheet();toast('Spot salvato');render();
 }
 function delSpot(id){
@@ -789,16 +972,36 @@ function locateMe(){
 
 /* ===================== Diario ===================== */
 function vDiario(v){
-  const list=[...S.diary].sort((a,b)=>new Date(b.start)-new Date(a.start));
-  v.innerHTML=`<button class="btn full" style="margin-bottom:12px" onclick="openEntry()">＋ Nuova uscita</button>
-  ${list.length?list.map(e=>{const sp=S.spots.find(s=>s.id===e.spot),kg=(e.catches||[]).reduce((a,c)=>a+(+c.w||0),0),d=new Date(e.start);
-    return `<div class="card" onclick="openEntry('${e.id}')" style="cursor:pointer"><div class="row">
-      <div class="ico" style="width:54px;height:54px">${e.photo?`<img src="${e.photo}" alt="">`:(e.catches?.length?'🐟':'🎣')}</div>
-      <div style="flex:1;min-width:0"><b>${d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',year:'numeric'})} · ${hhmm(d)}</b>
-      <div class="small mut">${esc(sp?.name||'Spot eliminato')} · ${MODES[e.mode]?.e||''} ${esc(e.tech||'')}</div>
-      <div class="small" style="margin-top:3px">${e.catches?.length?`🐟 ${e.catches.length} catture${kg?` · ${fmt1(kg)} kg`:''} · ${esc([...new Set(e.catches.map(c=>c.sp))].join(', '))}`:'<span class="mut">Cappotto</span>'}</div></div>
-      ${e.cond?`<span class="pill" style="background:${idxColor(e.cond.idx||0)}22;color:${idxColor(e.cond.idx||0)}">${e.cond.idx??'—'}</span>`:''}</div></div>`;}).join('')
-  :'<div class="empty"><div>📓</div>Il diario è vuoto.<br>Registra ogni uscita: l\'indice imparerà dalle tue abitudini.</div>'}`;
+  const f=S.dF||(S.dF={q:'',m:'all'});
+  v.innerHTML=`<div class="row" style="gap:8px;margin-bottom:12px"><button class="btn ghost" style="flex:1" onclick="openEntry()">＋ Nuova uscita</button><button class="btn" style="flex:1" onclick="fabTap()">🎣 ${S.live?'Sessione live':'Pesca ora'}</button></div>
+  ${S.diary.length?`<div class="search"><input placeholder="Cerca specie, spot, esche…" value="${esc(f.q)}" oninput="S.dF.q=this.value;drawDList()"></div>
+  <div class="chips" style="margin-bottom:6px">${[['all','Tutte'],['catch','🐟 Con catture'],...Object.entries(MODES).map(([k,m])=>[k,m.e+' '+m.n])].map(([k,n])=>`<span class="chip ${f.m===k?'on':''}" onclick="S.dF.m='${k}';render()">${n}</span>`).join('')}</div>`:''}
+  <div id="dlist"></div>`;
+  drawDList();
+}
+function drawDList(){
+  const el=document.getElementById('dlist');if(!el)return;
+  if(!S.diary.length){el.innerHTML='<div class="empty"><div>📓</div>Il diario è vuoto.<br>Registra ogni uscita: l\'indice imparerà dalle tue abitudini.</div>';return;}
+  const f=S.dF,q=f.q.trim().toLowerCase();
+  const list=S.diary.filter(e=>{
+    if(f.m==='catch'&&!e.catches?.length)return false;if(MODES[f.m]&&e.mode!==f.m)return false;
+    if(!q)return true;const sp=S.spots.find(s=>s.id===e.spot)?.name||'';
+    return [sp,e.tech,e.bait,e.note,...(e.catches||[]).map(c=>c.sp)].join(' ').toLowerCase().includes(q);
+  }).sort((a,b)=>parseLocal(b.start)-parseLocal(a.start));
+  if(!list.length){el.innerHTML='<div class="empty"><div>🔎</div>Nessuna uscita trovata.</div>';return;}
+  let last='',h='';
+  list.forEach(e=>{
+    const d=parseLocal(e.start),mk=d.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+    if(mk!==last){h+=`<div class="mhead">${mk}</div>`;last=mk;}
+    const sp=S.spots.find(s=>s.id===e.spot),kg=(e.catches||[]).reduce((a,c)=>a+(+c.w||0),0),ix=e.cond?.idx;
+    h+=`<div class="card" onclick="openEntry('${e.id}')" style="cursor:pointer;padding:12px"><div class="dcard">
+      <div class="ph">${e.photo?`<img src="${e.photo}" alt="">`:(e.catches?.length?'🐟':'🎣')}</div>
+      <div style="flex:1;min-width:0"><b style="text-transform:capitalize">${d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'})} · ${hhmm(d)}</b>
+      <div class="small mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(sp?.name||'Spot eliminato')} · ${MODES[e.mode]?.e||''} ${esc(e.tech||'')}</div>
+      <div class="small" style="margin-top:3px">${e.catches?.length?`🐟 ${e.catches.length} · ${kg?fmt1(kg)+' kg · ':''}${esc([...new Set(e.catches.map(c=>c.sp))].join(', '))}`:'<span class="mut">Cappotto</span>'}</div></div>
+      ${ix!=null?miniRing(ix):''}</div></div>`;
+  });
+  el.innerHTML=h;
 }
 let DRAFT=null;
 function openEntry(id){
@@ -817,16 +1020,17 @@ function drawEntry(){
   <label>Esche / artificiali</label><input value="${esc(e.bait)}" onchange="DRAFT.bait=this.value" placeholder="Es. arenicola, minnow 12 cm">
   <label>Catture (${e.catches.length})</label>
   ${e.catches.map((c,i)=>`<div class="catch"><div class="grid2">
-    <div><input list="spl" value="${esc(c.sp)}" placeholder="Specie" onchange="DRAFT.catches[${i}].sp=this.value"></div>
-    <div class="row"><input type="number" step="0.01" min="0" value="${c.w??''}" placeholder="kg" onchange="DRAFT.catches[${i}].w=this.value"><input type="number" step="1" min="0" value="${c.l??''}" placeholder="cm" onchange="DRAFT.catches[${i}].l=this.value"></div></div>
+    <div><input list="spl" value="${esc(c.sp)}" placeholder="Specie" onchange="DRAFT.catches[${i}].sp=this.value;drawEntry()"></div>
+    <div class="row"><input type="number" step="0.01" min="0" value="${c.w??''}" placeholder="kg" onchange="DRAFT.catches[${i}].w=this.value"><input type="number" step="1" min="0" value="${c.l??''}" placeholder="cm" onchange="DRAFT.catches[${i}].l=this.value;drawEntry()"></div></div>
     <div class="row small" style="margin-top:6px"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" ${c.rel?'checked':''} onchange="DRAFT.catches[${i}].rel=this.checked"> Rilasciato</label>
-    <span style="margin-left:auto;color:var(--bad);cursor:pointer" onclick="DRAFT.catches.splice(${i},1);drawEntry()">Rimuovi</span></div>${sizeWarn(c)}</div>`).join('')}
+    <span style="margin-left:auto;color:var(--bad);cursor:pointer" onclick="DRAFT.catches.splice(${i},1);drawEntry()">Rimuovi</span></div>${sizeWarn(c)}${(c.w===''||c.w==null)&&c.l&&estW(c.sp,c.l)?`<div class="small" style="margin-top:4px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(estW(c.sp,c.l))} kg · <u style="cursor:pointer" onclick="DRAFT.catches[${i}].w=${estW(c.sp,c.l).toFixed(2)};drawEntry()">usa questo valore</u></div>`:''}</div>`).join('')}
   <datalist id="spl">${spN.map(n=>`<option value="${n}">`).join('')}</datalist>
   <button class="btn ghost full" style="margin-top:8px" onclick="DRAFT.catches.push({sp:'',w:'',l:'',rel:false});drawEntry()">＋ Aggiungi cattura</button>
   <label>Foto</label>${e.photo?`<img src="${e.photo}" style="max-width:100%;border-radius:12px;margin-bottom:6px"><br><span class="small" style="color:var(--bad);cursor:pointer" onclick="DRAFT.photo=null;drawEntry()">Rimuovi foto</span>`:`<input type="file" accept="image/*" onchange="pickPhoto(this)">`}
   <label>Note</label><textarea onchange="DRAFT.note=this.value" placeholder="Com'è andata?">${esc(e.note)}</textarea>
   ${e.cond?`<p class="small mut" style="margin-top:8px">Condizioni registrate: vento ${fmt0(e.cond.ws)} km/h, ${e.cond.wave!=null?'onda '+fmt1(e.cond.wave)+' m, ':''}pressione ${fmt0(e.cond.p)} hPa, ${esc(e.cond.moon||'')}</p>`:''}
-  <div class="row" style="margin-top:14px">${e.id?`<button class="btn danger" onclick="delEntry('${e.id}')">Elimina</button>`:''}<button class="btn ghost" style="margin-left:auto" onclick="closeSheet()">Annulla</button><button class="btn" onclick="saveEntry()">Salva</button></div>`);
+  ${e.id?`<button class="btn ghost full" style="margin-top:14px" onclick="shareEntry('${e.id}')">📤 Crea cartolina da condividere</button>`:''}
+  <div class="row" style="margin-top:10px">${e.id?`<button class="btn danger" onclick="delEntry('${e.id}')">Elimina</button>`:''}<button class="btn ghost" style="margin-left:auto" onclick="closeSheet()">Annulla</button><button class="btn" onclick="saveEntry()">Salva</button></div>`);
 }
 function sizeWarn(c){
   const s=SPECIES.find(x=>x.n.toLowerCase()===String(c.sp).toLowerCase());
@@ -849,19 +1053,22 @@ function snapshot(e){
 }
 function saveEntry(){
   const e=DRAFT;e.catches=e.catches.filter(c=>c.sp&&c.sp.trim());
-  e.catches.forEach(c=>{c.w=c.w===''?null:+c.w;c.l=c.l===''?null:+c.l;});
+  e.catches.forEach(c=>{c.w=c.w===''||c.w==null?null:+c.w;c.l=c.l===''||c.l==null?null:+c.l;});
+  const live=e.fromLive;delete e.fromLive;
   if(!e.id){e.id=uid();e.cond=snapshot(e);S.diary.push(e);}
   else{const old=S.diary.find(x=>x.id===e.id);if(old.start!==e.start||!old.cond||old.cond.ws==null)e.cond=snapshot(e);Object.assign(old,e);}
   if(!LS.set('diary',S.diary)){S.diary=LS.get('diary',[]);return;}
-  buildProfile();loadWeather();
+  if(live){S.live=null;LS.set('live',null);}
+  buildProfile();loadWeather();COMP.rows=null;
   closeSheet();toast('Uscita salvata');go('diario');
+  const nb=checkBadges();if(nb.length)setTimeout(()=>celebrate(nb[0]),500);
 }
-function delEntry(id){if(!confirm('Eliminare questa uscita?'))return;S.diary=S.diary.filter(e=>e.id!==id);LS.set('diary',S.diary);buildProfile();closeSheet();render();}
+function delEntry(id){if(!confirm('Eliminare questa uscita?'))return;S.diary=S.diary.filter(e=>e.id!==id);LS.set('diary',S.diary);buildProfile();checkBadges();closeSheet();render();}
 
 /* ===================== Statistiche ===================== */
 function vStats(v){
   const D=S.diary;
-  if(!D.length){v.innerHTML='<div class="empty"><div>📊</div>Nessun dato ancora.<br>Registra le tue uscite nel diario per vedere le statistiche.</div>';return;}
+  if(!D.length){v.innerHTML=subHead('Statistiche')+'<div class="empty"><div>📊</div>Nessun dato ancora.<br>Registra le tue uscite nel diario per vedere le statistiche.</div>';return;}
   const all=D.flatMap(e=>(e.catches||[]).map(c=>({...c,e})));
   const kg=all.reduce((a,c)=>a+(+c.w||0),0),ok=D.filter(e=>e.catches?.length).length;
   const big=all.filter(c=>c.w).sort((a,b)=>b.w-a.w)[0];
@@ -873,7 +1080,7 @@ function vStats(v){
   const avgOf=(arr,k)=>{const v=arr.map(e=>e.cond?.[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
   const okE=D.filter(e=>e.catches?.length),noE=D.filter(e=>!e.catches?.length);
   const hb=(rows)=>{const mx=Math.max(1,...rows.map(r=>r[1]));return '<div class="hbars">'+rows.slice(0,6).map(r=>`<div class="r"><span>${esc(r[0])}</span><div class="bar"><div style="width:${r[1]/mx*100}%;background:var(--acc)"></div></div><b>${r[1]}</b></div>`).join('')+'</div>';};
-  v.innerHTML=`
+  v.innerHTML=subHead('Statistiche','Le tue performance in numeri')+`
   <div class="grid2 stat-hero" style="margin-bottom:14px">
     <div class="tile"><div class="k">Uscite</div><div class="v">${D.length}</div><div class="s">${fmt0(hours)} ore in pesca</div></div>
     <div class="tile"><div class="k">Catture</div><div class="v">${all.length}</div><div class="s">${fmt1(all.length/Math.max(1,hours))} / ora</div></div>
@@ -888,8 +1095,7 @@ function vStats(v){
   ${byMoon.length?`<div class="card"><h3>Fase lunare</h3>${hb(byMoon)}</div>`:''}
   ${okE.length&&noE.length?`<div class="card"><h3>Condizioni: fruttuose vs cappotto</h3>
     <div class="hr mut small" style="grid-template-columns:1fr 80px 80px"><span></span><b>🐟 Sì</b><b>🚫 No</b></div>
-    ${[['Vento km/h','ws',fmt0],['Onda m','wave',fmt1],['Pressione hPa','p',fmt0],['Δ pressione 3h','dp',fmt1],['Indice','idx',fmt0]].map(([n,k,f])=>`<div class="hr" style="grid-template-columns:1fr 80px 80px"><span>${n}</span><b>${f(avgOf(okE,k))}</b><span>${f(avgOf(noE,k))}</span></div>`).join('')}</div>`:''}
-  <div class="row" style="gap:8px"><button class="btn ghost" style="flex:1" onclick="exportData()">⬇️ Esporta backup</button><label class="btn ghost" style="flex:1;text-align:center;margin:0;color:var(--txt);font-size:14px">⬆️ Importa<input type="file" accept="application/json" style="display:none" onchange="importData(this)"></label></div>`;
+    ${[['Vento km/h','ws',fmt0],['Onda m','wave',fmt1],['Pressione hPa','p',fmt0],['Δ pressione 3h','dp',fmt1],['Indice','idx',fmt0]].map(([n,k,f])=>`<div class="hr" style="grid-template-columns:1fr 80px 80px"><span>${n}</span><b>${f(avgOf(okE,k))}</b><span>${f(avgOf(noE,k))}</span></div>`).join('')}</div>`:''}`;
 }
 function exportData(){
   const b=new Blob([JSON.stringify({v:1,spots:S.spots,diary:S.diary},null,1)],{type:'application/json'});
@@ -899,7 +1105,7 @@ function importData(inp){
   const f=inp.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{try{const j=JSON.parse(r.result);if(!Array.isArray(j.spots)||!Array.isArray(j.diary))throw 0;
     if(!confirm(`Importare ${j.spots.length} spot e ${j.diary.length} uscite? I dati attuali verranno sostituiti.`))return;
-    S.spots=j.spots;S.diary=j.diary;S.active=S.spots[0]?.id||null;LS.set('spots',S.spots);LS.set('diary',S.diary);LS.set('active',S.active);buildProfile();S.wx=null;loadWeather();toast('Backup importato');render();}
+    S.spots=j.spots;S.diary=j.diary;COMP.rows=null;LS.set('badges',null);S.active=S.spots[0]?.id||null;LS.set('spots',S.spots);LS.set('diary',S.diary);LS.set('active',S.active);buildProfile();S.wx=null;loadWeather();toast('Backup importato');render();}
     catch(e){toast('File non valido');}};
   r.readAsText(f);
 }
@@ -914,7 +1120,7 @@ function vAI(v){
   const traits=[...new Set(SPECIES.flatMap(s=>s.t))].sort();
   const cand=SPECIES.map(s=>{let sc=0;if(AIQ.sh&&s.sh===AIQ.sh)sc+=2;if(AIQ.c&&s.c===AIQ.c)sc+=2;AIQ.t.forEach(t=>{if(s.t.includes(t))sc+=3;});if(s.m.includes(S.mode))sc+=.5;return {s,sc};})
     .filter(x=>x.sc>.5).sort((a,b)=>b.sc-a.sc).slice(0,4);
-  v.innerHTML=`
+  v.innerHTML=subHead('Assistente','Consigli su misura, specie di stagione e riconoscimento')+`
   <div class="card"><h3>🤖 Consigli per ${MODES[S.mode].n}${X?' · ora':''}</h3>${tips.map(t=>`<div class="tip"><span>${t[0]}</span><span>${t[1]}</span></div>`).join('')}</div>
   <div class="card"><h3>In stagione a ${now.toLocaleDateString('it-IT',{month:'long'})}</h3>
     ${inSeason.length?inSeason.map(s=>`<div class="species"><div class="ico">🐟</div><div><b>${s.n}</b> <i class="small mut">${s.s}</i><div class="small">🪱 ${s.b}</div>${s.sz?`<div class="small mut">Misura minima indicativa: ${s.sz} cm</div>`:''}</div></div>`).join(''):'<div class="mut">Nessuna specie di punta in questo periodo.</div>'}
@@ -952,6 +1158,9 @@ function advice(){
   }else{
     out.push(['🌊',h.pr>=2?'Pioggia in corso: l\'acqua velata può attivare i predatori; evita piene e acqua troppo torbida.':'Acqua normale: cerca correnti di raccordo, lame e i margini dei raschi.']);
   }
+  if(h.expo==='terra'&&S.mode==='sea'&&h.ws>15)out.push(['⚠️',`Vento di terra a ${fmt0(h.ws)} km/h: ti spinge al largo. Prudenza con la barca.`]);
+  else if(h.expo==='terra'&&S.mode==='coast')out.push(['🏝️','Vento di terra: mare calmo e acqua limpida sotto costa, ideale per spinning leggero e bolognese.']);
+  else if(h.expo==='mare'&&S.mode==='coast'&&h.ws>=8)out.push(['🌬️','Vento di mare: smuove il fondale e porta cibo a riva, buono per il surfcasting.']);
   if(h.dp<-0.6)out.push(['📉','Pressione in calo: i pesci tendono ad alimentarsi prima del peggioramento. Approfittane!']);
   else if(h.dp>2)out.push(['📈','Pressione in rapida salita: pesci spesso apatici, rallenta il recupero ed usa esche più piccole.']);
   const ph=moonPhase(now);
@@ -964,14 +1173,376 @@ function advice(){
   return out;
 }
 
+/* ===================== Sole (alba/tramonto per qualunque data) ===================== */
+function sunTimes(date,lat,lon){
+  const n=Math.round(jd(new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),12)))-2451545.0);
+  const J=n-lon/360,M=(357.5291+0.98560028*J)%360;
+  const C=1.9148*Math.sin(M*RAD)+0.02*Math.sin(2*M*RAD)+0.0003*Math.sin(3*M*RAD);
+  const lam=(M+C+180+102.9372)%360;
+  const Jt=2451545.0+J+0.0053*Math.sin(M*RAD)-0.0069*Math.sin(2*lam*RAD);
+  const dec=Math.asin(Math.sin(lam*RAD)*Math.sin(23.44*RAD));
+  const cw=(Math.sin(-0.833*RAD)-Math.sin(lat*RAD)*Math.sin(dec))/(Math.cos(lat*RAD)*Math.cos(dec));
+  if(Math.abs(cw)>1)return null;
+  const w=Math.acos(cw)/RAD/360,toD=j=>new Date((j-2440587.5)*864e5);
+  return {sr:toD(Jt-w),ss:toD(Jt+w)};
+}
+
+/* ===================== Peso stimato (relazione lunghezza-peso W = a·L^b, g/cm) ===================== */
+const LW={'Spigola':[.0089,3.07],'Orata':[.0129,3.0],'Sarago maggiore':[.0138,3.05],'Sarago fasciato':[.0136,3.03],'Sarago pizzuto':[.0135,3.02],'Mormora':[.0098,3.08],'Ombrina':[.0094,3.07],'Leccia amia':[.0118,2.98],'Serra':[.0109,3.02],'Cefalo':[.0107,2.98],'Triglia di scoglio':[.0098,3.1],'Pagello fragolino':[.011,3.07],'Pagro':[.0157,2.97],'Dentice':[.0141,2.97],'Ricciola':[.015,2.93],'Tonno rosso':[.0158,3.0],'Lampuga':[.008,3.0],'Sgombro':[.0055,3.2],'Sugarello':[.0083,3.05],'Carpa':[.0182,3.0],'Persico reale':[.0102,3.13],'Persico trota (Black bass)':[.0118,3.1],'Luccio':[.0047,3.1],'Trota fario':[.0098,3.06],'Cavedano':[.01,3.06],'Siluro':[.006,3.06],'Anguilla':[.00085,3.2]};
+function estW(sp,l){const k=LW[Object.keys(LW).find(x=>x.toLowerCase()===String(sp||'').trim().toLowerCase())];return k&&l>0?k[0]*Math.pow(+l,k[1])/1000:null;}
+
+/* ===================== UI comuni ===================== */
+function subHead(t,sub,back='altro'){return `<div class="subhead"><button class="back" onclick="go('${back}')" aria-label="Indietro">‹</button><div><h2>${t}</h2>${sub?`<p>${sub}</p>`:''}</div></div>`;}
+function confetti(){
+  const c=document.createElement('div');c.className='confetti';
+  const cols=['#2fe0cf','#3b8cff','#ffb547','#ff6b7a','#5ee08a','#fff'];let h='';
+  for(let i=0;i<60;i++)h+=`<i style="left:${Math.random()*100}%;background:${cols[i%cols.length]};--dx:${(Math.random()-.5)*160}px;--r:${Math.random()*900-450}deg;animation-delay:${Math.random()*.4}s;width:${6+Math.random()*6}px"></i>`;
+  c.innerHTML=h;document.body.appendChild(c);setTimeout(()=>c.remove(),3200);
+}
+const durStr=ms=>{const s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60);};
+function weatherAlerts(X){
+  const now=Date.now(),hs=X.hours.filter(h=>h.t.getTime()>=now-3600e3&&h.t.getTime()<=now+24*3600e3),out=[];
+  const st=hs.find(h=>[95,96,99].includes(h.code));if(st)out.push(['⛈️','Temporali previsti',`Dalle ${hhmm(st.t)} circa: evita canne in carbonio all'aperto e cerca riparo.`]);
+  const g=hs.reduce((a,h)=>h.wg>(a?.wg||0)?h:a,null);if(g&&g.wg>=50)out.push(['🌬️',`Raffiche fino a ${fmt0(g.wg)} km/h`,`Picco verso le ${hhmm(g.t)}: attenzione su moli e scogliere.`]);
+  const wv=hs.reduce((a,h)=>(h.wave||0)>(a?.wave||0)?h:a,null);if(wv&&wv.wave>=2.5)out.push(['🌊',`Mare agitato (${fmt1(wv.wave)} m)`,`Massimo verso le ${hhmm(wv.t)}: non avvicinarti a scogli esposti.`]);
+  return out;
+}
+
+/* ===================== Sessione live ===================== */
+let LIVEDRAFT=null,LIVEQ={sp:'',w:'',l:'',rel:false};
+function fabTap(){if(S.live)go('live');else startLive();}
+function startLive(){LIVEDRAFT={spot:S.active,mode:S.mode,tech:TECH[S.mode][0],bait:''};drawStart();}
+function drawStart(){
+  const d=LIVEDRAFT;
+  openSheet(`<h2>🎣 Inizia a pescare</h2><p class="small mut">Cronometro, catture con un tocco e condizioni meteo salvate in automatico.</p>
+  <label>Spot</label><select onchange="LIVEDRAFT.spot=this.value">${S.spots.map(s=>`<option value="${s.id}" ${s.id===d.spot?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
+  <label>Ambiente</label><div class="chips">${Object.entries(MODES).map(([k,m])=>`<span class="chip ${d.mode===k?'on':''}" onclick="LIVEDRAFT.mode='${k}';LIVEDRAFT.tech=TECH['${k}'][0];drawStart()">${m.e} ${m.n}</span>`).join('')}</div>
+  <label>Tecnica</label><div class="chips">${TECH[d.mode].map(t=>`<span class="chip ${d.tech===t?'on':''}" onclick="LIVEDRAFT.tech='${t.replace(/'/g,"\\'")}';drawStart()">${t}</span>`).join('')}</div>
+  <label>Esche / artificiali</label><input value="${esc(d.bait)}" oninput="LIVEDRAFT.bait=this.value" placeholder="Es. arenicola, minnow 12 cm">
+  <button class="btn full" style="margin-top:18px" onclick="beginLive()">Inizia la sessione</button>`);
+}
+function beginLive(){
+  if(!S.spots.length){toast('Aggiungi prima uno spot');closeSheet();go('spot');return;}
+  S.live={...LIVEDRAFT,start:Date.now(),catches:[]};LS.set('live',S.live);LIVEQ={sp:'',w:'',l:'',rel:false};
+  closeSheet();toast('Buona pesca! 🎣');go('live');
+}
+function vLive(v){
+  if(!S.live){v.innerHTML='<div class="empty"><div>🎣</div>Nessuna sessione in corso.<br><br><button class="btn" onclick="startLive()">Inizia a pescare</button></div>';return;}
+  const L=S.live,sp=S.spots.find(s=>s.id===L.spot),mo=new Date().getMonth()+1;
+  const recent=S.diary.slice().reverse().flatMap(e=>(e.catches||[]).map(c=>c.sp));
+  const chips=[...new Set([...L.catches.map(c=>c.sp).reverse(),...recent,...SPECIES.filter(s=>s.m.includes(L.mode)&&s.mo.includes(mo)).map(s=>s.n)])].filter(Boolean).slice(0,10);
+  const kg=L.catches.reduce((a,c)=>a+(+c.w||0),0);
+  let idx='—';if(S.wx&&L.spot===S.active){const h=S.wx.hours.find(x=>x.t<=new Date()&&x.t.getTime()+3600e3>Date.now());if(h)idx=`<span style="color:${idxColor(h.idx)}">${h.idx}</span>`;}
+  const est=!LIVEQ.w&&LIVEQ.l?estW(LIVEQ.sp,LIVEQ.l):null;
+  v.innerHTML=`
+  <section class="live-hero"><div class="live-badge"><span class="rec"></span>IN PESCA</div>
+    <div class="live-time" id="liveT">${durStr(Date.now()-L.start)}</div>
+    <div class="live-sub">📍 ${esc(sp?.name||'')} · ${MODES[L.mode].e} ${esc(L.tech)}</div>
+    <div class="live-stats"><div><b>${L.catches.length}</b><span>catture</span></div><div><b>${fmt1(kg)}</b><span>kg</span></div><div><b>${idx}</b><span>indice ora</span></div></div>${WAVES}
+  </section>
+  <div class="card"><h3>Registra una cattura</h3>
+    <div class="chips">${chips.map(n=>`<span class="chip ${LIVEQ.sp===n?'on':''}" onclick="LIVEQ.sp='${n.replace(/'/g,"\\'")}';render()">${esc(n)}</span>`).join('')}</div>
+    <label>Specie</label><input list="spl2" value="${esc(LIVEQ.sp)}" oninput="LIVEQ.sp=this.value" placeholder="Scegli sopra o scrivi">
+    <datalist id="spl2">${SPECIES.map(s=>`<option value="${s.n}">`).join('')}</datalist>
+    <div class="grid2"><div><label>Peso (kg)</label><input type="number" step="0.01" min="0" value="${LIVEQ.w}" oninput="LIVEQ.w=this.value" placeholder="facoltativo"></div>
+    <div><label>Lunghezza (cm)</label><input type="number" step="1" min="0" value="${LIVEQ.l}" onchange="LIVEQ.l=this.value;render()" placeholder="facoltativa"></div></div>
+    ${est?`<div class="small" style="margin-top:6px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(est)} kg</div>`:''}
+    ${sizeWarn({sp:LIVEQ.sp,l:LIVEQ.l,rel:LIVEQ.rel})}
+    <div class="toggle ${LIVEQ.rel?'on':''}" onclick="LIVEQ.rel=!LIVEQ.rel;render()"><i></i>Rilasciato</div>
+    <button class="btn full fish" style="margin-top:16px" onclick="liveCatch()">🐟 Pesce!</button>
+  </div>
+  ${L.catches.length?`<div class="card"><h3>Catture della sessione</h3>${L.catches.map((c,i)=>`<div class="lc"><span class="tm">${hhmm(new Date(c.t))}</span><div><b>${esc(c.sp)}</b><div class="small mut">${[c.w?fmt1(c.w)+' kg':'',c.l?c.l+' cm':'',c.rel?'rilasciato':''].filter(Boolean).join(' · ')||'—'}</div></div><span class="x" onclick="S.live.catches.splice(${i},1);LS.set('live',S.live);render()">✕</span></div>`).join('')}</div>`:''}
+  <div class="row" style="gap:8px"><button class="btn danger" style="flex:1" onclick="cancelLive()">Annulla</button><button class="btn" style="flex:2" onclick="endLive()">Termina e salva</button></div>`;
+}
+function liveCatch(){
+  const q=LIVEQ,sp=(q.sp||'').trim();if(!sp){toast('Scegli la specie');return;}
+  let w=q.w===''?null:+q.w;if(w==null&&q.l){const e=estW(sp,q.l);if(e)w=Math.round(e*100)/100;}
+  S.live.catches.push({sp,w,l:q.l===''?null:+q.l,rel:q.rel,t:Date.now()});LS.set('live',S.live);
+  LIVEQ={sp,w:'',l:'',rel:false};confetti();toast('Cattura registrata! 🐟');render();
+}
+function endLive(){
+  const L=S.live;
+  DRAFT={id:null,start:isoLocal(new Date(L.start)),end:isoLocal(new Date()),spot:L.spot,mode:L.mode,tech:L.tech,bait:L.bait||'',catches:L.catches.map(c=>({sp:c.sp,w:c.w??'',l:c.l??'',rel:!!c.rel})),note:'',photo:null,fromLive:true};
+  drawEntry();
+}
+function cancelLive(){if(!confirm('Annullare la sessione? Le catture registrate andranno perse.'))return;S.live=null;LS.set('live',null);go('home');}
+setInterval(()=>{const el=document.getElementById('liveT');if(el&&S.live)el.textContent=durStr(Date.now()-S.live.start);},1000);
+
+/* ===================== Trofei e livelli ===================== */
+const BADGES=[
+  ['first','🐟','Primo pesce','La tua prima cattura',c=>c.n>=1],
+  ['ten','🎣','Mano calda','10 catture',c=>c.n>=10],
+  ['fifty','🪝','Cinquanta!','50 catture',c=>c.n>=50],
+  ['hundred','💯','Centurione','100 catture',c=>c.n>=100],
+  ['sp5','🐠','Collezionista','5 specie diverse',c=>c.species>=5],
+  ['sp10','🧬','Biologo marino','10 specie diverse',c=>c.species>=10],
+  ['kg2','💪','Bel colpo','Un pesce da 2 kg',c=>c.maxW>=2],
+  ['kg5','🏆','Trofeo','Un pesce da 5 kg',c=>c.maxW>=5],
+  ['kg10','🐋','Il mostro','Un pesce da 10 kg',c=>c.maxW>=10],
+  ['multi','🔥','Giornata d\'oro','5 catture in un\'uscita',c=>c.multi],
+  ['night','🌙','Notturno','Uscita iniziata di notte',c=>c.night],
+  ['dawn','🌅','Mattiniero','Uscita iniziata all\'alba',c=>c.dawn],
+  ['long','⏳','Maratoneta','Sessione di 6 ore',c=>c.long],
+  ['rel5','🤲','Catch & release','5 pesci rilasciati',c=>c.rel>=5],
+  ['spots5','🧭','Esploratore','5 spot diversi',c=>c.spots>=5],
+  ['modes3','🌍','Tuttofare','3 ambienti diversi',c=>c.modes>=3],
+  ['out10','📓','Costante','10 uscite',c=>c.out>=10],
+  ['out50','⚓','Veterano','50 uscite',c=>c.out>=50],
+  ['skunk','🧥','Cappotto','Fa parte della pesca',c=>c.skunk]
+];
+const LEVELS=[[0,'Novellino'],[250,'Apprendista'],[700,'Pescatore'],[1600,'Esperto'],[3200,'Maestro'],[6000,'Lupo di mare'],[11000,'Leggenda']];
+function career(){
+  const D=S.diary,all=D.flatMap(e=>(e.catches||[]).map(c=>({...c,e})));
+  const hr=e=>parseLocal(e.start).getHours();
+  const c={out:D.length,n:all.length,species:new Set(all.map(x=>String(x.sp).trim().toLowerCase())).size,kg:all.reduce((a,x)=>a+(+x.w||0),0),
+    maxW:Math.max(0,...all.map(x=>+x.w||0)),night:D.some(e=>hr(e)>=21||hr(e)<4),dawn:D.some(e=>hr(e)>=4&&hr(e)<=7),rel:all.filter(x=>x.rel).length,
+    spots:new Set(D.map(e=>e.spot)).size,modes:new Set(D.map(e=>e.mode)).size,long:D.some(e=>parseLocal(e.end)-parseLocal(e.start)>=6*3600e3),
+    skunk:D.some(e=>!e.catches?.length),multi:D.some(e=>(e.catches?.length||0)>=5)};
+  c.unlocked=BADGES.filter(b=>b[4](c)).map(b=>b[0]);
+  c.xp=c.out*20+c.n*10+Math.round(c.kg*15)+c.species*40+c.unlocked.length*50;
+  let i=0;while(i<LEVELS.length-1&&c.xp>=LEVELS[i+1][0])i++;
+  c.lvl={n:i+1,name:LEVELS[i][1],from:LEVELS[i][0],to:LEVELS[i+1]?.[0]??null};
+  c.lvl.pct=c.lvl.to?(c.xp-c.lvl.from)/(c.lvl.to-c.lvl.from):1;
+  return c;
+}
+function checkBadges(){
+  const got=LS.get('badges',null),now=career().unlocked;
+  if(got===null){LS.set('badges',now);return [];}
+  const nw=now.filter(id=>!got.includes(id));LS.set('badges',[...new Set([...got,...now])]);return nw;
+}
+function celebrate(id){
+  const b=BADGES.find(x=>x[0]===id);if(!b)return;confetti();
+  openSheet(`<div class="celebrate"><div class="bi">${b[1]}</div><p class="mut small" style="margin:0;text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Nuovo trofeo sbloccato</p><h2>${b[2]}</h2><p class="mut">${b[3]}</p><button class="btn full" onclick="closeSheet()">Fantastico!</button></div>`);
+}
+function lvlRing(c){
+  const r=40,C=2*Math.PI*r;
+  return `<div class="lvl"><svg viewBox="0 0 92 92"><defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#2fe0cf"/><stop offset="1" stop-color="#3b8cff"/></linearGradient></defs><circle cx="46" cy="46" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/><circle cx="46" cy="46" r="${r}" fill="none" stroke="url(#lg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C*c.lvl.pct} ${C}"/></svg><b>${c.lvl.n}</b><small>livello</small></div>`;
+}
+function vTrofei(v){
+  const c=career();
+  v.innerHTML=subHead('Trofei',`${c.unlocked.length} di ${BADGES.length} sbloccati`)+`
+  <div class="card"><div class="profile">${lvlRing(c)}<div style="flex:1"><h2>${c.lvl.name}</h2><div class="xpbar"><div style="width:${c.lvl.pct*100}%"></div></div>
+    <div class="small mut">${fmt0(c.xp)} XP${c.lvl.to?` · ${fmt0(c.lvl.to-c.xp)} al prossimo livello`:' · livello massimo!'}</div></div></div>
+    <p class="small mut" style="margin-top:12px">Guadagni XP con uscite (+20), catture (+10), kg pescati (+15/kg), nuove specie (+40) e trofei (+50).</p></div>
+  <div class="badges">${BADGES.map(b=>{const on=c.unlocked.includes(b[0]);return `<div class="bdg ${on?'':'off'}"><div class="bi">${on?b[1]:'🔒'}</div><b>${b[2]}</b><span>${b[3]}</span></div>`;}).join('')}</div>`;
+}
+
+/* ===================== Calendario lunare ===================== */
+function lunarScore(d){const ph=moonPhase(d),n=Math.min(ph.angle,Math.abs(ph.angle-180),360-ph.angle);return Math.round(30+55*(1-n/90));}
+function vCal(v){
+  const sp=activeSpot()||{lat:42,lon:12.5},base=new Date();base.setHours(0,0,0,0);base.setDate(1);base.setMonth(base.getMonth()+(S.calOff||0));
+  const y=base.getFullYear(),m=base.getMonth(),nd=new Date(y,m+1,0).getDate(),lead=(base.getDay()+6)%7,today=new Date().toDateString();
+  if(!S.calSel)S.calSel=today;
+  const cell=dd=>{
+    const d=new Date(y,m,dd),ds=d.toDateString(),mid=new Date(y,m,dd,12),ph=moonPhase(mid);
+    const fc=S.wx&&S.wx.fdays.some(x=>x.date.toDateString()===ds),sc=fc?dayScore(S.wx,d):lunarScore(mid);
+    const out=S.diary.some(e=>parseLocal(e.start).toDateString()===ds);
+    return `<div class="cd ${ds===today?'today':''} ${ds===S.calSel?'sel':''} ${fc?'fc':''}" onclick="S.calSel='${ds}';render()">${out?'<span class="dot"></span>':''}<span>${dd}</span><span class="m">${ph.e}</span><span class="sb" style="background:${idxColor(sc)}"></span></div>`;
+  };
+  const sel=new Date(S.calSel),sel12=new Date(sel.getFullYear(),sel.getMonth(),sel.getDate(),12),ph=moonPhase(sel12);
+  const fc=S.wx&&S.wx.fdays.some(x=>x.date.toDateString()===S.calSel),sc=fc?dayScore(S.wx,sel):lunarScore(sel12);
+  const sun=sunTimes(sel,sp.lat,sp.lon),sol=solunar(sel,sp.lat,sp.lon),outs=S.diary.filter(e=>parseLocal(e.start).toDateString()===S.calSel);
+  v.innerHTML=subHead('Calendario lunare',`Fasi lunari e periodi solunari · ${esc(sp.name||'')}`)+`
+  <div class="card"><div class="calhead"><button onclick="S.calOff=(S.calOff||0)-1;render()">‹</button><b>${base.toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</b><button onclick="S.calOff=(S.calOff||0)+1;render()">›</button></div>
+    <div class="cal">${['L','M','M','G','V','S','D'].map(x=>`<div class="wd">${x}</div>`).join('')}${'<div></div>'.repeat(lead)}${Array.from({length:nd},(_,i)=>cell(i+1)).join('')}</div>
+    <div class="legend"><span><i style="background:var(--acc);border-radius:50%"></i>Previsione meteo</span><span><i style="background:var(--acc2);border-radius:50%"></i>Uscita nel diario</span><span>La barra colorata indica l'attività attesa</span></div></div>
+  <div class="card"><div class="row" style="gap:14px"><div class="moonbig">${ph.e}</div><div style="flex:1"><b style="font-size:17px;text-transform:capitalize">${sel.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</b>
+    <div class="small mut">${ph.name} · ${Math.round(ph.illum*100)}% illuminata · età ${fmt1(ph.age)} giorni</div></div>${miniRing(sc)}</div>
+    <div class="small mut" style="margin:10px 0 8px">${fc?'Indice basato sulle previsioni meteo':'Indice basato solo su luna e periodi solunari'}${sun?` · 🌅 ${hhmm(sun.sr)} · 🌇 ${hhmm(sun.ss)}`:''}</div>
+    ${timeline(sol,{date:sel,sr:sun?.sr,ss:sun?.ss})}
+    <div class="small" style="margin-top:10px">${sol.map(s=>`${s.type==='major'?'●':'○'} ${s.k} <b>${hhmm(s.t)}</b>`).join(' · ')||'—'}</div>
+    ${outs.length?`<div style="margin-top:12px">${outs.map(e=>`<div class="win" onclick="openEntry('${e.id}')" style="cursor:pointer"><div class="clock" style="background:#ffb54722">📓</div><div class="t"><b style="font-size:14px">${esc(S.spots.find(s=>s.id===e.spot)?.name||'Uscita')}</b><div class="small mut">${e.catches?.length||0} catture · ${esc(e.tech||'')}</div></div></div>`).join('')}</div>`:''}
+  </div>`;
+}
+
+/* ===================== Dove pescare oggi ===================== */
+let COMP={ts:0,rows:null,loading:false};
+async function runCompare(force){
+  if(COMP.loading)return;COMP.loading=true;if(S.tab==='compare')render();
+  const rows=[],t0=new Date();t0.setHours(0,0,0,0);
+  for(const sp of S.spots.slice(0,12)){
+    try{
+      const r=await fetchRaw(sp,force),X=build(r.w,r.m,sp,sp.mode||S.mode);
+      const h=X.hours.find(x=>x.t<=new Date()&&x.t.getTime()+3600e3>Date.now());
+      const t1=X.fdays[1]?.date;
+      rows.push({sp,sim:r.sim,now:h?.idx,code:h?.code,temp:h?.temp,s:[dayScore(X,t0),t1?dayScore(X,t1):0],w:[bestWindows(X,t0,1)[0],t1?bestWindows(X,t1,1)[0]:null]});
+    }catch(e){}
+  }
+  COMP={ts:Date.now(),rows,loading:false};if(S.tab==='compare')render();
+}
+function vCompare(v){
+  const head=subHead('Dove pescare','Classifica dei tuoi spot per indice di pesca');
+  if(S.spots.length<2){v.innerHTML=head+'<div class="empty"><div>🧭</div>Salva almeno due spot per confrontarli.<br><br><button class="btn" onclick="go(\'spot\')">Aggiungi spot</button></div>';return;}
+  if(!COMP.rows||Date.now()-COMP.ts>15*60e3||COMP.rows.length!==Math.min(12,S.spots.length)){if(!COMP.loading)setTimeout(runCompare,0);}
+  if(COMP.loading||!COMP.rows){v.innerHTML=head+'<div class="loader"><div class="spin"></div><p>Analizzo i tuoi spot…</p></div>';return;}
+  const k=S.cmpDay||0,rows=COMP.rows.slice().sort((a,b)=>b.s[k]-a.s[k]),med=['🥇','🥈','🥉'];
+  v.innerHTML=head+`<div class="seg2"><button class="${k===0?'on':''}" onclick="S.cmpDay=0;render()">Oggi</button><button class="${k===1?'on':''}" onclick="S.cmpDay=1;render()">Domani</button></div>
+  ${rows.some(r=>r.sim)?'<div class="banner">⚠️ Per alcuni spot il meteo non è raggiungibile: valori simulati.</div>':''}
+  ${rows.map((r,i)=>`<div class="card"><div class="rank"><div class="md">${med[i]||'<span class="mut small">'+(i+1)+'°</span>'}</div>
+    <div class="t"><b>${esc(r.sp.name)}</b><div class="small mut">${svgInline(r.sp.mode)} ${MODES[r.sp.mode]?.n||''}${k===0&&r.now!=null?` · ora ${wmo(r.code)[0]} ${fmt0(r.temp)}° · indice ${r.now}`:''}</div>
+    <div class="small" style="margin-top:3px">${r.w[k]?`⏰ Meglio <b>${hhmm(r.w[k].from)}–${hhmm(r.w[k].to)}</b>`:'<span class="mut">Nessuna finestra favorevole</span>'}</div></div>
+    ${miniRing(r.s[k])}</div>
+    ${r.sp.id!==S.active?`<button class="btn ghost full" style="margin-top:12px;padding:10px" onclick="useSpot('${r.sp.id}')">Usa questo spot</button>`:''}</div>`).join('')}
+  <button class="btn ghost full" onclick="runCompare(true)">↻ Aggiorna</button>`;
+}
+function svgInline(k){return `<span style="display:inline-block;width:14px;height:14px;vertical-align:-2px">${svgI(k,2)}</span>`;}
+
+/* ===================== Guida ===================== */
+const KNOTS=[
+  ['Palomar','Ami, girelle e artificiali · tenuta altissima',['Piega circa 15 cm di filo formando un\'asola e passala nell\'occhiello.','Fai un nodo semplice con l\'asola, senza stringerlo.','Passa l\'amo (o l\'artificiale) dentro l\'asola.','Inumidisci, tira insieme filo madre e capo libero, poi taglia l\'eccesso.']],
+  ['Clinch migliorato','Nylon e fluorocarbon fino a 0,40 mm',['Passa il filo nell\'occhiello e lascia 15 cm di capo.','Avvolgi il capo 5-7 volte attorno al filo madre.','Infila il capo nella piccola asola vicino all\'occhiello.','Ripassalo nell\'asola grande appena formata, inumidisci e stringi.']],
+  ['Uni (Grinner)','Versatile, adatto anche al trecciato',['Passa il filo nell\'occhiello e forma un\'asola parallela al filo madre.','Avvolgi il capo 5-6 volte attorno ai due fili, dentro l\'asola.','Inumidisci e tira il capo per serrare le spire.','Fai scorrere il nodo fino all\'occhiello tirando il filo madre.']],
+  ['Doppio Uni','Giunzione trecciato–finale',['Sovrapponi i due fili per 20 cm.','Con il capo del finale fai un nodo Uni da 4-5 giri attorno al trecciato.','Con il capo del trecciato fai un Uni da 7-8 giri attorno al finale.','Inumidisci, stringi i due nodi e falli scorrere uno contro l\'altro.']],
+  ['FG knot','Giunzione sottile trecciato–fluoro per lo spinning',['Tieni il trecciato in tensione (ad esempio fra mulinello e un punto fisso).','Intreccia il trecciato attorno al fluorocarbon con 16-20 incroci alternati.','Blocca con due mezzi colli, poi stringi con forza tirando tutti i capi.','Chiudi con 6-8 mezzi colli alternati sul trecciato e taglia gli eccessi.']],
+  ['Nodo del chirurgo','Giunzione rapida tra due fili',['Sovrapponi i due fili per 15 cm.','Forma un\'asola con entrambi i fili insieme.','Passa i due capi dentro l\'asola due volte.','Inumidisci, tira i quattro capi e taglia gli eccessi.']]
+];
+const RIGS=[
+  ['Pater noster','Surfcasting · mare formato',['Trave di 60-120 cm in nylon spesso con 1-3 braccioli su perline e girelle.','Piombo da 100-200 g in fondo alla trave.','Braccioli da 30-60 cm, ami adatti all\'esca (arenicola, bibi).','Ottimo su fondali sabbiosi con onda, per pesci di taglia media.']],
+  ['Long arm','Surfcasting · mare calmo e pesci sospettosi',['Un unico bracciolo lungo 1,5-3 m in fluorocarbon sottile.','Piombo scorrevole o fisso a monte del bracciolo.','L\'esca si muove in modo naturale nella corrente.','Ideale per orate e mormore con acqua limpida.']],
+  ['Beach ledgering','Pesca leggera da spiaggia',['Piombo scorrevole da 20-60 g fermato da una perlina.','Bracciolo da 80-150 cm, ami piccoli.','Canne leggere e lanci brevi sul primo canalone.','Per mormore, saraghi e pesci di bassofondale.']],
+  ['Bolognese','Porti e scogliere con pastura',['Galleggiante da 2-6 g, piombatura a scalare.','Finale da 0,14-0,18 mm lungo 1 m.','Pastura costante per richiamare e tenere il branco.','Per saraghi, cefali e occhiate.']],
+  ['Spinning','Artificiali da riva o da barca',['Trecciato PE 0,8-1,5 con finale fluoro 0,28-0,40 lungo 1-2 m.','Giunzione con FG o doppio Uni.','Moschettone senza girella per non frenare il nuoto dell\'esca.','Minnow, WTD, metal jig o gomme a seconda di profondità e luce.']],
+  ['Eging','Seppie e calamari',['Trecciato PE 0,6-0,8 con finale fluoro da 1,75-2,5 m.','Egi da 2,5-3,5 in base alla profondità.','Lancia, lascia affondare, poi jerkate secche e lunghe pause.','Il cefalopode attacca quasi sempre durante la discesa.']],
+  ['Bolentino','Barca · fondo',['Trave con 2-3 braccioli corti su travetti o girelle.','Piombo da 100-300 g in fondo, in base a corrente e profondità.','Esche: calamaro, gamberone, sarda a pezzi.','Mantieni il contatto con il fondo con piccoli sollevamenti.']],
+  ['Hair rig','Carpfishing',['Amo con un "capello" di 1-2 cm che sporge dalla curva.','Boilie infilata sul capello e fermata da uno stopper.','Piombo semi-fisso su clip: la carpa si autoferra.','Pastura a boilies e mais nella zona di pesca.']]
+];
+const BAITS=[
+  ['Arenicola','Verme di sabbia','Surfcasting: orate, mormore, spigole'],['Americano / coreano','Verme di mare','Universale da riva: saraghi, mormore, triglie'],
+  ['Bibi','Sipunculide','Orate e saraghi, resiste bene sull\'amo'],['Cannolicchio','Mollusco','Saraghi e orate tra scogli e sabbia'],
+  ['Cozza','Mollusco','Saraghi e orate in porti e scogliere'],['Gamberetto','Crostaceo','Spigole, saraghi, pagelli'],
+  ['Calamaro','Cefalopode','Bolentino, dentici, pagri, spigole notturne'],['Sarda','Pesce','Traina e bolentino, predatori'],
+  ['Bigattino','Larva','Acqua dolce e cefali, ottimo con pastura'],['Lombrico','Verme di terra','Acqua dolce: trote, persici, anguille'],
+  ['Boilies','Pasta bollita','Carpfishing'],['Mais','Granaglia','Carpe e ciprinidi'],
+  ['Minnow','Artificiale','Spigole, serra, lecce: recupero lineare'],['WTD / popper','Artificiale di superficie','Predatori in caccia, alba e tramonto'],
+  ['Metal jig','Artificiale metallico','Lanci lunghi e vertical: tonnetti, ricciole'],['Soft bait','Gomma siliconica','Spigole, black bass, persici']
+];
+function vGuide(v){
+  const g=S.gTab||'nodi',acc=(arr,ic)=>arr.map(([n,s,steps])=>`<details class="acc"><summary><span class="ico">${ic}</span><span>${n}<small>${s}</small></span></summary><ol>${steps.map(x=>`<li>${x}</li>`).join('')}</ol></details>`).join('');
+  v.innerHTML=subHead('Guida','Nodi, montature ed esche')+`<div class="seg2 seg3">${[['nodi','Nodi'],['mont','Montature'],['esche','Esche']].map(([k,n])=>`<button class="${g===k?'on':''}" onclick="S.gTab='${k}';render()">${n}</button>`).join('')}</div>
+  <div class="card">${g==='nodi'?acc(KNOTS,'🪢'):g==='mont'?acc(RIGS,'🎣'):BAITS.map(([n,t,u])=>`<div class="kv"><span><b>${n}</b><br><span class="small mut">${u}</span></span><span class="tag" style="align-self:center">${t}</span></div>`).join('')}</div>`;
+}
+
+/* ===================== Altro / hub ===================== */
+let DEFERRED=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e;});
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+function installApp(){
+  if(DEFERRED){DEFERRED.prompt();DEFERRED=null;return;}
+  openSheet(`<h2>📲 Installa Lenza</h2><p class="mut" style="margin:8px 0 14px">Aggiungila alla schermata Home: si apre a schermo intero e funziona anche offline.</p>
+  <div class="kv"><span>iPhone (Safari)</span><span class="mut">Condividi → Aggiungi a Home</span></div>
+  <div class="kv"><span>Android (Chrome)</span><span class="mut">Menu ⋮ → Installa app</span></div>
+  <button class="btn full" style="margin-top:16px" onclick="closeSheet()">Ok</button>`);
+}
+function vAltro(v){
+  const c=career(),hub=[
+    ['compare','🧭','Dove pescare','Confronta i tuoi spot','linear-gradient(140deg,#118a8a,#0c4a6e)'],
+    ['stats','📊','Statistiche','Le tue performance','linear-gradient(140deg,#2b5fd9,#1a2f7a)'],
+    ['trofei','🏆','Trofei',`${c.unlocked.length}/${BADGES.length} sbloccati`,'linear-gradient(140deg,#c9771a,#6e3a10)'],
+    ['cal','🌙','Calendario','Luna e solunare','linear-gradient(140deg,#6a4bd6,#2c1f6e)'],
+    ['ai','🤖','Assistente','Consigli e specie','linear-gradient(140deg,#159a6b,#0b4a3a)'],
+    ['guide','🪢','Guida','Nodi, montature, esche','linear-gradient(140deg,#b8436e,#5a1d3a)'],
+    ['settings','⚙️','Impostazioni','Backup e dati','linear-gradient(140deg,#3d5671,#1b2a3c)']
+  ];
+  if(!standalone())hub.push(['install','📲','Installa app','Sulla schermata Home','linear-gradient(140deg,#2fe0cf,#3b8cff)']);
+  v.innerHTML=`<div class="card"><div class="profile">${lvlRing(c)}<div style="flex:1"><div class="small mut" style="text-transform:uppercase;letter-spacing:1.2px;font-weight:700">Il tuo livello</div><h2>${c.lvl.name}</h2>
+    <div class="xpbar"><div style="width:${c.lvl.pct*100}%"></div></div><div class="small mut">${fmt0(c.xp)} XP${c.lvl.to?` · prossimo a ${fmt0(c.lvl.to)}`:''}</div></div></div>
+    <div class="minis"><div><b data-count="${c.out}">0</b><span>uscite</span></div><div><b data-count="${c.n}">0</b><span>catture</span></div><div><b data-count="${c.species}">0</b><span>specie</span></div><div><b>${fmt1(c.kg)}</b><span>kg</span></div></div></div>
+  <div class="hub">${hub.map(([t,e,n,s,bg])=>`<button style="background:${bg}" onclick="${t==='install'?'installApp()':`go('${t}')`}"><span class="he">${e}</span><b>${n}</b><span>${s}</span></button>`).join('')}</div>`;
+}
+function vSettings(v){
+  let bytes=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('lenza.'))bytes+=(localStorage.getItem(k)||'').length*2;}}catch(e){}
+  v.innerHTML=subHead('Impostazioni','Dati, backup e informazioni')+`
+  <div class="card"><h3>I tuoi dati</h3>
+    <div class="kv"><span>Spot salvati</span><b>${S.spots.length}</b></div><div class="kv"><span>Uscite nel diario</span><b>${S.diary.length}</b></div>
+    <div class="kv"><span>Spazio usato sul dispositivo</span><b>${fmt0(bytes/1024)} KB</b></div>
+    <p class="small mut" style="margin:10px 0">I dati restano solo su questo dispositivo. Esporta un backup per non perderli o per spostarli su un altro telefono.</p>
+    <div class="row" style="gap:8px"><button class="btn ghost" style="flex:1" onclick="exportData()">⬇️ Esporta</button><label class="btn ghost" style="flex:1;text-align:center;margin:0;color:var(--txt);font-size:14px">⬆️ Importa<input type="file" accept="application/json" style="display:none" onchange="importData(this)"></label></div></div>
+  <div class="card"><h3>App</h3>
+    <button class="btn ghost full" style="margin-bottom:8px" onclick="welcome()">👋 Rivedi l'introduzione</button>
+    ${standalone()?'':'<button class="btn ghost full" style="margin-bottom:8px" onclick="installApp()">📲 Installa sulla schermata Home</button>'}
+    <button class="btn danger full" onclick="wipeAll()">🗑️ Cancella tutti i dati</button></div>
+  <div class="card"><h3>Informazioni</h3>
+    <p class="small mut">Dati meteo e marini: Open-Meteo.com (CC BY 4.0). Mappe: © OpenStreetMap contributors. Fasi lunari, periodi solunari e alba/tramonto del calendario sono calcolati sul dispositivo.</p>
+    <p class="small mut" style="margin-top:8px">L'indice di pesca è una stima basata su regole: un aiuto per scegliere, non una garanzia. Misure minime indicative: verifica sempre la normativa vigente. Unità di misura metriche.</p></div>`;
+}
+function wipeAll(){
+  if(!confirm('Cancellare spot, diario, trofei e impostazioni? L\'operazione non è reversibile.'))return;
+  try{Object.keys(localStorage).filter(k=>k.startsWith('lenza.')).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  location.hash='';location.reload();
+}
+
+/* ===================== Benvenuto ===================== */
+function welcome(){
+  openSheet(`<div class="welcome"><div class="wl"><svg viewBox="0 0 24 24" fill="none" stroke="#03282a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v9.5a4.5 4.5 0 1 1-9 0V10l3 3"/><circle cx="14" cy="3" r="1"/></svg></div>
+  <h2>Benvenuto su Lenza</h2><p class="mut">Sapere quando e dove pescare, ogni volta.</p>
+  <div class="feat"><div><span>🎯</span>Indice di pesca ora per ora, da meteo, mare, luna e marea reali</div>
+  <div><span>📍</span>I tuoi spot sulla mappa e la classifica di dove andare oggi</div>
+  <div><span>⏱️</span>Sessione live: cronometro e catture con un tocco</div>
+  <div><span>🏆</span>Diario, statistiche, trofei: l'indice impara dalle tue uscite</div></div>
+  <button class="btn full" onclick="welcomeLocate()">📍 Usa la mia posizione</button>
+  <button class="btn ghost full" style="margin-top:8px" onclick="LS.set('welcomed',true);closeSheet()">Esplora con lo spot di esempio</button></div>`);
+}
+function welcomeLocate(){
+  LS.set('welcomed',true);
+  if(!navigator.geolocation){closeSheet();toast('Geolocalizzazione non disponibile');return;}
+  toast('Cerco la tua posizione…');
+  navigator.geolocation.getCurrentPosition(p=>{
+    const s={id:uid(),name:'La mia posizione',lat:p.coords.latitude,lon:p.coords.longitude,mode:S.mode,note:'',face:null};
+    S.spots.push(s);S.active=s.id;LS.set('spots',S.spots);LS.set('active',s.id);closeSheet();S.wx=null;loadWeather();toast('Spot creato: rinominalo dalla sezione Spot');
+  },()=>{closeSheet();toast('Posizione non disponibile');},{enableHighAccuracy:true,timeout:12000});
+}
+
+/* ===================== Cartolina da condividere ===================== */
+function rrect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+async function shareEntry(id){
+  const e=S.diary.find(x=>x.id===id);if(!e)return;
+  toast('Preparo la cartolina…');
+  const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  try{await document.fonts.load('800 80px Outfit');await document.fonts.load('300 80px Outfit');}catch(err){}
+  let bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0f4a7a');bg.addColorStop(.55,'#072a4d');bg.addColorStop(1,'#020a15');g.fillStyle=bg;g.fillRect(0,0,W,H);
+  const glow=g.createRadialGradient(W*.2,80,10,W*.2,80,600);glow.addColorStop(0,'rgba(47,224,207,.35)');glow.addColorStop(1,'rgba(47,224,207,0)');g.fillStyle=glow;g.fillRect(0,0,W,H);
+  const px=60,py=60,pw=W-120,ph=720;
+  if(e.photo){
+    const img=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=e.photo;});
+    if(img){g.save();rrect(g,px,py,pw,ph,48);g.clip();const k=Math.max(pw/img.width,ph/img.height);g.drawImage(img,px+(pw-img.width*k)/2,py+(ph-img.height*k)/2,img.width*k,img.height*k);
+      const sh=g.createLinearGradient(0,py+ph-260,0,py+ph);sh.addColorStop(0,'rgba(2,10,21,0)');sh.addColorStop(1,'rgba(2,10,21,.7)');g.fillStyle=sh;g.fillRect(px,py,pw,ph);g.restore();}
+  }else{
+    g.save();rrect(g,px,py,pw,ph,48);g.clip();const sea=g.createLinearGradient(0,py,0,py+ph);sea.addColorStop(0,'#1b7fd6');sea.addColorStop(1,'#063a66');g.fillStyle=sea;g.fillRect(px,py,pw,ph);
+    for(let k=0;k<3;k++){g.fillStyle=`rgba(255,255,255,${.06+k*.04})`;g.beginPath();g.moveTo(px,py+ph-200+k*60);for(let x=0;x<=pw;x+=20)g.lineTo(px+x,py+ph-200+k*60+Math.sin(x/90+k)*22);g.lineTo(px+pw,py+ph);g.lineTo(px,py+ph);g.fill();}
+    g.fillStyle='#fff';g.font='300px serif';g.textAlign='center';g.textBaseline='middle';g.fillText(e.catches?.length?'🐟':'🎣',W/2,py+ph/2-40);g.restore();
+  }
+  g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=3;rrect(g,px,py,pw,ph,48);g.stroke();
+  const best=(e.catches||[]).slice().sort((a,b)=>(+b.w||0)-(+a.w||0))[0],sp=S.spots.find(s=>s.id===e.spot);
+  g.textAlign='left';g.textBaseline='alphabetic';g.fillStyle='#fff';g.font='800 96px Outfit, sans-serif';
+  let title=best?best.sp:'Giornata di pesca';while(g.measureText(title).width>W-120&&title.length>3)title=title.slice(0,-2);
+  g.fillText(title,px,py+ph+130);
+  const tg=g.createLinearGradient(px,0,px+700,0);tg.addColorStop(0,'#2fe0cf');tg.addColorStop(1,'#3b8cff');g.fillStyle=tg;g.font='700 60px Outfit, sans-serif';
+  g.fillText(best?[best.w?fmt1(best.w)+' kg':'',best.l?best.l+' cm':''].filter(Boolean).join(' · ')||`${e.catches.length} catture`:'Il cappotto fa parte del gioco',px,py+ph+215);
+  g.fillStyle='rgba(234,244,255,.8)';g.font='400 40px Outfit, sans-serif';
+  g.fillText(`${e.catches?.length||0} catture · ${e.tech||''}`,px,py+ph+290);
+  g.fillText(`📍 ${sp?.name||''} · ${parseLocal(e.start).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}`,px,py+ph+350);
+  g.fillStyle=tg;rrect(g,px,H-110,64,64,18);g.fill();g.save();g.translate(px+12,H-98);g.scale(1.7,1.7);g.strokeStyle='#03282a';g.lineWidth=2.4;g.lineCap='round';g.lineJoin='round';g.stroke(new Path2D('M14 3v9.5a4.5 4.5 0 1 1-9 0V10l3 3'));g.restore();
+  g.textAlign='left';g.fillStyle='#fff';g.font='800 46px Outfit, sans-serif';g.fillText('Lenza',px+84,H-62);
+  if(e.cond?.idx!=null){g.textAlign='right';g.fillStyle=idxColor(e.cond.idx);g.font='700 38px Outfit, sans-serif';g.fillText(`Indice ${e.cond.idx} · ${idxLabel(e.cond.idx)[0]}`,W-px,H-64);}
+  const blob=await new Promise(r=>c.toBlob(r,'image/png'));
+  const file=new File([blob],'lenza-cattura.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'La mia uscita di pesca'});return;}catch(err){if(err.name==='AbortError')return;}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='lenza-cattura.png';a.click();toast('Immagine scaricata');
+}
+
 /* ===================== Sheet ===================== */
 function openSheet(html){document.getElementById('sheetBox').innerHTML=html;document.getElementById('sheet').classList.add('on');}
 function closeSheet(){document.getElementById('sheet').classList.remove('on');}
 
 (function(){const b=document.getElementById('bubbles');let h='';for(let i=0;i<14;i++){const z=4+Math.random()*12;h+=`<span class="bub" style="left:${Math.random()*100}%;width:${z}px;height:${z}px;animation-duration:${10+Math.random()*16}s;animation-delay:${-Math.random()*20}s"></span>`;}b.innerHTML=h;})();
+try{Object.keys(localStorage).filter(k=>k.startsWith('lenza.wx_')).forEach(k=>{const v=JSON.parse(localStorage.getItem(k));if(!v||Date.now()-v.ts>36*3600e3)localStorage.removeItem(k);});}catch(e){}
+{const t=location.hash.slice(1);if(PAGES.includes(t))S.tab=t;}
 buildProfile();
+checkBadges();
 render();
 loadWeather();
+if(!LS.get('welcomed',false))setTimeout(welcome,700);
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
