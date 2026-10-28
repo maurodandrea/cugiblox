@@ -381,6 +381,10 @@
   .aigrid div{background:rgba(0,10,30,.3);border-radius:12px;padding:8px 6px;text-align:center;}
   .aigrid b{display:block;font-size:15px;}
   .aigrid span{font-size:10.5px;color:var(--mut);}
+  .mwrap{border-radius:16px;overflow:hidden;background:#000;touch-action:none;}
+  .mwrap canvas{display:block;touch-action:none;cursor:crosshair;}
+  .dlb{height:8px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden;margin:10px 0 4px;}
+  .dlb div{height:100%;background:var(--grad);border-radius:6px;transition:width .2s;}
   /* confetti, celebrazione, benvenuto */
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:3000;overflow:hidden;}
   .confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:fall 2.4s cubic-bezier(.2,.6,.4,1) forwards;}
@@ -774,6 +778,7 @@ function render(){
   if(S.tab!=='spot'&&MAP){MAP.remove();MAP=null;}
   ({home:vHome,meteo:vMeteo,spot:vSpot,diario:vDiario,stats:vStats,ai:vAI,altro:vAltro,live:vLive,trofei:vTrofei,cal:vCal,compare:vCompare,guide:vGuide,settings:vSettings}[S.tab]||vHome)(v);
   countUp(v);
+  if(S.tab==='settings')modelStatus();
 }
 function countUp(root){
   root.querySelectorAll('[data-count]').forEach(el=>{
@@ -1051,7 +1056,7 @@ function drawEntry(){
     <div class="row"><input type="number" step="0.01" min="0" value="${c.w??''}" placeholder="kg" onchange="DRAFT.catches[${i}].w=this.value"><input type="number" step="1" min="0" value="${c.l??''}" placeholder="cm" onchange="DRAFT.catches[${i}].l=this.value;drawEntry()"></div></div>
     <div class="row small" style="margin-top:6px"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" ${c.rel?'checked':''} onchange="DRAFT.catches[${i}].rel=this.checked"> Rilasciato</label>
     <span style="margin-left:auto;color:var(--bad);cursor:pointer" onclick="DRAFT.catches.splice(${i},1);for(const k in ENTRYAI)delete ENTRYAI[k];drawEntry()">Rimuovi</span></div>
-    ${c.photo?`<div class="cphoto"><img src="${c.photo}" alt="" onclick="viewPhoto(DRAFT.catches[${i}].photo)"><span onclick="DRAFT.catches[${i}].photo=null;delete ENTRYAI[${i}];drawEntry()">✕</span></div>${ENTRYAI[i]?aiCard(ENTRYAI[i],i):aiKey()?`<div class="small" style="margin-top:6px"><u style="cursor:pointer;color:var(--acc)" onclick="entryAnalyze(${i})">🤖 Riconosci specie e misura da questa foto</u></div>`:''}`:photoPicker(`pickCatchPhoto(this,${i})`,aiKey()?'Foto · riconoscimento auto':'Foto del pesce')}${sizeWarn(c)}${(c.w===''||c.w==null)&&c.l&&estW(c.sp,c.l)?`<div class="small" style="margin-top:4px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(estW(c.sp,c.l))} kg · <u style="cursor:pointer" onclick="DRAFT.catches[${i}].w=${estW(c.sp,c.l).toFixed(2)};drawEntry()">usa questo valore</u></div>`:''}</div>`).join('')}
+    ${c.photo?`<div class="cphoto"><img src="${c.photo}" alt="" onclick="viewPhoto(DRAFT.catches[${i}].photo)"><span onclick="DRAFT.catches[${i}].photo=null;delete ENTRYAI[${i}];drawEntry()">✕</span></div>${ENTRYAI[i]?aiCard(ENTRYAI[i],i):`<div class="small" style="margin-top:6px;display:flex;gap:14px"><u style="cursor:pointer;color:var(--acc)" onclick="entryAnalyze(${i})">🧠 Riconosci la specie</u><u style="cursor:pointer;color:var(--acc)" onclick="openMeasure(DRAFT.catches[${i}].photo,'${i}')">📏 Misura sulla foto</u></div>`}`:photoPicker(`pickCatchPhoto(this,${i})`,'Foto del pesce')}${sizeWarn(c)}${(c.w===''||c.w==null)&&c.l&&estW(c.sp,c.l)?`<div class="small" style="margin-top:4px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(estW(c.sp,c.l))} kg · <u style="cursor:pointer" onclick="DRAFT.catches[${i}].w=${estW(c.sp,c.l).toFixed(2)};drawEntry()">usa questo valore</u></div>`:''}</div>`).join('')}
   <datalist id="spl">${spN.map(n=>`<option value="${n}">`).join('')}</datalist>
   <button class="btn ghost full" style="margin-top:8px" onclick="DRAFT.catches.push({sp:'',w:'',l:'',rel:false});drawEntry()">＋ Aggiungi cattura</button>
   <label>Foto dell'uscita</label>${e.photo?`<div class="cphoto"><img src="${e.photo}" alt="" onclick="viewPhoto(DRAFT.photo)"><span onclick="DRAFT.photo=null;drawEntry()">✕</span></div>`:photoPicker('pickPhoto(this)','Scatta una foto')}
@@ -1061,7 +1066,7 @@ function drawEntry(){
   <div class="row" style="margin-top:10px">${e.id?`<button class="btn danger" onclick="delEntry('${e.id}')">Elimina</button>`:''}<button class="btn ghost" style="margin-left:auto" onclick="closeSheet()">Annulla</button><button class="btn" onclick="saveEntry()">Salva</button></div>`);
 }
 function sizeWarn(c){
-  const s=SPECIES.find(x=>x.n.toLowerCase()===String(c.sp).toLowerCase());
+  const s=SPECIES.find(x=>x.n.toLowerCase()===String(c.sp).toLowerCase())||(FISH?.labels||[]).map(l=>({n:l.n,sz:l.sz})).find(x=>x.n.toLowerCase()===String(c.sp).toLowerCase());
   if(s&&s.sz&&c.l&&+c.l<s.sz&&!c.rel) return `<div class="small" style="color:var(--acc2);margin-top:4px">⚠️ Sotto la misura minima indicativa (${s.sz} cm): va rilasciato.</div>`;
   return '';
 }
@@ -1079,7 +1084,7 @@ function readPhoto(inp,max=640){
   });
 }
 async function pickPhoto(inp){const d=await readPhoto(inp);if(d){DRAFT.photo=d;drawEntry();}}
-async function pickCatchPhoto(inp,i){const d=await readPhoto(inp);if(d){DRAFT.catches[i].photo=d;delete ENTRYAI[i];drawEntry();if(aiKey())entryAnalyze(i,readPhoto.big);}}
+async function pickCatchPhoto(inp,i){const d=await readPhoto(inp);if(d){DRAFT.catches[i].photo=d;delete ENTRYAI[i];drawEntry();entryAnalyze(i,readPhoto.big);}}
 const entryPhoto=e=>e.photo||(e.catches||[]).find(c=>c.photo)?.photo||null;
 function viewPhoto(src,cap){openSheet(`<img src="${src}" style="width:100%;border-radius:20px;display:block" alt="">${cap?`<p style="margin-top:10px;text-align:center"><b>${cap}</b></p>`:''}<button class="btn ghost full" style="margin-top:12px" onclick="closeSheet()">Chiudi</button>`);}
 function photoPicker(fn,label){return `<div class="snap"><label class="snapbtn">📸 ${label}<input type="file" accept="image/*" capture="environment" onchange="${fn}"></label><label class="snapalt">🖼️ Galleria<input type="file" accept="image/*" onchange="${fn}"></label></div>`;}
@@ -1096,6 +1101,8 @@ function saveEntry(){
   const e=DRAFT;e.catches=e.catches.filter(c=>c.sp&&c.sp.trim());
   e.catches.forEach(c=>{c.w=c.w===''||c.w==null?null:+c.w;c.l=c.l===''||c.l==null?null:+c.l;});
   const live=e.fromLive;delete e.fromLive;
+  // le catture con foto riconosciute (e confermate o corrette) insegnano al riconoscimento
+  e.catches.forEach(c=>{if(c.emb){learnFish(c.sp,c.emb);delete c.emb;}});
   if(!e.id){e.id=uid();e.cond=snapshot(e);S.diary.push(e);}
   else{const old=S.diary.find(x=>x.id===e.id);if(old.start!==e.start||!old.cond||old.cond.ws==null)e.cond=snapshot(e);Object.assign(old,e);}
   if(!LS.set('diary',S.diary)){S.diary=LS.get('diary',[]);return;}
@@ -1168,7 +1175,7 @@ function vAI(v){
   </div>
   <div class="card"><h3>Riconosci dalla foto</h3>
     ${ASSIST?`<div class="cphoto big"><img src="${ASSIST.photo}" alt="" onclick="viewPhoto(ASSIST.photo)"><span onclick="ASSIST=null;render()">✕</span></div>${aiCard(ASSIST.st,'assist')}`
-      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">🔍</span><b>Che pesce è?</b><small>${aiKey()?'Fotografalo: specie, misura e peso stimati da Claude':'Richiede la chiave API (Impostazioni)'}</small></label>
+      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">🔍</span><b>Che pesce è?</b><small>Fotografalo: lo riconosco sul telefono, gratis e anche offline</small></label>
         <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 0">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="assistSnap(this)"></label>`}
   </div>
   <div class="card"><h3>Riconosci per caratteristiche</h3>
@@ -1234,7 +1241,8 @@ function sunTimes(date,lat,lon){
 }
 
 /* ===================== Peso stimato (relazione lunghezza-peso W = a·L^b, g/cm) ===================== */
-const LW={'Spigola':[.0089,3.07],'Orata':[.0129,3.0],'Sarago maggiore':[.0138,3.05],'Sarago fasciato':[.0136,3.03],'Sarago pizzuto':[.0135,3.02],'Mormora':[.0098,3.08],'Ombrina':[.0094,3.07],'Leccia amia':[.0118,2.98],'Serra':[.0109,3.02],'Cefalo':[.0107,2.98],'Triglia di scoglio':[.0098,3.1],'Pagello fragolino':[.011,3.07],'Pagro':[.0157,2.97],'Dentice':[.0141,2.97],'Ricciola':[.015,2.93],'Tonno rosso':[.0158,3.0],'Lampuga':[.008,3.0],'Sgombro':[.0055,3.2],'Sugarello':[.0083,3.05],'Carpa':[.0182,3.0],'Persico reale':[.0102,3.13],'Persico trota (Black bass)':[.0118,3.1],'Luccio':[.0047,3.1],'Trota fario':[.0098,3.06],'Cavedano':[.01,3.06],'Siluro':[.006,3.06],'Anguilla':[.00085,3.2]};
+const LW={'Spigola':[.0089,3.07],'Orata':[.0129,3.0],'Sarago maggiore':[.0138,3.05],'Sarago fasciato':[.0136,3.03],'Sarago pizzuto':[.0135,3.02],'Mormora':[.0098,3.08],'Ombrina':[.0094,3.07],'Leccia amia':[.0118,2.98],'Serra':[.0109,3.02],'Cefalo':[.0107,2.98],'Triglia di scoglio':[.0098,3.1],'Pagello fragolino':[.011,3.07],'Pagro':[.0157,2.97],'Dentice':[.0141,2.97],'Ricciola':[.015,2.93],'Tonno rosso':[.0158,3.0],'Lampuga':[.008,3.0],'Sgombro':[.0055,3.2],'Sugarello':[.0083,3.05],'Carpa':[.0182,3.0],'Persico reale':[.0102,3.13],'Persico trota (Black bass)':[.0118,3.1],'Luccio':[.0047,3.1],'Trota fario':[.0098,3.06],'Cavedano':[.01,3.06],'Siluro':[.006,3.06],'Anguilla':[.00085,3.2],
+  'Sparaglione':[.0137,3.04],'Occhiata':[.0112,3.0],'Salpa':[.0129,3.0],'Boga':[.0081,3.1],'Tanuta':[.0147,3.0],'Corvina':[.0116,3.05],'Leccia stella':[.0151,2.95],'Palamita':[.0083,3.1],'Alletterato':[.0129,3.07],'Aguglia':[.001,3.2],'Barracuda':[.0046,3.03],'Cernia bruna':[.0124,3.05],'Sciarrano':[.0109,3.1],'Perchia':[.0094,3.12],'Donzella':[.0083,3.1],'Tordo':[.0123,3.05],'Scorfano nero':[.0174,3.0],'Scorfano rosso':[.0159,3.05],'Tracina':[.0064,3.1],'Pesce prete':[.013,3.1],'Murena':[.0008,3.2],'Grongo':[.0007,3.2],'Sogliola':[.0066,3.12],'Rombo chiodato':[.0123,3.13],'Gattuccio':[.0021,3.2],'Razza chiodata':[.0045,3.15],'Tinca':[.0128,3.07],'Carassio':[.0172,3.05],'Scardola':[.0112,3.1],'Abramide':[.009,3.15],'Barbo':[.0087,3.05],'Alborella':[.0062,3.15],'Lucioperca':[.0068,3.1],'Persico sole':[.015,3.1],'Trota iridea':[.0114,3.03],'Temolo':[.0074,3.1],'Pesce gatto':[.012,3.05]};
 function estW(sp,l){const k=LW[Object.keys(LW).find(x=>x.toLowerCase()===String(sp||'').trim().toLowerCase())];return k&&l>0?k[0]*Math.pow(+l,k[1])/1000:null;}
 
 /* ===================== UI comuni ===================== */
@@ -1256,7 +1264,7 @@ function weatherAlerts(X){
 
 /* ===================== Sessione live ===================== */
 let LIVEDRAFT=null,LIVEQ={sp:'',w:'',l:'',rel:false,photo:null};
-async function liveSnap(inp){const d=await readPhoto(inp);if(d){LIVEQ.photo=d;LIVEQ.big=readPhoto.big;LIVEAI=null;if(aiKey())liveAnalyze();else{LIVEAI={err:'Attiva il riconoscimento automatico: inserisci la chiave API nelle Impostazioni'};render();}}}
+async function liveSnap(inp){const d=await readPhoto(inp);if(d){LIVEQ.photo=d;LIVEQ.big=readPhoto.big;LIVEQ.emb=null;LIVEAI=null;liveAnalyze();}}
 function fabTap(){if(S.live)go('live');else startLive();}
 function startLive(){LIVEDRAFT={spot:S.active,mode:S.mode,tech:TECH[S.mode][0],bait:''};drawStart();}
 function drawStart(){
@@ -1289,11 +1297,11 @@ function vLive(v){
   </section>
   <div class="card"><h3>Registra una cattura</h3>
     ${LIVEQ.photo?`<div class="cphoto big"><img src="${LIVEQ.photo}" alt="" onclick="viewPhoto(LIVEQ.photo)"><span onclick="LIVEQ.photo=null;LIVEQ.big=null;LIVEAI=null;render()">✕</span></div>${aiCard(LIVEAI,'live')}`
-      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>${aiKey()?'Riconosco specie, misura e peso in automatico':'Si apre la fotocamera · facoltativo'}</small></label>
+      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>Riconosco la specie sul telefono · poi misuri sulla foto</small></label>
         <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 12px">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="liveSnap(this)"></label>`}
     <div class="chips">${chips.map(n=>`<span class="chip ${LIVEQ.sp===n?'on':''}" onclick="LIVEQ.sp='${n.replace(/'/g,"\\'")}';render()">${esc(n)}</span>`).join('')}</div>
     <label>Specie</label><input list="spl2" value="${esc(LIVEQ.sp)}" oninput="LIVEQ.sp=this.value" placeholder="Scegli sopra o scrivi">
-    <datalist id="spl2">${SPECIES.map(s=>`<option value="${s.n}">`).join('')}</datalist>
+    <datalist id="spl2">${[...new Set([...SPECIES.map(s=>s.n),...Object.keys(LW)])].map(n=>`<option value="${n}">`).join('')}</datalist>
     <div class="grid2"><div><label>Peso (kg)</label><input type="number" step="0.01" min="0" value="${LIVEQ.w}" oninput="LIVEQ.w=this.value" placeholder="facoltativo"></div>
     <div><label>Lunghezza (cm)</label><input type="number" step="1" min="0" value="${LIVEQ.l}" onchange="LIVEQ.l=this.value;render()" placeholder="facoltativa"></div></div>
     ${est?`<div class="small" style="margin-top:6px;color:var(--acc)">⚖️ Peso stimato ≈ ${fmt1(est)} kg</div>`:''}
@@ -1307,13 +1315,13 @@ function vLive(v){
 function liveCatch(){
   const q=LIVEQ,sp=(q.sp||'').trim();if(!sp){toast('Scegli la specie');return;}
   let w=q.w===''?null:+q.w;if(w==null&&q.l){const e=estW(sp,q.l);if(e)w=Math.round(e*100)/100;}
-  S.live.catches.push({sp,w,l:q.l===''?null:+q.l,rel:q.rel,photo:q.photo||null,ai:q.ai||null,t:Date.now()});LIVEAI=null;
+  S.live.catches.push({sp,w,l:q.l===''?null:+q.l,rel:q.rel,photo:q.photo||null,emb:q.emb||null,t:Date.now()});LIVEAI=null;
   if(!LS.set('live',S.live)&&q.photo){S.live.catches[S.live.catches.length-1].photo=null;LS.set('live',S.live);toast('Memoria piena: cattura salvata senza foto');}
   LIVEQ={sp,w:'',l:'',rel:false,photo:null};confetti();toast('Cattura registrata! 🐟');render();
 }
 function endLive(){
   const L=S.live;
-  DRAFT={id:null,start:isoLocal(new Date(L.start)),end:isoLocal(new Date()),spot:L.spot,mode:L.mode,tech:L.tech,bait:L.bait||'',catches:L.catches.map(c=>({sp:c.sp,w:c.w??'',l:c.l??'',rel:!!c.rel,photo:c.photo||null,ai:c.ai||null})),note:'',photo:null,fromLive:true};
+  DRAFT={id:null,start:isoLocal(new Date(L.start)),end:isoLocal(new Date()),spot:L.spot,mode:L.mode,tech:L.tech,bait:L.bait||'',catches:L.catches.map(c=>({sp:c.sp,w:c.w??'',l:c.l??'',rel:!!c.rel,photo:c.photo||null,emb:c.emb||null})),note:'',photo:null,fromLive:true};
   for(const k in ENTRYAI)delete ENTRYAI[k];
   drawEntry();
 }
@@ -1509,18 +1517,18 @@ function vSettings(v){
     <div class="kv"><span>Spazio usato sul dispositivo</span><b>${fmt0(bytes/1024)} KB</b></div>
     <p class="small mut" style="margin:10px 0">I dati restano solo su questo dispositivo. Esporta un backup per non perderli o per spostarli su un altro telefono.</p>
     <div class="row" style="gap:8px"><button class="btn ghost" style="flex:1" onclick="exportData()">⬇️ Esporta</button><label class="btn ghost" style="flex:1;text-align:center;margin:0;color:var(--txt);font-size:14px">⬆️ Importa<input type="file" accept="application/json" style="display:none" onchange="importData(this)"></label></div></div>
-  <div class="card"><h3>🤖 Riconoscimento automatico</h3>
-    <p class="small" style="margin-bottom:8px">Dalla foto della cattura Claude riconosce la specie e stima lunghezza e peso. Serve una chiave API Anthropic personale: la crei su <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--acc)">console.anthropic.com</a>.</p>
-    <label>Chiave API</label><input id="akey" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(aiKey())}">
-    <div class="row" style="gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="saveKey()">Salva</button>${aiKey()?'<button class="btn ghost" style="flex:1" onclick="testKey()">Verifica</button>':''}</div>
-    <div id="akeyst" class="small" style="margin-top:8px">${aiKey()?'<span style="color:var(--ok)">● Riconoscimento attivo</span>':'<span class="mut">○ Non attivo</span>'}</div>
-    <p class="small mut" style="margin-top:8px">La chiave resta solo su questo dispositivo. Ogni foto analizzata viene inviata ad Anthropic e costa pochi centesimi sul tuo account API. Le misure dalla foto sono stime: con una mano, un metro o il mulinello vicino al pesce sono molto più precise.</p></div>
+  <div class="card"><h3>🧠 Riconoscimento dei pesci</h3>
+    <p class="small" style="margin-bottom:8px">Il riconoscimento della specie funziona <b>sul telefono</b>, gratis e anche senza internet, con BioCLIP: un modello open source addestrato su milioni di foto di animali e piante. Va scaricato una volta (circa 100 MB).</p>
+    <div id="mstat"><div class="small mut">Controllo…</div></div>
+    <div class="kv" style="margin-top:10px"><span>Catture che hai confermato</span><b>${myFish().length}</b></div>
+    <p class="small mut" style="margin-top:6px">Ogni cattura con foto che salvi insegna al riconoscimento i pesci delle tue zone. Lunghezza e peso si misurano sulla foto toccando muso, coda e un oggetto di riferimento.</p>
+    ${myFish().length?'<button class="btn ghost full" style="margin-top:8px" onclick="if(confirm(\'Dimenticare le catture confermate?\')){LS.set(\'myfish\',[]);render();}">Azzera l\'apprendimento</button>':''}</div>
   <div class="card"><h3>App</h3>
     <button class="btn ghost full" style="margin-bottom:8px" onclick="welcome()">👋 Rivedi l'introduzione</button>
     ${standalone()?'':'<button class="btn ghost full" style="margin-bottom:8px" onclick="installApp()">📲 Installa sulla schermata Home</button>'}
     <button class="btn danger full" onclick="wipeAll()">🗑️ Cancella tutti i dati</button></div>
   <div class="card"><h3>Informazioni</h3>
-    <p class="small mut">Dati meteo e marini: Open-Meteo.com (CC BY 4.0). Mappe: © OpenStreetMap contributors. Fasi lunari, periodi solunari e alba/tramonto del calendario sono calcolati sul dispositivo.</p>
+    <p class="small mut">Riconoscimento: BioCLIP, Imageomics Institute (licenza MIT), eseguito con ONNX Runtime Web. Dati meteo e marini: Open-Meteo.com (CC BY 4.0). Mappe: © OpenStreetMap contributors. Fasi lunari, periodi solunari e alba/tramonto del calendario sono calcolati sul dispositivo.</p>
     <p class="small mut" style="margin-top:8px">L'indice di pesca è una stima basata su regole: un aiuto per scegliere, non una garanzia. Misure minime indicative: verifica sempre la normativa vigente. Unità di misura metriche.</p></div>`;
 }
 function wipeAll(){
@@ -1589,142 +1597,233 @@ async function shareEntry(id){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='lenza-cattura.png';a.click();toast('Immagine scaricata');
 }
 
-/* ===================== Riconoscimento con Claude (visione) ===================== */
-// Chiave API dell'utente, salvata solo su questo dispositivo; la foto viene inviata direttamente ad Anthropic.
-const AI_MODEL='claude-opus-5-5';
-const SDK_URL='https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.133.0/+esm';
-let AIC=null;
-const aiKey=()=>LS.get('apikey','');
-async function aiClient(){
-  const key=aiKey();if(!key)throw new Error('nokey');
-  if(!AIC||AIC.key!==key){const {default:Anthropic}=await import(SDK_URL);AIC={key,c:new Anthropic({apiKey:key,dangerouslyAllowBrowser:true})};}
-  return AIC.c;
+/* ===================== Riconoscimento sul dispositivo (BioCLIP, gratuito e offline) ===================== */
+// Specie: modello open source BioCLIP (MIT) eseguito nel browser con ONNX Runtime Web.
+// Punteggio = somiglianza con le descrizioni scientifiche delle specie + somiglianza con foto di esempio
+// + le catture confermate dall'utente; poi pesato per l'ambiente di pesca (mare, lago, fiume).
+const ORT_URL='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
+const MODEL_CACHE='lenza-model-v1',MODEL_KEY='models/bioclip-int8.onnx';
+let FISH=null,SESS=null,MODEL_DL=null;
+function decI8(o){
+  const bin=atob(o.q),rows=o.scale.length,dim=bin.length/rows,out=new Float32Array(bin.length);
+  for(let i=0;i<bin.length;i++){let v=bin.charCodeAt(i);if(v>127)v-=256;out[i]=v*o.scale[(i/dim)|0];}
+  return {d:out,rows,dim};
 }
-const FISH_SCHEMA={type:'object',additionalProperties:false,
-  required:['is_fish','species','scientific_name','confidence','alternatives','length_cm','length_min_cm','length_max_cm','weight_kg','size_reference','size_confidence','notes'],
-  properties:{
-    is_fish:{type:'boolean',description:'true se nella foto c\'è un pesce o un cefalopode catturato'},
-    species:{type:'string',description:'Nome comune italiano della specie'},
-    scientific_name:{type:'string'},
-    confidence:{type:'number',description:'Sicurezza sulla specie, da 0 a 1'},
-    alternatives:{type:'array',description:'Fino a 3 specie alternative plausibili',items:{type:'object',additionalProperties:false,required:['species','confidence'],properties:{species:{type:'string'},confidence:{type:'number'}}}},
-    length_cm:{type:'number',description:'Lunghezza totale stimata, dalla punta del muso alla fine della coda'},
-    length_min_cm:{type:'number'},length_max_cm:{type:'number'},
-    weight_kg:{type:'number',description:'Peso stimato'},
-    size_reference:{type:'string',description:'Oggetto usato come riferimento per la misura, oppure "nessuno"'},
-    size_confidence:{type:'string',enum:['alta','media','bassa']},
-    notes:{type:'string',description:'Una o due frasi utili per il pescatore, in italiano'}
-  }};
-function aiPrompt(mode){
-  const names=SPECIES.map(s=>`${s.n} (${s.s})`).join(', ');
-  const sp=activeSpot();
-  return `Sei un esperto di ittiologia e di pesca sportiva in Italia. Analizza la foto di una cattura.
-Contesto: ambiente "${MODES[mode]?.d||''}", spot "${sp?.name||''}" (lat ${sp?.lat?.toFixed(2)}, lon ${sp?.lon?.toFixed(2)}), mese ${new Date().toLocaleDateString('it-IT',{month:'long'})}.
-1. Identifica la specie. Se corrisponde, usa esattamente uno di questi nomi: ${names}. Altrimenti usa il nome comune italiano più diffuso. Indica fino a 3 alternative plausibili.
-2. Stima la lunghezza totale in cm usando i riferimenti visibili: mano adulta (palmo largo circa 8,5 cm, mano lunga circa 19 cm), dita, mulinello, canna, scarpe, metro o tavoletta di misura, piastrelle, ecc. Indica quale riferimento hai usato. Senza riferimenti affidabili allarga l'intervallo e metti size_confidence "bassa".
-3. Stima il peso in kg coerente con specie e lunghezza.
-Se nella foto non c'è un pesce, metti is_fish a false e valori 0 o stringhe vuote. Sii onesto sull'incertezza.`;
+async function fishData(){
+  if(FISH)return FISH;
+  const j=await (await fetch('models/fish.json')).json();
+  FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N)};return FISH;
 }
-async function analyzeFish(dataUrl,mode){
-  const client=await aiClient();
-  const resp=await client.beta.messages.create({
-    model:AI_MODEL,max_tokens:16000,
-    betas:['server-side-fallback-2026-07-01'],fallbacks:'default',
-    output_config:{effort:'medium',format:{type:'json_schema',schema:FISH_SCHEMA}},
-    messages:[{role:'user',content:[
-      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:dataUrl.split(',')[1]}},
-      {type:'text',text:aiPrompt(mode)}
-    ]}]
-  });
-  if(resp.stop_reason==='refusal')throw new Error('refusal');
-  const txt=resp.content.find(b=>b.type==='text')?.text;
-  if(!txt)throw new Error('empty');
-  const r=JSON.parse(txt);
-  // Se conosciamo la relazione lunghezza-peso della specie, il peso viene da lì (più coerente)
-  const lw=estW(r.species,r.length_cm);
-  r.weight_final=lw?Math.round(lw*100)/100:Math.round(r.weight_kg*100)/100;
-  r.weight_src=lw?'formula':'ai';
-  return r;
+async function modelReady(){try{const c=await caches.open(MODEL_CACHE);return !!(await c.match(MODEL_KEY));}catch(e){return false;}}
+async function downloadModel(){
+  if(MODEL_DL)return MODEL_DL.p;
+  const st={pct:0};MODEL_DL={st};
+  MODEL_DL.p=(async()=>{
+    const j=await fishData(),bufs=[];let got=0;
+    for(const part of j.model.parts){
+      const r=await fetch(part);if(!r.ok)throw new Error('download');
+      const rd=r.body.getReader();
+      for(;;){const {done,value}=await rd.read();if(done)break;bufs.push(value);got+=value.length;st.pct=got/j.model.size;drawDl();}
+    }
+    const c=await caches.open(MODEL_CACHE);await c.put(MODEL_KEY,new Response(new Blob(bufs)));
+    try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
+  })().finally(()=>{MODEL_DL=null;render();});
+  render();return MODEL_DL.p;
+}
+function drawDl(){const el=document.getElementById('dlbar');if(el&&MODEL_DL)el.style.width=(MODEL_DL.st.pct*100).toFixed(1)+'%';const t=document.getElementById('dlpct');if(t&&MODEL_DL)t.textContent=Math.round(MODEL_DL.st.pct*100)+'%';}
+async function deleteModel(){if(!confirm('Eliminare il modello dal dispositivo? Potrai riscaricarlo quando vuoi.'))return;try{await caches.delete(MODEL_CACHE);}catch(e){}SESS=null;toast('Modello eliminato');render();}
+function loadScript(u){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('ort'));document.head.appendChild(s);});}
+async function session(){
+  if(SESS)return SESS;
+  if(!window.ort){await loadScript(ORT_URL+'ort.wasm.min.js');ort.env.wasm.wasmPaths=ORT_URL;ort.env.wasm.numThreads=1;}
+  const c=await caches.open(MODEL_CACHE),r=await c.match(MODEL_KEY);if(!r)throw new Error('nomodel');
+  SESS=await ort.InferenceSession.create(new Uint8Array(await r.arrayBuffer()),{executionProviders:['wasm'],graphOptimizationLevel:'all'});
+  return SESS;
+}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+/* Ridimensionamento bicubico con antialias, identico a quello usato per tarare il modello (PIL) */
+function resampleRGBA(src,sw,sh,dw,dh){
+  const cub=x=>{x=Math.abs(x);const a=-.5;return x<1?((a+2)*x-(a+3))*x*x+1:x<2?(((x-5)*x+8)*x-4)*a:0;};
+  const coeffs=(inS,outS)=>{const sc=inS/outS,fs=Math.max(sc,1),sup=2*fs,ss=1/fs,out=[];
+    for(let i=0;i<outS;i++){const c=(i+.5)*sc;let x0=Math.max(Math.floor(c-sup+.5),0),x1=Math.min(Math.floor(c+sup+.5),inS);const w=[];let t=0;
+      for(let x=x0;x<x1;x++){const v=cub((x-c+.5)*ss);w.push(v);t+=v;}out.push([x0,w.map(v=>t?v/t:0)]);}return out;};
+  const pass=(inp,iw,ih,ow,horiz)=>{const oh=horiz?ih:ow,owid=horiz?ow:iw,cf=coeffs(horiz?iw:ih,horiz?ow:ow),out=new Uint8ClampedArray(owid*(horiz?ih:ow)*4);
+    if(horiz){for(let y=0;y<ih;y++)for(let x=0;x<ow;x++){const [x0,w]=cf[x];let r=0,g=0,b=0;for(let k=0;k<w.length;k++){const o=(y*iw+x0+k)*4;r+=inp[o]*w[k];g+=inp[o+1]*w[k];b+=inp[o+2]*w[k];}const q=(y*ow+x)*4;out[q]=Math.round(r);out[q+1]=Math.round(g);out[q+2]=Math.round(b);out[q+3]=255;}}
+    else{for(let y=0;y<ow;y++){const [y0,w]=cf[y];for(let x=0;x<iw;x++){let r=0,g=0,b=0;for(let k=0;k<w.length;k++){const o=((y0+k)*iw+x)*4;r+=inp[o]*w[k];g+=inp[o+1]*w[k];b+=inp[o+2]*w[k];}const q=(y*iw+x)*4;out[q]=Math.round(r);out[q+1]=Math.round(g);out[q+2]=Math.round(b);out[q+3]=255;}}}
+    return out;};
+  const h=pass(src,sw,sh,dw,true);return pass(h,dw,sh,dh,false);
+}
+function imgPixels(img){const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const g=c.getContext('2d');g.drawImage(img,0,0);return g.getImageData(0,0,c.width,c.height).data;}
+function toTensor(img,how,mean,std,px0){
+  const w=img.naturalWidth,h=img.naturalHeight,src=px0||imgPixels(img),out=new Float32Array(3*224*224);
+  let buf,bw,bh,ox=0,oy=0;
+  if(how==='pad'){const k=224/Math.max(w,h);bw=Math.max(1,Math.round(w*k));bh=Math.max(1,Math.round(h*k));buf=resampleRGBA(src,w,h,bw,bh);ox=(224-bw)>>1;oy=(224-bh)>>1;}
+  else{const k=224/Math.min(w,h);bw=Math.max(224,Math.round(w*k));bh=Math.max(224,Math.round(h*k));buf=resampleRGBA(src,w,h,bw,bh);ox=-((bw-224)>>1);oy=-((bh-224)>>1);}
+  const fill=mean.map(x=>Math.floor(x*255));
+  for(let y=0;y<224;y++)for(let x=0;x<224;x++){
+    const sx=x-ox,sy=y-oy,inside=sx>=0&&sy>=0&&sx<bw&&sy<bh,o=(sy*bw+sx)*4,i=y*224+x;
+    for(let ch=0;ch<3;ch++){const v=inside?buf[o+ch]:fill[ch];out[ch*50176+i]=(v/255-mean[ch])/std[ch];}
+  }
+  return out;
+}
+async function embedPhoto(src){
+  const F=await fishData(),s=await session(),img=await loadImg(src),e=new Float32Array(F.dim),px=imgPixels(img);
+  for(const how of F.prep){
+    const x=toTensor(img,how,F.mean,F.std,px),o=await s.run({pixels:new ort.Tensor('float32',x,[1,3,224,224])});
+    const v=o.embedding.data;for(let i=0;i<F.dim;i++)e[i]+=v[i];
+  }
+  let n=0;for(let i=0;i<F.dim;i++)n+=e[i]*e[i];n=Math.sqrt(n);for(let i=0;i<F.dim;i++)e[i]/=n;
+  return e;
+}
+const dotRow=(M,r,e)=>{let s=0;const o=r*M.dim;for(let i=0;i<M.dim;i++)s+=M.d[o+i]*e[i];return s;};
+const myFish=()=>LS.get('myfish',[]);
+function embToB64(e){let s='';for(let i=0;i<e.length;i++)s+=String.fromCharCode(Math.max(-127,Math.min(127,Math.round(e[i]*400)))&255);return btoa(s);}
+function b64ToEmb(b){const bin=atob(b),e=new Float32Array(bin.length);for(let i=0;i<bin.length;i++){let v=bin.charCodeAt(i);if(v>127)v-=256;e[i]=v/400;}return e;}
+function learnFish(sp,emb){
+  if(!emb||!sp)return;const l=myFish();l.push({sp:String(sp).trim(),e:emb});while(l.length>200)l.shift();LS.set('myfish',l);
+}
+async function classifyFish(src,mode){
+  const F=await fishData(),e=await embedPhoto(src),L=F.labels;
+  // somiglianza testo e foto di esempio, più le tue catture confermate (stesso nome)
+  const mine={};for(const m of myFish()){const v=b64ToEmb(m.e);let s=0;for(let i=0;i<v.length;i++)s+=v[i]*e[i];const k=m.sp.toLowerCase();if(!(k in mine)||s>mine[k])mine[k]=s;}
+  const lg=L.map((l,i)=>{let sp=dotRow(F.P,i,e);const my=mine[l.n.toLowerCase()];if(my!=null)sp=Math.max(sp,my);return F.scale*(dotRow(F.T,i,e)+F.w*sp);});
+  // specie confermate da te che non sono in elenco
+  const extra=Object.keys(mine).filter(k=>!L.some(l=>l.n.toLowerCase()===k));
+  const exNames=extra.map(k=>myFish().find(m=>m.sp.toLowerCase()===k).sp);
+  extra.forEach(k=>lg.push(F.scale*(F.w+1)*mine[k]*F.myk));
+  const mx=Math.max(...lg);let p=lg.map(x=>Math.exp(x-mx));
+  p=p.map((x,i)=>i<L.length&&!L[i].m.includes(mode)?x*F.outside:x);
+  const agg={};p.forEach((x,i)=>{const n=i<L.length?L[i].n:exNames[i-L.length];agg[n]=(agg[n]||0)+x;});
+  const tot=Object.values(agg).reduce((a,b)=>a+b,0),rk=Object.entries(agg).map(([n,x])=>[n,x/tot]).sort((a,b)=>b[1]-a[1]);
+  // pesce o no: confronto solo testuale con descrizioni di oggetti comuni
+  const tl=L.map((l,i)=>F.scale*dotRow(F.T,i,e)),nl=[];for(let r=0;r<F.N.rows;r++)nl.push(F.scale*dotRow(F.N,r,e));
+  const m2=Math.max(...tl,...nl),fm=tl.reduce((a,x)=>a+Math.exp(x-m2),0),nm=nl.reduce((a,x)=>a+Math.exp(x-m2),0);
+  const lab=L.find(l=>l.n===rk[0][0]);
+  return {is_fish:fm>=nm,species:rk[0][0],scientific_name:lab?.s||'',confidence:rk[0][1],alternatives:rk.slice(1,4).map(([n,c])=>({species:n,confidence:c})),emb:embToB64(e)};
 }
 function aiErrMsg(e){
-  if(e.message==='nokey')return 'Inserisci la chiave API nelle Impostazioni';
-  if(e.message==='refusal')return 'Il modello non ha potuto analizzare questa foto';
-  const st=e.status;
-  if(st===401)return 'Chiave API non valida';
-  if(st===429)return 'Troppe richieste: riprova tra poco';
-  if(st===400&&/credit|balance/i.test(e.message||''))return 'Credito API esaurito';
-  if(st>=500)return 'Servizio momentaneamente non disponibile';
-  if(!navigator.onLine)return 'Sei offline: il riconoscimento richiede internet';
+  if(e.message==='nomodel')return 'Scarica il modello di riconoscimento (una volta sola)';
+  if(e.message==='download'||e.message==='ort')return navigator.onLine?'Download non riuscito: riprova':'Sei offline: serve internet solo per il primo download';
   return 'Riconoscimento non riuscito';
 }
+
+/* ===================== Misura sulla foto ===================== */
+const REFS=[['Palmo della mano',8.5],['Carta di credito',8.56],['Moneta da 2 €',2.575],['Moneta da 1 €',2.325],['Accendino',8],['Lattina 33 cl (altezza)',11.5],['Smartphone',15],['Metro: 10 cm',10]];
+let MEAS=null;
+function openMeasure(src,target){
+  MEAS={src,target,pts:[],ref:LS.get('lastref',0),refCm:null,drag:-1};
+  openSheet(`<h2>📏 Misura il pesce</h2><p class="small mut" id="mhelp"></p>
+    <div class="mwrap"><canvas id="mcv"></canvas></div>
+    <label>Oggetto di riferimento nella foto</label><div class="chips" id="mrefs"></div>
+    <div id="mcustom" style="display:none;margin-top:8px"><input type="number" step="0.1" min="0.5" placeholder="Lunghezza del riferimento in cm" oninput="MEAS.refCm=+this.value;drawMeasure()"></div>
+    <div class="aigrid" style="margin-top:12px"><div><b id="mlen">—</b><span>lunghezza</span></div><div><b id="mw">—</b><span>peso stimato</span></div><div><b id="mpts">0/4</b><span>punti</span></div></div>
+    <div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost" style="flex:1" onclick="MEAS.pts=[];drawMeasure()">↺ Ricomincia</button><button class="btn" style="flex:2" id="mok" onclick="applyMeasure()" disabled>Usa questa misura</button></div>`);
+  loadImg(src).then(img=>{MEAS.img=img;const cv=document.getElementById('mcv');const W=cv.parentElement.clientWidth;cv.width=W*devicePixelRatio;cv.height=W*img.naturalHeight/img.naturalWidth*devicePixelRatio;cv.style.width=W+'px';cv.style.height=(W*img.naturalHeight/img.naturalWidth)+'px';
+    const pos=ev=>{const r=cv.getBoundingClientRect();return [(ev.clientX-r.left)/r.width,(ev.clientY-r.top)/r.height];};
+    cv.onpointerdown=ev=>{const [x,y]=pos(ev),ar=cv.height/cv.width;let best=-1,bd=.05;MEAS.pts.forEach((p,i)=>{const d=Math.hypot(p[0]-x,(p[1]-y)*ar);if(d<bd){bd=d;best=i;}});
+      if(best>=0)MEAS.drag=best;else if(MEAS.pts.length<4){MEAS.pts.push([x,y]);MEAS.drag=MEAS.pts.length-1;}cv.setPointerCapture(ev.pointerId);drawMeasure();};
+    cv.onpointermove=ev=>{if(MEAS.drag<0)return;MEAS.pts[MEAS.drag]=pos(ev);drawMeasure();};
+    cv.onpointerup=()=>{MEAS.drag=-1;};
+    drawMeasure();});
+}
+function measResult(){
+  const M=MEAS;if(M.pts.length<4||!M.img)return null;
+  const W=M.img.naturalWidth,H=M.img.naturalHeight,d=(a,b)=>Math.hypot((a[0]-b[0])*W,(a[1]-b[1])*H);
+  const refCm=M.ref<REFS.length?REFS[M.ref][1]:M.refCm;if(!refCm)return null;
+  const rp=d(M.pts[2],M.pts[3]);if(rp<5)return null;
+  return Math.round(d(M.pts[0],M.pts[1])/rp*refCm*10)/10;
+}
+function measSpecies(){const t=MEAS.target;return t==='live'?LIVEQ.sp:DRAFT?.catches?.[+t]?.sp;}
+function drawMeasure(){
+  const M=MEAS,cv=document.getElementById('mcv');if(!cv||!M.img)return;const g=cv.getContext('2d'),W=cv.width,H=cv.height,s=devicePixelRatio;
+  g.drawImage(M.img,0,0,W,H);
+  const P=M.pts.map(p=>[p[0]*W,p[1]*H]),col=['#2fe0cf','#2fe0cf','#ffb547','#ffb547'],lab=['Muso','Coda','Rif. A','Rif. B'];
+  const line=(a,b,c)=>{g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=6*s;g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();g.strokeStyle=c;g.lineWidth=3*s;g.stroke();};
+  if(P.length>=2)line(P[0],P[1],col[0]);if(P.length>=4)line(P[2],P[3],col[2]);
+  P.forEach((p,i)=>{g.fillStyle=col[i];g.strokeStyle='#fff';g.lineWidth=2*s;g.beginPath();g.arc(p[0],p[1],9*s,0,7);g.fill();g.stroke();g.font=`700 ${12*s}px Outfit, sans-serif`;g.fillStyle='#fff';g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=3*s;g.strokeText(lab[i],p[0]+12*s,p[1]-10*s);g.fillText(lab[i],p[0]+12*s,p[1]-10*s);});
+  const steps=['Tocca la punta del <b>muso</b> del pesce','Ora tocca la fine della <b>coda</b>','Tocca un\'estremità dell\'<b>oggetto di riferimento</b>','Tocca l\'altra estremità del riferimento','Puoi trascinare i punti per correggerli'];
+  document.getElementById('mhelp').innerHTML=steps[Math.min(4,M.pts.length)];
+  document.getElementById('mrefs').innerHTML=[...REFS.map((r,i)=>`<span class="chip ${M.ref===i?'on':''}" onclick="MEAS.ref=${i};LS.set('lastref',${i});document.getElementById('mcustom').style.display='none';drawMeasure()">${r[0]}</span>`),`<span class="chip ${M.ref===REFS.length?'on':''}" onclick="MEAS.ref=${REFS.length};document.getElementById('mcustom').style.display='block';drawMeasure()">Altro…</span>`].join('');
+  document.getElementById('mcustom').style.display=M.ref===REFS.length?'block':'none';
+  const len=measResult(),w=len?estW(measSpecies(),len):null;
+  document.getElementById('mlen').textContent=len?fmt1(len)+' cm':'—';
+  document.getElementById('mw').textContent=w?fmt1(w)+' kg':len?'specie?':'—';
+  document.getElementById('mpts').textContent=M.pts.length+'/4';
+  document.getElementById('mok').disabled=!len;
+}
+function applyMeasure(){
+  const len=measResult();if(!len)return;const t=MEAS.target,sp=measSpecies(),w=estW(sp,len);
+  closeSheet();
+  if(t==='live'){LIVEQ.l=String(Math.round(len));if(w)LIVEQ.w=String(Math.round(w*100)/100);render();}
+  else{const c=DRAFT.catches[+t];c.l=Math.round(len);if(w)c.w=Math.round(w*100)/100;drawEntry();}
+  toast(`📏 ${fmt1(len)} cm${w?' · ≈ '+fmt1(w)+' kg':''}`);
+}
+
+/* ===================== Schede risultato ===================== */
 function aiCard(st,target){
-  // st: {loading, err, r}; target: 'live' o indice cattura
   if(!st)return '';
-  if(st.loading)return `<div class="aibox"><div class="aispin"></div><div><b>Riconosco il pesce…</b><div class="small mut">Specie, misura e peso dalla foto</div></div></div>`;
-  if(st.err)return `<div class="aibox err"><span style="font-size:22px">⚠️</span><div style="flex:1"><b>${esc(st.err)}</b>${st.err.includes('chiave')||st.err.includes('Impostazioni')?`<div class="small"><a href="#settings" style="color:var(--acc)">Vai alle Impostazioni</a></div>`:`<div class="small"><u style="cursor:pointer" onclick="aiRetry('${target}')">Riprova</u></div>`}</div></div>`;
+  if(st.needModel)return `<div class="aibox"><span style="font-size:24px">🧠</span><div style="flex:1"><b>Riconoscimento automatico gratuito</b><div class="small mut">Scarica una volta il modello (circa 100 MB, meglio con Wi-Fi): poi funziona anche senza internet.</div>
+    ${MODEL_DL?`<div class="dlb"><div id="dlbar" style="width:${(MODEL_DL.st.pct*100).toFixed(1)}%"></div></div><div class="small mut"><span id="dlpct">${Math.round(MODEL_DL.st.pct*100)}%</span> scaricato…</div>`:`<button class="btn" style="margin-top:8px;padding:9px 14px" onclick="downloadModel().then(()=>aiRetry('${target}')).catch(e=>toast(aiErrMsg(e)))">⬇️ Scarica e riconosci</button>`}</div></div>`;
+  if(st.loading)return `<div class="aibox"><div class="aispin"></div><div><b>Riconosco il pesce…</b><div class="small mut">Sul tuo telefono, senza internet</div></div></div>`;
+  if(st.err)return `<div class="aibox err"><span style="font-size:22px">⚠️</span><div style="flex:1"><b>${esc(st.err)}</b><div class="small"><u style="cursor:pointer" onclick="aiRetry('${target}')">Riprova</u></div></div></div>`;
   const r=st.r;if(!r)return '';
-  if(!r.is_fish)return `<div class="aibox err"><span style="font-size:22px">🤔</span><div><b>Non vedo un pesce nella foto</b><div class="small mut">${esc(r.notes)}</div></div></div>`;
-  const pc=Math.round(r.confidence*100),col=pc>=80?'var(--ok)':pc>=55?'var(--acc2)':'var(--bad)';
+  if(!r.is_fish)return `<div class="aibox err"><span style="font-size:22px">🤔</span><div><b>Non sembra un pesce</b><div class="small mut">Inquadra il pesce intero, da vicino e di lato. Se è un pesce, scegli la specie qui sotto.</div></div></div>`;
+  const pc=Math.round(r.confidence*100),col=pc>=70?'var(--ok)':pc>=40?'var(--acc2)':'var(--bad)';
+  const src=target==='live'?'LIVEQ.photo':target==='assist'?'ASSIST.photo':`DRAFT.catches[${target}].photo`;
   return `<div class="aibox ok"><div style="flex:1;min-width:0">
-    <div class="small mut" style="text-transform:uppercase;letter-spacing:1px;font-weight:700">🤖 Riconosciuto da Claude</div>
+    <div class="small mut" style="text-transform:uppercase;letter-spacing:1px;font-weight:700">🧠 Riconosciuto sul telefono</div>
     <div style="font-size:19px;font-weight:800;margin-top:2px">${esc(r.species)} <span class="pill" style="background:${col}22;color:${col}">${pc}%</span></div>
-    <div class="small mut"><i>${esc(r.scientific_name)}</i></div>
-    <div class="aigrid"><div><b>${fmt0(r.length_cm)} cm</b><span>${fmt0(r.length_min_cm)}–${fmt0(r.length_max_cm)} cm</span></div><div><b>${fmt1(r.weight_final)} kg</b><span>${r.weight_src==='formula'?'da lunghezza':'stima AI'}</span></div><div><b>${esc(r.size_confidence)}</b><span>affidabilità misura</span></div></div>
-    <div class="small mut">📏 Riferimento: ${esc(r.size_reference||'nessuno')}</div>
+    <div class="small mut"><i>${esc(r.scientific_name)}</i>${pc<40?' · poco sicuro, controlla le alternative':''}</div>
     ${r.alternatives?.length?`<div class="small" style="margin-top:6px">Oppure: ${r.alternatives.map(a=>`<span class="chip" style="padding:3px 9px;font-size:12px" onclick="aiPick('${target}','${esc(a.species).replace(/'/g,"\\'")}')">${esc(a.species)} ${Math.round(a.confidence*100)}%</span>`).join(' ')}</div>`:''}
-    ${r.notes?`<div class="small" style="margin-top:6px">💡 ${esc(r.notes)}</div>`:''}
+    ${target!=='assist'?`<button class="btn ghost full" style="margin-top:10px;padding:10px" onclick="openMeasure(${src},'${target}')">📏 Misura sulla foto · lunghezza e peso</button>`:''}
   </div></div>`;
 }
 /* Sessione live */
 let LIVEAI=null;
 async function liveAnalyze(){
   if(!LIVEQ.photo)return;
-  if(!aiKey()){LIVEAI={err:'Attiva il riconoscimento automatico: inserisci la chiave API nelle Impostazioni'};render();return;}
-  const big=LIVEQ.big||LIVEQ.photo;LIVEAI={loading:true};render();
+  if(!(await modelReady())){LIVEAI={needModel:true};render();return;}
+  LIVEAI={loading:true};render();
   try{
-    const r=await analyzeFish(big,S.live?.mode||S.mode);LIVEAI={r};
-    if(r.is_fish){LIVEQ.sp=r.species;LIVEQ.l=String(Math.round(r.length_cm));LIVEQ.w=String(r.weight_final);LIVEQ.ai={conf:r.confidence,ref:r.size_reference,range:[r.length_min_cm,r.length_max_cm]};toast('🐟 '+r.species+' · '+fmt1(r.weight_final)+' kg');}
+    const r=await classifyFish(LIVEQ.big||LIVEQ.photo,S.live?.mode||S.mode);LIVEAI={r};
+    if(r.is_fish){LIVEQ.sp=r.species;LIVEQ.emb=r.emb;if(LIVEQ.l){const w=estW(r.species,LIVEQ.l);if(w)LIVEQ.w=String(Math.round(w*100)/100);}}
   }catch(e){LIVEAI={err:aiErrMsg(e)};}
   if(S.tab==='live')render();
 }
-/* Modulo uscita: indice della cattura */
+/* Modulo uscita */
 const ENTRYAI={};
 async function entryAnalyze(i,big){
-  const c=DRAFT.catches[i];if(!c?.photo||!aiKey())return;
+  const c=DRAFT.catches[i];if(!c?.photo)return;
+  if(!(await modelReady())){ENTRYAI[i]={needModel:true};drawEntry();return;}
   ENTRYAI[i]={loading:true};drawEntry();
-  try{
-    const r=await analyzeFish(big||c.photo,DRAFT.mode);ENTRYAI[i]={r};
-    if(r.is_fish&&DRAFT.catches[i]===c){c.sp=r.species;c.l=Math.round(r.length_cm);c.w=r.weight_final;c.ai={conf:r.confidence,ref:r.size_reference,range:[r.length_min_cm,r.length_max_cm]};}
-  }catch(e){ENTRYAI[i]={err:aiErrMsg(e)};}
-  if(document.getElementById('sheet').classList.contains('on')&&DRAFT)drawEntry();
+  try{const r=await classifyFish(big||c.photo,DRAFT.mode);ENTRYAI[i]={r};if(r.is_fish&&DRAFT.catches[i]===c){c.sp=r.species;c.emb=r.emb;}}
+  catch(e){ENTRYAI[i]={err:aiErrMsg(e)};}
+  if(document.getElementById('sheet').classList.contains('on')&&DRAFT&&!MEAS_OPEN())drawEntry();
 }
+const MEAS_OPEN=()=>!!document.getElementById('mcv');
 function aiRetry(t){if(t==='live')liveAnalyze();else if(t==='assist')assistAnalyze();else entryAnalyze(+t);}
 function aiPick(t,sp){
-  const len=t==='live'?+LIVEQ.l:t==='assist'?null:+DRAFT.catches[+t].l;
-  const w=len?estW(sp,len):null;
-  if(t==='live'){LIVEQ.sp=sp;if(w)LIVEQ.w=String(Math.round(w*100)/100);render();}
-  else if(t==='assist'){toast(sp);}
-  else{const c=DRAFT.catches[+t];c.sp=sp;if(w)c.w=Math.round(w*100)/100;drawEntry();}
+  if(t==='live'){LIVEQ.sp=sp;const w=LIVEQ.l?estW(sp,LIVEQ.l):null;if(w)LIVEQ.w=String(Math.round(w*100)/100);if(LIVEAI?.r){const r=LIVEAI.r;r.alternatives=[{species:r.species,confidence:r.confidence},...r.alternatives.filter(a=>a.species!==sp)].slice(0,3);r.confidence=null;r.species=sp;}render();}
+  else if(t==='assist'){const r=ASSIST.st.r;r.alternatives=[{species:r.species,confidence:r.confidence},...r.alternatives.filter(a=>a.species!==sp)].slice(0,3);r.species=sp;r.confidence=null;render();}
+  else{const c=DRAFT.catches[+t];c.sp=sp;const w=c.l?estW(sp,c.l):null;if(w)c.w=Math.round(w*100)/100;drawEntry();}
 }
-/* Assistente: riconoscimento al volo, senza registrare */
+/* Assistente */
 let ASSIST=null;
 async function assistSnap(inp){const d=await readPhoto(inp);if(!d)return;ASSIST={photo:d,big:readPhoto.big};assistAnalyze();}
 async function assistAnalyze(){
-  if(!ASSIST)return;if(!aiKey()){ASSIST.st={err:'Inserisci la chiave API nelle Impostazioni'};render();return;}
+  if(!ASSIST)return;
+  if(!(await modelReady())){ASSIST.st={needModel:true};render();return;}
   ASSIST.st={loading:true};render();
-  try{ASSIST.st={r:await analyzeFish(ASSIST.big||ASSIST.photo,S.mode)};}catch(e){ASSIST.st={err:aiErrMsg(e)};}
+  try{ASSIST.st={r:await classifyFish(ASSIST.big||ASSIST.photo,S.mode)};}catch(e){ASSIST.st={err:aiErrMsg(e)};}
   if(S.tab==='ai')render();
 }
-/* Impostazioni */
-function saveKey(){
-  const v=document.getElementById('akey').value.trim();
-  if(v&&!/^sk-ant-/.test(v)){toast('La chiave deve iniziare con sk-ant-');return;}
-  LS.set('apikey',v);AIC=null;toast(v?'Chiave salvata su questo dispositivo':'Chiave rimossa');render();
-}
-async function testKey(){
-  const el=document.getElementById('akeyst');el.textContent='Verifico…';
-  try{const c=await aiClient();await c.models.retrieve(AI_MODEL);el.innerHTML='<span style="color:var(--ok)">✓ Chiave valida, riconoscimento attivo</span>';}
-  catch(e){el.innerHTML=`<span style="color:var(--bad)">✗ ${esc(aiErrMsg(e))}</span>`;}
+/* Impostazioni: stato del modello */
+async function modelStatus(){
+  const el=document.getElementById('mstat');if(!el)return;
+  const ok=await modelReady();
+  el.innerHTML=MODEL_DL?`<div class="dlb"><div id="dlbar" style="width:${(MODEL_DL.st.pct*100).toFixed(1)}%"></div></div><div class="small mut"><span id="dlpct">${Math.round(MODEL_DL.st.pct*100)}%</span> scaricato…</div>`
+    :ok?`<div class="small" style="color:var(--ok)">● Modello installato: riconoscimento attivo anche offline</div><button class="btn danger full" style="margin-top:10px" onclick="deleteModel()">Elimina modello</button>`
+    :`<div class="small mut">○ Modello non ancora scaricato</div><button class="btn full" style="margin-top:10px" onclick="downloadModel().then(()=>toast('Modello pronto!')).catch(e=>toast(aiErrMsg(e)))">⬇️ Scarica modello (circa 100 MB)</button>`;
 }
 
 /* ===================== Sheet ===================== */
