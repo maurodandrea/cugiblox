@@ -2032,11 +2032,11 @@ function aiCard(st,target){
   if(st.err)return `<div class="aibox err"><span style="font-size:22px">⚠️</span><div style="flex:1"><b>${esc(st.err)}</b><div class="small"><u style="cursor:pointer" onclick="aiRetry('${target}')">Riprova</u></div></div></div>`;
   const r=st.r;if(!r)return '';
   if(!r.is_fish)return `<div class="aibox err"><span style="font-size:22px">🤔</span><div><b>Non sembra un pesce</b><div class="small mut">Inquadra il pesce intero, da vicino e di lato. Se è un pesce, scegli la specie qui sotto.</div>${target!=='assist'?`<div class="small" style="margin-top:6px"><u style="cursor:pointer;color:var(--acc)" onclick="openMeasureFor('${target}')">📏 Misura a mano sulla foto</u></div>`:''}</div></div>`;
-  const pc=Math.round(r.confidence*100),col=pc>=70?'var(--ok)':pc>=40?'var(--acc2)':'var(--bad)';
+  const pick=r.confidence==null,pc=pick?100:Math.round(r.confidence*100),col=pc>=70?'var(--ok)':pc>=40?'var(--acc2)':'var(--bad)';
   return `<div class="aibox ok"><div style="flex:1;min-width:0">
     <div class="small mut" style="text-transform:uppercase;letter-spacing:1px;font-weight:700">🧠 Riconosciuto sul telefono</div>
-    <div style="font-size:19px;font-weight:800;margin-top:2px">${esc(r.species)} <span class="pill" style="background:${col}22;color:${col}">${pc}%</span></div>
-    <div class="small mut"><i>${esc(r.scientific_name)}</i>${pc<40?' · poco sicuro, controlla le alternative':''}</div>
+    <div style="font-size:19px;font-weight:800;margin-top:2px">${esc(r.species)} <span class="pill" style="background:${col}22;color:${col}">${pick?'scelta da te':pc+'%'}</span></div>
+    <div class="small mut">${pick?'':`<i>${esc(r.scientific_name)}</i>`}${!pick&&pc<40?' · poco sicuro, controlla le alternative':''}</div>
     ${r.alternatives?.length?`<div class="small" style="margin-top:6px">Oppure: ${r.alternatives.map(a=>`<span class="chip" style="padding:3px 9px;font-size:12px" onclick="aiPick('${target}','${esc(a.species).replace(/'/g,"\\'")}')">${esc(a.species)} ${Math.round(a.confidence*100)}%</span>`).join(' ')}</div>`:''}
     ${measBlock(st,target)}
   </div></div>`;
@@ -2105,7 +2105,13 @@ checkBadges();
 render();
 loadWeather();
 if(!LS.get('welcomed',false))setTimeout(welcome,700);
-if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+// aggiornamento automatico: controlla sempre se c'è una versione nuova e ricarica appena è pronta
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
+  const had=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')r.update();});}).catch(()=>{});
+  let reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!had||reloaded||S.live)return;reloaded=true;toast('Nuova versione di Lenza: ricarico…');setTimeout(()=>location.reload(),800);});
+}
 </script>
 </body>
 </html>
