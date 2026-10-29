@@ -1859,7 +1859,7 @@ async function fishProbOf(seg,m){
 }
 async function findFish(seg,avoid){
   const {enc}=seg,M=seg.masks;
-  const overlaps=m=>avoid&&maskIoU(m,avoid,enc.ww)>0&&(()=>{let k=0;for(let i=0;i<m.b.length;i++)if(m.b[i]&&avoid.b[i])k++;return k>0.3*avoid.n;})();
+  const overlaps=m=>avoid&&maskIoU(m,avoid,enc.ww)>0&&(()=>{let k=0;for(let i=0;i<m.b.length;i++)if(m.b[i]&&avoid.b[i])k++;return k>0.05*avoid.n;})();
   const cands=maxb=>M.filter(m=>{const f=m.f;return f.asp>1.6&&f.asp<10&&f.rect>.35&&f.rect<.88&&f.frac>.015&&f.frac<.7&&f.border<=maxb&&!overlaps(m);})
     .map(m=>{const cen=Math.hypot(m.f.c[0]/enc.ww-.5,m.f.c[1]/enc.hh-.5);return {m,sc:Math.sqrt(m.f.A)*m.s*(1.2-cen)};}).sort((a,b)=>b.sc-a.sc).slice(0,3);
   let C=cands(0);if(!C.length)C=cands(1);
