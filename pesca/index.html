@@ -1040,7 +1040,7 @@ function chart(hs){
     <path d="${smooth(wp)}" fill="none" stroke="#ffb547" stroke-width="2" stroke-dasharray="5 5" opacity=".9"/>
     <circle cx="${ip[best][0]}" cy="${ip[best][1]}" r="11" fill="#2fe0cf" opacity=".25"/><circle cx="${ip[best][0]}" cy="${ip[best][1]}" r="5" fill="#fff" stroke="#2fe0cf" stroke-width="3"/>
     <text x="${clamp(ip[best][0],60,W-60)}" y="${ip[best][1]-16}" fill="#fff" font-size="20" font-weight="800" text-anchor="middle">${hs[best].idx} · ${pad(hs[best].t.getHours())}:00</text>${lbl}${nowLine(hs,x,p,H-p)}<g class="sel"></g></svg>
-  <div class="legend"><span><i style="background:var(--grad)"></i>Indice di pesca</span><span><i style="background:#ffb547"></i>Vento (max ${fmt0(wmx)} km/h)</span></div>`;
+  <div class="legend"><span><i style="background:var(--grad)"></i>Indice di pesca</span><span><i style="background:#ffb547"></i>Vento</span></div>`;
 }
 
 /* ===================== Spot ===================== */
