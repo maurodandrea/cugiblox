@@ -949,7 +949,7 @@ function vMeteo(v){
     <div class="tile"><div class="k">Luna</div><div class="v" style="font-size:16px">${ph.e} ${ph.name}</div><div class="s">${Math.round(ph.illum*100)}% illuminata</div></div>
   </div>
   <div style="margin-top:12px">${timeline(sol,d)}</div></div>
-  <div class="card"><h3>Andamento</h3>${chart(hs)}</div>
+  <div class="card"><h3>Indice di pescosità</h3>${chart(hs)}</div>
   ${X.marine&&hs.some(h=>h.lvl!=null)?`<div class="card"><h3>Marea</h3>${tideChart(hs)}</div>`:''}
   <div class="card"><h3>Ora per ora</h3>
     <div class="hr mut small" style="font-weight:700"><span>Ora</span><span></span><span>°C</span><span>Vento km/h</span><span>${X.marine?'Onda':'hPa'}</span><span>Indice</span></div>
@@ -1009,7 +1009,9 @@ function chart(hs){
   const W=500,H=170,p=22,n=hs.length;if(!n)return '';
   const x=i=>p+i*(W-2*p)/(n-1||1),y=v=>H-p-v*(H-2*p-10);
   const wmx=Math.max(30,...hs.map(h=>h.ws));
-  const ip=hs.map((h,i)=>[x(i),y(h.idx/100)]),wp=hs.map((h,i)=>[x(i),y(h.ws/wmx)]);
+  // scala sull'intervallo dei valori del giorno (almeno 20 punti): alti e bassi più visibili
+  const vi=hs.map(h=>h.idx);let lo=Math.min(...vi)-4,hi=Math.max(...vi)+4;if(hi-lo<20){const c=(hi+lo)/2;lo=c-10;hi=c+10;}
+  const ip=hs.map((h,i)=>[x(i),y((h.idx-lo)/(hi-lo))]),wp=hs.map((h,i)=>[x(i),y(h.ws/wmx)]);
   const line=smooth(ip),area=line+` L${x(n-1)} ${H-p} L${x(0)} ${H-p}Z`;
   const best=hs.reduce((a,h,i)=>h.idx>hs[a].idx?i:a,0);
   const grid=[.25,.5,.75,1].map(k=>`<line x1="${p}" x2="${W-p}" y1="${y(k)}" y2="${y(k)}" stroke="rgba(255,255,255,.06)"/>`).join('');
