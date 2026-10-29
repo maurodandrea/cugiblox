@@ -708,7 +708,7 @@ function build(w,m,sp,mode=S.mode){
 
 /* ===================== Indice di Pesca ===================== */
 const WEIGHTS={
-  coast:{press:16,wind:6,wave:20,sol:14,moon:8,light:14,cloud:0,rain:0,sst:6,expo:6,tide:20,calm:15},  // pioggia e nuvole tolte; marea: 2 ore prima e 1 dopo l'alta
+  coast:{press:16,wind:6,wave:20,sol:14,moon:8,light:14,cloud:0,rain:0,sst:6,expo:6,tide:20,calm:15,scir:12},  // pioggia e nuvole tolte; marea: 2 ore prima e 1 dopo l'alta
   sea:{press:16,wind:20,wave:18,sol:14,moon:8,light:12,cloud:4,rain:4,sst:4,expo:6},
   lake:{press:24,wind:12,wave:0,sol:16,moon:8,light:18,cloud:10,rain:8,sst:4},
   river:{press:20,wind:8,wave:0,sol:12,moon:6,light:18,cloud:10,rain:20,sst:6}
@@ -760,6 +760,10 @@ function factors(X,i,mode){
   if(h.wave!=null){const t=h.t.getTime();let storm=false;
     for(let j=i-1;j>=0;j--){const q=X.hours[j];if(t-q.t.getTime()>48*3600e3)break;if(q.wave!=null&&q.wave>=1.5){storm=true;break;}}
     f.calm=storm&&h.wave<=1?1:.4;}
+  // scaduta dopo lo scirocco: almeno 6 ore di scirocco (vento da SE, 100°–170°, da 20 km/h) nelle 48 ore precedenti e ora è calato o ha girato
+  {const isS=q=>q.wd!=null&&q.wd>=100&&q.wd<=170&&q.ws>=20,t=h.t.getTime();let n=0;
+    for(let j=i-1;j>=0;j--){const q=X.hours[j];if(t-q.t.getTime()>48*3600e3)break;if(isS(q))n++;}
+    f.scir=n>=6&&!isS(h)?1:.4;}
   // alta marea: favorevole dalle 2 ore prima del picco fino a 1 ora dopo
   const hi=highTides(X);
   if(hi){const t=mid.getTime();f.tide=hi.some(p=>t>=p-2*3600e3&&t<=p+3600e3)?1:.3;}
@@ -927,7 +931,7 @@ function vHome(v){
 function seaState(w){return w<0.1?'calmo':w<0.5?'poco mosso':w<1.25?'mosso':w<2.5?'molto mosso':w<4?'agitato':'grosso';}
 function explain(h){
   const f=h.f||{},good=[],bad=[];
-  const L={press:'pressione',wind:'vento',wave:'moto ondoso',sol:'periodo solunare',moon:'fase lunare',light:'luce',sst:'temperatura',tide:'alta marea',calm:'mare calmo dopo la mareggiata',expo:'esposizione al vento'};
+  const L={press:'pressione',wind:'vento',wave:'moto ondoso',sol:'periodo solunare',moon:'fase lunare',light:'luce',sst:'temperatura',tide:'alta marea',calm:'mare calmo dopo la mareggiata',scir:'scaduta dopo lo scirocco',expo:'esposizione al vento'};
   for(const k in L){if(f[k]==null)continue;if(f[k]>=.95)good.push(L[k]);else if(f[k]<=.45)bad.push(L[k]);}
   let s='';
   if(good.length)s+='A favore: '+good.slice(0,3).join(', ')+'. ';
