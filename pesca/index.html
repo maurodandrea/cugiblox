@@ -923,7 +923,7 @@ function vHome(v){
 function seaState(w){return w<0.1?'calmo':w<0.5?'poco mosso':w<1.25?'mosso':w<2.5?'molto mosso':w<4?'agitato':'grosso';}
 function explain(h){
   const f=h.f||{},good=[],bad=[];
-  const L={press:'pressione',wind:'vento',wave:'moto ondoso',sol:'periodo solunare',moon:'fase lunare',light:'luce',cloud:'nuvolosità',rain:'pioggia',sst:'temperatura',tide:'marea',expo:'esposizione al vento'};
+  const L={press:'pressione',wind:'vento',wave:'moto ondoso',sol:'periodo solunare',moon:'fase lunare',light:'luce',sst:'temperatura',tide:'marea',expo:'esposizione al vento'};
   for(const k in L){if(f[k]==null)continue;if(f[k]>=.95)good.push(L[k]);else if(f[k]<=.45)bad.push(L[k]);}
   let s='';
   if(good.length)s+='A favore: '+good.slice(0,3).join(', ')+'. ';
