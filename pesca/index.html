@@ -1298,7 +1298,7 @@ function vLive(v){
   </section>
   <div class="card"><h3>Registra una cattura</h3>
     ${LIVEQ.photo?`<div class="cphoto big"><img src="${LIVEQ.photo}" alt="" onclick="viewPhoto(LIVEQ.photo)"><span onclick="LIVEQ.photo=null;LIVEQ.big=null;LIVEAI=null;render()">✕</span></div>${aiCard(LIVEAI,'live')}`
-      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>Riconosco la specie sul telefono · poi misuri sulla foto</small></label>
+      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>Dall'alto, pesce intero, con accanto una moneta da 2 € o una carta: calcolo da solo specie, lunghezza e peso</small></label>
         <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 12px">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="liveSnap(this)"></label>`}
     <div class="chips">${chips.map(n=>`<span class="chip ${LIVEQ.sp===n?'on':''}" onclick="LIVEQ.sp='${n.replace(/'/g,"\\'")}';render()">${esc(n)}</span>`).join('')}</div>
     <label>Specie</label><input list="spl2" value="${esc(LIVEQ.sp)}" oninput="LIVEQ.sp=this.value" placeholder="Scegli sopra o scrivi">
@@ -1883,7 +1883,7 @@ function findRef(seg,refIdx){
     const C=M.filter(m=>m.f.asp<1.2&&m.f.circ>.78&&m.f.frac<.08&&m.f.border===0);if(!C.length)return null;
     let best=C.reduce((a,m)=>m.f.circ*m.s>a.f.circ*a.s?m:a),r=Math.sqrt(best.f.A/Math.PI);
     for(const m of C){const r2=Math.sqrt(m.f.A/Math.PI);if(r2>r&&Math.hypot(m.f.c[0]-best.f.c[0],m.f.c[1]-best.f.c[1])<.3*r&&r2<2.2*r){best=m;r=r2;}}  // anello esterno concentrico
-    return {m:best,kind:'circle'};
+    return {m:best,kind:'circle',r};
   }
   const C=M.filter(m=>m.f.asp>spec.a[0]&&m.f.asp<spec.a[1]&&m.f.rect>.85&&m.f.frac<.25&&m.f.border===0);if(!C.length)return null;
   return {m:C.reduce((a,m)=>m.f.rect*m.s*(1-Math.abs(m.f.asp-spec.r)/spec.r)>a.f.rect*a.s*(1-Math.abs(a.f.asp-spec.r)/spec.r)?m:a),kind:'rect'};
@@ -1894,6 +1894,14 @@ async function autoMeasure(src,refIdx,onp){
     SEG={src,img,enc,masks:await samSegment(enc,onp)};
   }
   const seg=SEG,rf=findRef(seg,refIdx),fk='fish_'+(rf?seg.masks.indexOf(rf.m):'none');
+  if(rf&&rf.kind==='circle'&&!rf.m.grown){
+    const f=rf.m.f;rf.m.grown=true;
+    for(const m of await samDecode(seg.enc,[[[f.c[0]*4+2,f.c[1]*4+2]]],1)){
+      if(m.n<12||m.s<.6)continue;m.f=mShape(m,seg.enc.ww,seg.enc.hh);const r2=Math.sqrt(m.f.A/Math.PI);
+      if(m.f.asp<1.2&&m.f.circ>.78&&m.f.border===0&&r2>rf.r*1.05&&r2<2.2*rf.r&&Math.hypot(m.f.c[0]-f.c[0],m.f.c[1]-f.c[1])<.3*rf.r&&r2>Math.sqrt(rf.m.f.A/Math.PI)){
+        Object.assign(rf.m,{b:m.b,n:m.n,bb:m.bb,f:m.f});rf.r=r2;}
+    }
+  }
   if(seg[fk]===undefined)seg[fk]=await findFish(seg,rf?.m);seg.fish=seg[fk];onp&&onp(1);
   const {img,enc}=seg,W=img.naturalWidth,H=img.naturalHeight,k=enc.k,P=([x,y])=>[((x*4+2)/k)/W,((y*4+2)/k)/H];
   const out={ref:refIdx,fishOk:!!seg.fish,refOk:false,auto:!!REFS[refIdx]?.[2]};
