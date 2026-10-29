@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06141c">
+<title>Lenza · Misurazione</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06141c;--card:#0d2430;--line:#1d4152;--txt:#e8f4f6;--mut:#8fb0ba;--acc:#2fe0cf;--acc2:#ffb547;--bad:#ff6b6b;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:Outfit,system-ui,sans-serif;font-size:15px;line-height:1.4;}
+header{position:sticky;top:0;z-index:5;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:rgba(6,20,28,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.word{font-size:22px;font-weight:800;}.word b{color:var(--acc);}
+.ver{font-size:11px;color:var(--mut);font-weight:600;}
+main{max-width:640px;margin:0 auto;padding:14px 16px 60px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:14px;}
+h2{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);margin:0 0 10px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:12px 16px;font:700 15px Outfit,sans-serif;background:linear-gradient(135deg,var(--acc),#3b9cff);color:#03282a;cursor:pointer;}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt);}
+.btn:disabled{opacity:.45;}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.shoot{flex:1;position:relative;overflow:hidden;}
+.shoot input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer;background:#0a1d27;}
+.chip.on{background:var(--acc);color:#03282a;border-color:var(--acc);font-weight:700;}
+.small{font-size:13px;}.mut{color:var(--mut);}
+.bar{height:8px;border-radius:9px;background:#0a1d27;overflow:hidden;margin:8px 0;}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),#3b9cff);transition:width .3s;}
+.sp{font-size:26px;font-weight:800;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0;}
+.grid div{background:#0a1d27;border-radius:12px;padding:10px 6px;text-align:center;}
+.grid b{display:block;font-size:19px;}.grid span{font-size:12px;color:var(--mut);}
+img.prev,canvas{width:100%;border-radius:14px;display:block;}
+canvas{touch-action:none;}
+.spin{width:20px;height:20px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:r 1s linear infinite;flex:none;}
+@keyframes r{to{transform:rotate(360deg);}}
+input[type=number],select{background:#0a1d27;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:8px;font:600 15px Outfit,sans-serif;}
+.warn{color:var(--acc2);}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#123544;border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:.3s;pointer-events:none;}
+#toast.on{opacity:1;}
+</style>
+</head>
+<body>
+<header><div class="word">Len<b>za</b> · misurazione</div><div class="ver" id="ver" data-build="__BUILD__"></div></header>
+<main id="app"></main>
+<div id="toast"></div>
+<script src="motore.js"></script>
+<script>
+// Pagina di prova: solo riconoscimento della specie e misura automatica dalla foto.
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt1=x=>(Math.round(x*10)/10).toLocaleString('it-IT');
+const fmtW=w=>w<1?Math.round(w*1000)+' g':fmt1(w)+' kg';
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200);}
+const MODES=[['coast','Mare da riva'],['sea','Mare (barca)'],['lake','Lago'],['river','Fiume']];
+const P={mode:LS.get('mode','coast'),ready:null,photo:null,r:null,m:null,busy:'',t0:0,manual:null};
+
+async function readPhoto(inp){
+  const f=inp.files&&inp.files[0];inp.value='';if(!f)return;
+  const url=URL.createObjectURL(f),img=await loadImg(url);
+  const k=Math.min(1,1280/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');
+  c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+  P.photo=c.toDataURL('image/jpeg',.85);P.r=null;P.m=null;P.manual=null;SEG=null;analyze();
+}
+async function analyze(){
+  const src=P.photo;P.t0=performance.now();
+  try{
+    P.busy='Riconosco la specie…';render();
+    P.r=await classifyFish(src,P.mode);if(P.photo!==src)return;
+    await measure(null);
+  }catch(e){P.busy='';P.err=aiErrMsg(e);render();}
+}
+async function measure(force){
+  const src=P.photo,t=performance.now();P.err=null;P.busy='Cerco pesce e riferimento…';P.pct=0;render();
+  try{
+    const m=await autoMeasure(src,force,p=>{P.pct=p;const el=document.getElementById('pct');if(el)el.textContent=Math.round(p*100)+'%';});
+    if(P.photo!==src)return;
+    // specie anche sul solo pesce ritagliato, mediata con la foto intera
+    if(m.fishMask&&P.r&&!P.r.cropped&&!P.r.mine){
+      const r2=await classifyEmb(await embedMask(SEG,m.fishMask),P.mode),d1=P.r.dist||{},d2=r2.dist||{},avg={};
+      for(const k of new Set([...Object.keys(d1),...Object.keys(d2)]))avg[k]=((d1[k]||0)+(d2[k]||0))/2;
+      const rk=Object.entries(avg).sort((a,b)=>b[1]-a[1]),lab=(await fishData()).labels.find(l=>l.n===rk[0][0]);
+      P.r={...P.r,species:rk[0][0],scientific_name:lab?.s||'',confidence:rk[0][1],alternatives:rk.slice(1,4).map(([n,c])=>({species:n,confidence:c})),emb:r2.emb,dist:avg,cropped:true};
+    }
+    m.preview=await measPreview(src,m.pts).catch(()=>null);m.secs=(performance.now()-t)/1000;
+    P.m=m;P.busy='';render();
+  }catch(e){P.busy='';P.err='Misura non riuscita: '+aiErrMsg(e);render();}
+}
+function pickSpecies(n){if(!P.r)return;learnFish(n,P.r.emb);P.r={...P.r,species:n,confidence:null,mine:true};toast('Specie corretta: la ricorderò');render();}
+function setMode(v){P.mode=v;LS.set('mode',v);if(P.photo)analyze();else render();}
+function setShoe(v){if(+v>=30&&+v<=50){LS.set('shoesize',+v);if(P.m?.ref===3&&P.m.len)measure(3);}}
+
+/* misura a mano: 4 punti (muso, coda, inizio e fine del riferimento) */
+function startManual(ref){P.manual={pts:P.m?.pts?.length===4?P.m.pts.map(p=>[...p]):[],ref:ref??P.m?.ref??3,drag:-1};render();}
+function manualLen(){
+  const M=P.manual;if(!M||M.pts.length<4||!M.img)return null;const W=M.img.naturalWidth,H=M.img.naturalHeight,d=(a,b)=>Math.hypot((a[0]-b[0])*W,(a[1]-b[1])*H);
+  const rp=d(M.pts[2],M.pts[3]);return rp<5?null:Math.round(d(M.pts[0],M.pts[1])/rp*refCm(M.ref)*10)/10;
+}
+function drawManual(){
+  const M=P.manual,cv=document.getElementById('mcv');if(!cv||!M.img)return;const g=cv.getContext('2d'),W=cv.width,H=cv.height,s=devicePixelRatio;
+  g.drawImage(M.img,0,0,W,H);const Pt=M.pts.map(p=>[p[0]*W,p[1]*H]),col=['#2fe0cf','#2fe0cf','#ffb547','#ffb547'],lab=['Muso','Coda','Rif. inizio','Rif. fine'];
+  const line=(a,b,c)=>{g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=6*s;g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();g.strokeStyle=c;g.lineWidth=3*s;g.stroke();};
+  if(Pt.length>=2)line(Pt[0],Pt[1],col[0]);if(Pt.length>=4)line(Pt[2],Pt[3],col[2]);
+  Pt.forEach((p,i)=>{g.fillStyle=col[i];g.beginPath();g.arc(p[0],p[1],9*s,0,7);g.fill();g.font=`700 ${12*s}px Outfit,sans-serif`;g.fillStyle='#fff';g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=3*s;g.strokeText(lab[i],p[0]+12*s,p[1]-10*s);g.fillText(lab[i],p[0]+12*s,p[1]-10*s);});
+  const steps=['Tocca la punta del <b>muso</b>','Tocca la fine della <b>coda</b>',`Tocca un'estremità di: <b>${esc(refName(M.ref))}</b>`,'Tocca l\'altra estremità del riferimento','Trascina i punti per correggerli'];
+  document.getElementById('mhelp').innerHTML=steps[Math.min(4,M.pts.length)];
+  const len=manualLen(),w=len?estW(P.r?.species,len):null;document.getElementById('mlen').innerHTML=len?`<b>${fmt1(len)} cm</b>${w?' · ≈ '+fmtW(w):''}`:'—';
+}
+function initManual(){
+  const M=P.manual,cv=document.getElementById('mcv');if(!cv)return;
+  loadImg(P.photo).then(img=>{M.img=img;const W=cv.clientWidth;cv.width=W*devicePixelRatio;cv.height=W*img.naturalHeight/img.naturalWidth*devicePixelRatio;cv.style.height=(W*img.naturalHeight/img.naturalWidth)+'px';
+    const pos=ev=>{const r=cv.getBoundingClientRect();return [(ev.clientX-r.left)/r.width,(ev.clientY-r.top)/r.height];};
+    cv.onpointerdown=ev=>{const [x,y]=pos(ev),ar=cv.height/cv.width;let best=-1,bd=.05;M.pts.forEach((p,i)=>{const d=Math.hypot(p[0]-x,(p[1]-y)*ar);if(d<bd){bd=d;best=i;}});
+      if(best>=0)M.drag=best;else if(M.pts.length<4){M.pts.push([x,y]);M.drag=M.pts.length-1;}cv.setPointerCapture(ev.pointerId);drawManual();};
+    cv.onpointermove=ev=>{if(M.drag<0)return;M.pts[M.drag]=pos(ev);drawManual();};
+    cv.onpointerup=()=>{M.drag=-1;};drawManual();});
+}
+async function applyManual(){
+  const len=manualLen();if(!len)return;const M=P.manual;
+  P.m={...(P.m||{}),len,pts:M.pts,ref:M.ref,refOk:true,fishOk:true,manual:true,fishCut:false,kind:REFS[M.ref]?.[2]?.t||null};
+  P.m.preview=await measPreview(P.photo,M.pts).catch(()=>null);P.manual=null;render();
+}
+
+function render(){
+  const app=document.getElementById('app'),dl=MODEL_DL;
+  let h='';
+  if(P.ready===false||dl){
+    h+=`<div class="card"><h2>Modelli</h2><p class="small">Per riconoscere e misurare servono i modelli sul telefono (circa 140 MB, una volta sola; poi funziona anche offline).</p>
+      ${dl?`<div class="bar"><i id="dlbar" style="width:${(dl.st.pct*100).toFixed(1)}%"></i></div><div class="small mut">Download… <b id="dlpct">${Math.round(dl.st.pct*100)}%</b></div>`
+        :`<button class="btn" onclick="downloadModel().then(()=>{P.ready=true;render();}).catch(e=>toast(aiErrMsg(e)))">⬇️ Scarica i modelli</button>`}</div>`;
+  }
+  h+=`<div class="card"><h2>Impostazioni</h2><div class="row"><select onchange="setMode(this.value)">${MODES.map(([k,n])=>`<option value="${k}" ${P.mode===k?'selected':''}>${n}</option>`).join('')}</select>
+    <span class="small">Scarpa n.</span><input type="number" min="30" max="50" step="0.5" style="width:80px" value="${shoeSize()}" onchange="setShoe(this.value)"></div></div>`;
+  h+=`<div class="card"><h2>Foto del pesce</h2><div class="row"><label class="btn shoot">📷 Scatta<input type="file" accept="image/*" capture="environment" onchange="readPhoto(this)"></label><label class="btn ghost shoot">🖼️ Galleria<input type="file" accept="image/*" onchange="readPhoto(this)"></label></div>
+    <p class="small mut" style="margin:10px 0 0">Per una misura precisa: pesce intero e disteso, foto dall'alto, accanto una moneta, il bancomat, la tua scarpa o la mano aperta.</p></div>`;
+  if(P.photo&&!P.manual){
+    h+=`<div class="card">`;
+    if(!(P.m?.preview))h+=`<img class="prev" src="${P.photo}" alt="">`;
+    if(P.r){const r=P.r;h+=`<div style="margin-top:10px"><div class="sp">${esc(r.species)} ${r.confidence!=null?`<span class="small" style="color:${r.confidence>.6?'#5be38a':'var(--acc2)'}">${Math.round(r.confidence*100)}%</span>`:'<span class="small mut">scelta da te</span>'}</div>
+      <div class="small mut"><i>${esc(r.scientific_name||'')}</i>${r.is_fish===false?' · <span class="warn">non sembra un pesce</span>':''}</div>
+      <div class="chips" style="margin-top:6px"><span class="small mut">Non è giusto? Tocca:</span>${(r.alternatives||[]).map(a=>`<span class="chip" onclick="pickSpecies('${esc(a.species)}')">${esc(a.species)} ${Math.round(a.confidence*100)}%</span>`).join('')}
+      <select class="chip" onchange="if(this.value)pickSpecies(this.value)"><option value="">altra…</option></select></div></div>`;}
+    if(P.busy)h+=`<div class="row" style="margin-top:12px"><div class="spin"></div><span class="small">${P.busy} <b id="pct">${P.pct?Math.round(P.pct*100)+'%':''}</b></span></div>`;
+    if(P.err)h+=`<p class="warn small">⚠️ ${esc(P.err)}</p>`;
+    const m=P.m;
+    if(m&&!P.busy){
+      if(m.len){const w=estW(P.r?.species,m.len);h+=`<div class="grid"><div><b>${fmt1(m.len)} cm</b><span>lunghezza</span></div><div><b>${w?fmtW(w):'—'}</b><span>peso stimato</span></div><div><b style="font-size:13px">${esc(refName(m.ref))}</b><span>${m.manual?'segnato da te':m.forced?'scelto da te':'trovato'}</span></div></div>`;
+        if(m.kind==='hand'&&!m.manual)h+=`<div class="small warn">✋ Con la mano la misura è approssimativa (palmo di ${fmt1(refCm(4))} cm).</div>`;
+        if(m.fishCut&&!m.manual)h+=`<div class="small warn">✂️ Testa o coda escono dalla foto: misura per difetto.</div>`;}
+      else if(m.fishCut)h+=`<p class="small">📏 <b>Il pesce esce dalla foto</b>: rifalla con tutto il pesce dentro.</p>`;
+      else if(!m.fishOk&&m.refOk)h+=`<p class="small">📏 Ho trovato «${esc(refName(m.ref))}» ma non riesco a isolare il pesce.</p>`;
+      else if(m.fishOk)h+=`<p class="small">📏 Pesce trovato, ma nessun riferimento (moneta, bancomat, scarpa, mano).${m.person?' Con il pesce in mano a una persona la misura non è affidabile.':''}</p>`;
+      else h+=`<p class="small">📏 Non trovo né il pesce né un riferimento.</p>`;
+      if(m.preview)h+=`<img class="prev" src="${m.preview}" alt="" style="margin-top:8px"><div class="small mut" style="margin-top:4px">Azzurro: pesce · arancione: riferimento${m.secs?` · ${fmt1(m.secs)} s`:''}</div>`;
+      h+=`<div class="small" style="margin-top:10px">Il riferimento è un altro? <div class="chips" style="margin-top:6px">${REFS.map((r,i)=>[r,i]).filter(([r])=>r[2]).map(([r,i])=>`<span class="chip ${m.ref===i?'on':''}" onclick="measure(${i})">${esc(refName(i))}</span>`).join('')}</div></div>
+        <button class="btn ghost" style="margin-top:12px;width:100%" onclick="startManual()">📏 Segna o correggi i punti a mano</button>`;
+    }
+    h+=`</div>`;
+  }
+  if(P.manual){const M=P.manual;
+    h+=`<div class="card"><h2>Misura a mano</h2><p class="small" id="mhelp"></p><canvas id="mcv"></canvas>
+      <div class="chips" style="margin-top:10px">${REFS.map((r,i)=>`<span class="chip ${M.ref===i?'on':''}" onclick="P.manual.ref=${i};render()">${esc(refName(i))}</span>`).join('')}</div>
+      <p class="small" id="mlen" style="margin:10px 0">—</p>
+      <div class="row"><button class="btn ghost" onclick="P.manual.pts=[];drawManual()">↺ Ricomincia</button><button class="btn ghost" onclick="P.manual=null;render()">Annulla</button><button class="btn" style="flex:1" onclick="applyManual()">Usa la misura</button></div></div>`;
+  }
+  app.innerHTML=h;
+  if(P.manual){const M=P.manual;if(M.img){const cv=document.getElementById('mcv');M.img=null;}initManual();}
+  if(P.r){const sel=app.querySelector('select.chip');if(sel)fishData().then(F=>{sel.innerHTML='<option value="">altra…</option>'+F.labels.map(l=>`<option>${esc(l.n)}</option>`).join('');});}
+}
+{const el=document.getElementById('ver'),b=el.dataset.build,lm=new Date(document.lastModified),p2=n=>String(n).padStart(2,'0');
+  el.textContent='agg. '+(b.includes('BUILD')?`${p2(lm.getDate())}/${p2(lm.getMonth()+1)}/${lm.getFullYear()} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`:b);}
+modelReady().then(r=>{P.ready=r;render();});render();
+</script>
+</body>
+</html>
