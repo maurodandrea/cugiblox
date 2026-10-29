@@ -1304,7 +1304,7 @@ function vLive(v){
     ${LIVEQ.photo?`<div class="cphoto big"><img src="${LIVEQ.photo}" alt="" onclick="viewPhoto(LIVEQ.photo)"><span onclick="LIVEQ.photo=null;LIVEQ.big=null;LIVEAI=null;render()">✕</span></div>${aiCard(LIVEAI,'live')}`
       :`<div class="shoot2"><label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Scatta</b><small>Fotocamera</small></label>
         <label class="shoot"><input type="file" accept="image/*" onchange="liveSnap(this)"><span class="cam">🖼️</span><b>Galleria</b><small>Foto già fatta</small></label></div>
-        <p class="small mut" style="margin:-4px 0 12px;text-align:center">Pesce intero visto dall'alto, con accanto una moneta da 2 € o una carta: calcolo da solo specie, lunghezza e peso</p>`}
+        <p class="small mut" style="margin:-4px 0 12px;text-align:center">Pesce intero visto dall'alto, con accanto una moneta, un bancomat, una scarpa o la mano: calcolo da solo specie, lunghezza e peso</p>`}
     <div class="chips">${chips.map(n=>`<span class="chip ${LIVEQ.sp===n?'on':''}" onclick="LIVEQ.sp='${n.replace(/'/g,"\\'")}';render()">${esc(n)}</span>`).join('')}</div>
     <label>Specie</label><input list="spl2" value="${esc(LIVEQ.sp)}" oninput="LIVEQ.sp=this.value" placeholder="Scegli sopra o scrivi">
     <datalist id="spl2">${[...new Set([...SPECIES.map(s=>s.n),...Object.keys(LW)])].map(n=>`<option value="${n}">`).join('')}</datalist>
@@ -1524,10 +1524,11 @@ function vSettings(v){
     <p class="small mut" style="margin:10px 0">I dati restano solo su questo dispositivo. Esporta un backup per non perderli o per spostarli su un altro telefono.</p>
     <div class="row" style="gap:8px"><button class="btn ghost" style="flex:1" onclick="exportData()">⬇️ Esporta</button><label class="btn ghost" style="flex:1;text-align:center;margin:0;color:var(--txt);font-size:14px">⬆️ Importa<input type="file" accept="application/json" style="display:none" onchange="importData(this)"></label></div></div>
   <div class="card"><h3>🧠 Riconoscimento dei pesci</h3>
-    <p class="small" style="margin-bottom:8px">Il riconoscimento della specie funziona <b>sul telefono</b>, gratis e anche senza internet, con BioCLIP: un modello open source addestrato su milioni di foto di animali e piante. Lunghezza e peso si calcolano da soli con SlimSAM, che ritaglia pesce e oggetto di riferimento nella foto. I modelli si scaricano una volta (circa 115 MB).</p>
+    <p class="small" style="margin-bottom:8px">Il riconoscimento della specie funziona <b>sul telefono</b>, gratis e anche senza internet, con BioCLIP: un modello open source addestrato su milioni di foto di animali e piante. Lunghezza e peso si calcolano da soli con SlimSAM, che ritaglia pesce e oggetto di riferimento nella foto. I modelli si scaricano una volta (circa 155 MB).</p>
     <div id="mstat"><div class="small mut">Controllo…</div></div>
-    <div class="kv" style="margin-top:10px"><span>Catture che hai confermato</span><b>${myFish().length}</b></div>
-    <p class="small mut" style="margin-top:6px">Ogni cattura con foto che salvi insegna al riconoscimento i pesci delle tue zone. Per la misura automatica fotografa il pesce dall'alto con accanto una moneta da 2 € (o 1 €), una carta di credito, un accendino, una lattina o lo smartphone.</p>
+    <div class="kv" style="margin-top:10px"><span>Numero della tua scarpa (riferimento di riserva)</span><input type="number" min="30" max="50" step="0.5" style="width:80px;padding:6px 8px" value="${shoeSize()}" onchange="if(+this.value>=30&&+this.value<=50)LS.set('shoesize',+this.value)"></div>
+    <div class="kv"><span>Catture che hai confermato</span><b>${myFish().length}</b></div>
+    <p class="small mut" style="margin-top:6px">Ogni cattura con foto che salvi insegna al riconoscimento i pesci delle tue zone. Per la misura automatica fotografa il pesce dall'alto con accanto una moneta, un bancomat, una scarpa o la mano: li riconosco da solo. Se non c'è nulla, ti chiedo di segnare la tua scarpa sulla foto.</p>
     ${myFish().length?'<button class="btn ghost full" style="margin-top:8px" onclick="if(confirm(\'Dimenticare le catture confermate?\')){LS.set(\'myfish\',[]);render();}">Azzera l\'apprendimento</button>':''}</div>
   <div class="card"><h3>App</h3>
     <button class="btn ghost full" style="margin-bottom:8px" onclick="welcome()">👋 Rivedi l'introduzione</button>
@@ -1618,9 +1619,9 @@ function decI8(o){
 async function fishData(){
   if(FISH)return FISH;
   const j=await (await fetch('models/fish.json')).json();
-  FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N)};return FISH;
+  FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N),O:decI8(j.O)};return FISH;
 }
-async function modelItems(){const F=await fishData();return [{key:MODEL_KEY,parts:F.model.parts,size:F.model.size},...(F.sam||[]).map(s=>({key:s.path,parts:[s.path],size:s.size}))];}
+async function modelItems(){const F=await fishData();return [{key:MODEL_KEY,parts:F.model.parts,size:F.model.size},...(F.sam||[]).map(s=>({key:s.path,parts:[s.path],size:s.size})),...(F.tc?[{key:F.tc.path,parts:[F.tc.path],size:F.tc.size}]:[])];}
 async function modelReady(){try{const c=await caches.open(MODEL_CACHE);for(const it of await modelItems())if(!(await c.match(it.key)))return false;return true;}catch(e){return false;}}
 async function downloadModel(){
   if(MODEL_DL)return MODEL_DL.p;
@@ -1643,7 +1644,7 @@ async function downloadModel(){
   render();return MODEL_DL.p;
 }
 function drawDl(){const el=document.getElementById('dlbar');if(el&&MODEL_DL)el.style.width=(MODEL_DL.st.pct*100).toFixed(1)+'%';const t=document.getElementById('dlpct');if(t&&MODEL_DL)t.textContent=Math.round(MODEL_DL.st.pct*100)+'%';}
-async function deleteModel(){if(!confirm('Eliminare i modelli dal dispositivo? Potrai riscaricarli quando vuoi.'))return;try{await caches.delete(MODEL_CACHE);}catch(e){}SESS=null;SAMS=null;SEG=null;toast('Modelli eliminati');render();}
+async function deleteModel(){if(!confirm('Eliminare i modelli dal dispositivo? Potrai riscaricarli quando vuoi.'))return;try{await caches.delete(MODEL_CACHE);}catch(e){}SESS=null;SAMS=null;SEG=null;TCS=null;toast('Modelli eliminati');render();}
 function loadScript(u){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('ort'));document.head.appendChild(s);});}
 async function ensureOrt(){if(!window.ort){await loadScript(ORT_URL+'ort.wasm.min.js');ort.env.wasm.wasmPaths=new URL(ORT_URL,location.href).href;ort.env.wasm.numThreads=1;}}
 async function cachedSession(key){
@@ -1719,15 +1720,20 @@ function aiErrMsg(e){
 }
 
 /* ===================== Misura sulla foto ===================== */
-// [nome, lunghezza in cm, forma per la misura automatica (null = solo a mano)]
-const REFS=[['Palmo della mano',8.5,null],['Carta di credito',8.56,{t:'rect',a:[1.4,1.8],r:1.586}],['Moneta da 2 €',2.575,{t:'circle'}],['Moneta da 1 €',2.325,{t:'circle'}],['Accendino',8,{t:'rect',a:[2.4,4.2],r:3.2}],['Lattina 33 cl (altezza)',11.5,{t:'rect',a:[1.5,2.0],r:1.74}],['Smartphone',15,{t:'rect',a:[1.8,2.5],r:2.1}],['Metro: 10 cm',10,null]];
+// [nome, lunghezza in cm, tipo per il riconoscimento automatico (null = solo a mano)]
+const REFS=[['Moneta da 2 €',2.575,{t:'coin'}],['Moneta da 1 €',2.325,{t:'coin'}],['Bancomat / carta',8.56,{t:'card'}],['Scarpa',null,{t:'shoe'}],['Mano (palmo)',8.5,{t:'hand'}],['Accendino',8,null],['Lattina 33 cl (altezza)',11.5,null],['Smartphone',15,null],['Metro: 10 cm',10,null]];
+// scarpa: lunghezza esterna indicativa dal numero europeo (numero × 2/3 + 1 cm)
+const shoeSize=()=>LS.get('shoesize',44);
+const refCm=i=>i===3?Math.round((shoeSize()*2/3+1)*10)/10:REFS[i]?.[1];
+const refName=i=>i===3?`Scarpa n. ${shoeSize()}`:REFS[i]?.[0]||'';
 let MEAS=null;
 function openMeasure(src,target,pre){
-  MEAS={src,target,pts:pre?.pts?pre.pts.map(p=>[...p]):[],ref:pre?.ref??LS.get('lastref',2),refCm:null,drag:-1};
+  MEAS={src,target,pts:pre?.pts?pre.pts.map(p=>[...p]):[],ref:pre?.ref??3,refCm:null,drag:-1};
   openSheet(`<h2>📏 Misura il pesce</h2><p class="small mut" id="mhelp"></p>
     <div class="mwrap"><canvas id="mcv"></canvas></div>
     <label>Oggetto di riferimento nella foto</label><div class="chips" id="mrefs"></div>
     <div id="mcustom" style="display:none;margin-top:8px"><input type="number" step="0.1" min="0.5" placeholder="Lunghezza del riferimento in cm" oninput="MEAS.refCm=+this.value;drawMeasure()"></div>
+    <div id="mshoe" style="display:none;margin-top:8px" class="row"><span class="small">Numero di scarpa</span><input type="number" min="30" max="50" step="0.5" style="width:90px" value="${shoeSize()}" oninput="if(+this.value>=30&&+this.value<=50){LS.set('shoesize',+this.value);drawMeasure();}"></div>
     <div class="aigrid" style="margin-top:12px"><div><b id="mlen">—</b><span>lunghezza</span></div><div><b id="mw">—</b><span>peso stimato</span></div><div><b id="mpts">0/4</b><span>punti</span></div></div>
     <div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost" style="flex:1" onclick="MEAS.pts=[];drawMeasure()">↺ Ricomincia</button><button class="btn" style="flex:2" id="mok" onclick="applyMeasure()" disabled>Usa questa misura</button></div>`);
   loadImg(src).then(img=>{MEAS.img=img;const cv=document.getElementById('mcv');const W=cv.parentElement.clientWidth;cv.width=W*devicePixelRatio;cv.height=W*img.naturalHeight/img.naturalWidth*devicePixelRatio;cv.style.width=W+'px';cv.style.height=(W*img.naturalHeight/img.naturalWidth)+'px';
@@ -1741,21 +1747,22 @@ function openMeasure(src,target,pre){
 function measResult(){
   const M=MEAS;if(M.pts.length<4||!M.img)return null;
   const W=M.img.naturalWidth,H=M.img.naturalHeight,d=(a,b)=>Math.hypot((a[0]-b[0])*W,(a[1]-b[1])*H);
-  const refCm=M.ref<REFS.length?REFS[M.ref][1]:M.refCm;if(!refCm)return null;
+  const rc=M.ref<REFS.length?refCm(M.ref):M.refCm;if(!rc)return null;
   const rp=d(M.pts[2],M.pts[3]);if(rp<5)return null;
-  return Math.round(d(M.pts[0],M.pts[1])/rp*refCm*10)/10;
+  return Math.round(d(M.pts[0],M.pts[1])/rp*rc*10)/10;
 }
 function measSpecies(){const t=MEAS.target;return t==='live'?LIVEQ.sp:t==='assist'?ASSIST?.st?.r?.species:DRAFT?.catches?.[+t]?.sp;}
 function drawMeasure(){
   const M=MEAS,cv=document.getElementById('mcv');if(!cv||!M.img)return;const g=cv.getContext('2d'),W=cv.width,H=cv.height,s=devicePixelRatio;
   g.drawImage(M.img,0,0,W,H);
-  const P=M.pts.map(p=>[p[0]*W,p[1]*H]),col=['#2fe0cf','#2fe0cf','#ffb547','#ffb547'],lab=['Muso','Coda','Rif. A','Rif. B'];
+  const shoe=M.ref===3,P=M.pts.map(p=>[p[0]*W,p[1]*H]),col=['#2fe0cf','#2fe0cf','#ffb547','#ffb547'],lab=['Muso','Coda',shoe?'Punta':'Rif. A',shoe?'Tallone':'Rif. B'];
   const line=(a,b,c)=>{g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=6*s;g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();g.strokeStyle=c;g.lineWidth=3*s;g.stroke();};
   if(P.length>=2)line(P[0],P[1],col[0]);if(P.length>=4)line(P[2],P[3],col[2]);
   P.forEach((p,i)=>{g.fillStyle=col[i];g.strokeStyle='#fff';g.lineWidth=2*s;g.beginPath();g.arc(p[0],p[1],9*s,0,7);g.fill();g.stroke();g.font=`700 ${12*s}px Outfit, sans-serif`;g.fillStyle='#fff';g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=3*s;g.strokeText(lab[i],p[0]+12*s,p[1]-10*s);g.fillText(lab[i],p[0]+12*s,p[1]-10*s);});
-  const steps=['Tocca la punta del <b>muso</b> del pesce','Ora tocca la fine della <b>coda</b>','Tocca un\'estremità dell\'<b>oggetto di riferimento</b>','Tocca l\'altra estremità del riferimento','Puoi trascinare i punti per correggerli'];
+  const steps=['Tocca la punta del <b>muso</b> del pesce','Ora tocca la fine della <b>coda</b>',shoe?`Tocca la <b>punta della scarpa</b> (n. ${shoeSize()})`:'Tocca un\'estremità dell\'<b>oggetto di riferimento</b>',shoe?'Ora tocca il <b>tallone</b> della scarpa':'Tocca l\'altra estremità del riferimento','Puoi trascinare i punti per correggerli'];
   document.getElementById('mhelp').innerHTML=steps[Math.min(4,M.pts.length)];
-  document.getElementById('mrefs').innerHTML=[...REFS.map((r,i)=>`<span class="chip ${M.ref===i?'on':''}" onclick="MEAS.ref=${i};LS.set('lastref',${i});document.getElementById('mcustom').style.display='none';drawMeasure()">${r[0]}</span>`),`<span class="chip ${M.ref===REFS.length?'on':''}" onclick="MEAS.ref=${REFS.length};document.getElementById('mcustom').style.display='block';drawMeasure()">Altro…</span>`].join('');
+  document.getElementById('mshoe').style.display=shoe?'flex':'none';
+  document.getElementById('mrefs').innerHTML=[...REFS.map((r,i)=>`<span class="chip ${M.ref===i?'on':''}" onclick="MEAS.ref=${i};document.getElementById('mcustom').style.display='none';drawMeasure()">${refName(i)}</span>`),`<span class="chip ${M.ref===REFS.length?'on':''}" onclick="MEAS.ref=${REFS.length};document.getElementById('mcustom').style.display='block';drawMeasure()">Altro…</span>`].join('');
   document.getElementById('mcustom').style.display=M.ref===REFS.length?'block':'none';
   const len=measResult(),w=len?estW(measSpecies(),len):null;
   document.getElementById('mlen').textContent=len?fmt1(len)+' cm':'—';
@@ -1849,91 +1856,149 @@ function maskedCrop(seg,m){
   for(let y=0;y<ch;y++){const my2=Math.min(enc.hh-1,Math.floor((Y0+y)*k/4));for(let x=0;x<cw;x++){const mx2=Math.min(enc.ww-1,Math.floor((X0+x)*k/4));if(!m.b[my2*enc.ww+mx2]){const o=(y*cw+x)*4;d[o]=fill[0];d[o+1]=fill[1];d[o+2]=fill[2];}}}
   return {w:cw,h:ch,px:d};
 }
+// Classifica un oggetto ritagliato (mano, scarpa, moneta, carta, pesce, altro) con TinyCLIP:
+// un modello generico per gli oggetti di tutti i giorni, più adatto di BioCLIP per scarpe e mani.
+let TCS=null;
+async function tcSession(){if(TCS)return TCS;await ensureOrt();const F=await fishData();TCS=await cachedSession(F.tc.path);return TCS;}
+async function classifyMask(seg,m){
+  if(m.cls)return m.cls;
+  const F=await fishData(),s=await tcSession(),cr=maskedCrop(seg,m),fake={naturalWidth:cr.w,naturalHeight:cr.h};
+  const o=await s.run({pixels:new ort.Tensor('float32',toTensor(fake,'pad',F.mean,F.std,cr.px),[1,3,224,224])}),e=o.embedding.data;
+  const lg=[];for(let r=0;r<F.O.rows;r++)lg.push(100*dotRow(F.O,r,e));
+  const mx=Math.max(...lg),ex=lg.map(x=>Math.exp(x-mx)),t=ex.reduce((a,b)=>a+b,0);
+  m.cls={};F.ON.forEach((n,i)=>m.cls[n]=ex[i]/t);return m.cls;
+}
+// probabilità che un ritaglio sia un pesce secondo BioCLIP (specie ittiche contro oggetti comuni)
 async function fishProbOf(seg,m){
+  if(m.fp!=null)return m.fp;
   const F=await fishData(),s=await session(),cr=maskedCrop(seg,m),fake={naturalWidth:cr.w,naturalHeight:cr.h},e=new Float32Array(F.dim);
   for(const how of F.prep){const o=await s.run({pixels:new ort.Tensor('float32',toTensor(fake,how,F.mean,F.std,cr.px),[1,3,224,224])});const v=o.embedding.data;for(let i=0;i<F.dim;i++)e[i]+=v[i];}
   let nn=0;for(let i=0;i<F.dim;i++)nn+=e[i]*e[i];nn=Math.sqrt(nn);for(let i=0;i<F.dim;i++)e[i]/=nn;
   const tl=[],nl=[];for(let r=0;r<F.T.rows;r++)tl.push(100*dotRow(F.T,r,e));for(let r=0;r<F.N.rows;r++)nl.push(100*dotRow(F.N,r,e));
   const mx=Math.max(...tl,...nl),fm=tl.reduce((a,x)=>a+Math.exp(x-mx),0),nm=nl.reduce((a,x)=>a+Math.exp(x-mx),0);
-  return fm/(fm+nm);
+  return m.fp=fm/(fm+nm);
 }
-async function findFish(seg,avoid){
-  const {enc}=seg,M=seg.masks;
-  const overlaps=m=>avoid&&maskIoU(m,avoid,enc.ww)>0&&(()=>{let k=0;for(let i=0;i<m.b.length;i++)if(m.b[i]&&avoid.b[i])k++;return k>0.05*avoid.n;})();
-  const cands=maxb=>M.filter(m=>{const f=m.f;return f.asp>1.6&&f.asp<10&&f.rect>.35&&f.rect<.88&&f.frac>.015&&f.frac<.7&&f.border<=maxb&&!overlaps(m);})
+const isFishShape=(f,maxb)=>f.asp>1.6&&f.asp<10&&f.rect>.35&&f.rect<.88&&f.frac>.015&&f.frac<.7&&f.border<=maxb;
+function overlapFrac(m,ref){if(!ref)return 0;let k=0;for(let i=0;i<m.b.length;i++)if(m.b[i]&&ref.b[i])k++;return k/ref.n;}
+function insideMask(m,x,y,ww){return !!m.b[Math.round(y)*ww+Math.round(x)];}
+// Moneta da 1 € o da 2 €: la 2 € ha il centro dorato e l'anello argentato, la 1 € il contrario
+function coinType(seg,m){
+  if(!seg.px)seg.px=imgPixels(seg.img);
+  const {img,enc}=seg,W=img.naturalWidth,k=enc.k,cx=(m.f.c[0]*4+2)/k,cy=(m.f.c[1]*4+2)/k,R=Math.sqrt(m.f.A/Math.PI)*4/k;
+  let gi=0,ni=0,go=0,no=0;
+  for(let y=Math.max(0,Math.floor(cy-R));y<Math.min(img.naturalHeight,cy+R);y++)for(let x=Math.max(0,Math.floor(cx-R));x<Math.min(W,cx+R);x++){
+    const d=Math.hypot(x-cx,y-cy)/R,o=(y*W+x)*4,g=(seg.px[o]+seg.px[o+1])/2-seg.px[o+2];
+    if(d<.4){gi+=g;ni++;}else if(d>.72&&d<.93){go+=g;no++;}
+  }
+  const diff=(ni?gi/ni:0)-(no?go/no:0);
+  return diff<-20?1:0; // 1 = moneta da 1 € solo se i colori sono netti, altrimenti 2 €
+}
+async function growCoin(seg,m){
+  if(m.grown)return;m.grown=true;const f=m.f,r0=Math.sqrt(f.A/Math.PI);
+  for(const c of await samDecode(seg.enc,[[[f.c[0]*4+2,f.c[1]*4+2]]],1)){
+    if(c.n<12||c.s<.6)continue;c.f=mShape(c,seg.enc.ww,seg.enc.hh);const r2=Math.sqrt(c.f.A/Math.PI);
+    if(c.f.asp<1.2&&c.f.circ>.78&&c.f.border===0&&r2>r0*1.05&&r2<2.2*r0&&Math.hypot(c.f.c[0]-f.c[0],c.f.c[1]-f.c[1])<.3*r0&&r2>Math.sqrt(m.f.A/Math.PI))
+      Object.assign(m,{b:c.b,n:c.n,bb:c.bb,f:c.f});
+  }
+}
+// Cerca da solo il riferimento: moneta, bancomat/carta, scarpa o mano (in quest'ordine di precisione).
+// force: indice di REFS scelto a mano dall'utente.
+async function detectRefs(seg,force,onp){
+  const {enc}=seg,M=seg.masks,ww=enc.ww;
+  // oggetti grandi: una sola classificazione serve sia per il pesce sia per scarpa e mano
+  const big=M.filter(m=>m.f.frac>.005&&m.f.frac<.7&&m.f.border<=3&&!(m.f.asp<1.25&&m.f.circ>.75)).sort((a,b)=>Math.sqrt(b.f.A)*b.s-Math.sqrt(a.f.A)*a.s).slice(0,7);
+  let i=0;for(const m of big){await classifyMask(seg,m);onp&&onp(.86+.08*(++i)/big.length);}
+  const want=t=>force==null||REFS[force]?.[2]?.t===t;
+  let ref=null;
+  if(want('coin')){
+    const C=M.filter(m=>m.f.asp<1.25&&m.f.circ>.75&&m.f.frac<.06&&m.f.border===0&&!big.some(b=>isFishShape(b.f,1)&&b.cls?.fish>.5&&b.cls.fish===Math.max(...Object.values(b.cls))&&insideMask(b,m.f.c[0],m.f.c[1],ww))).sort((a,b)=>b.f.circ*b.s-a.f.circ*a.s).slice(0,2);
+    for(const m of C){const c=await classifyMask(seg,m);if(force!=null?c.coin>.1:(c.coin>.4||(m.f.frac<.02&&c.coin>.1&&c.coin>c.hand&&c.coin>c.shoe&&c.coin>c.card))){await growCoin(seg,m);ref={m,idx:force??coinType(seg,m),kind:'coin'};break;}}
+  }
+  if(!ref&&want('card')){
+    const C=M.filter(m=>m.f.asp>1.4&&m.f.asp<1.8&&m.f.rect>.85&&m.f.frac<.25&&m.f.border===0).sort((a,b)=>b.f.rect*b.s-a.f.rect*a.s).slice(0,2);
+    for(const m of C){const c=await classifyMask(seg,m);if(c.card>(force!=null?.15:.35)){ref={m,idx:2,kind:'card'};break;}}
+  }
+  for(const t of ['shoe','hand']){
+    if(ref||!want(t))continue;
+    let C=big.filter(m=>m.cls&&(force!=null?m.cls[t]>.15:(m.cls[t]>.7&&m.cls[t]===Math.max(...Object.values(m.cls)))));
+    if(C.length){const top=Math.max(...C.map(m=>m.cls[t]));C=C.filter(m=>m.cls[t]>=top-.15);
+      ref={m:C.reduce((a,m)=>m.f.A<a.f.A?m:a),idx:t==='shoe'?3:4,kind:t};}  // a parità, la sagoma più piccola: la scarpa senza la gamba
+  }
+  return {ref,big};
+}
+async function findFish2(seg,big,ref){
+  const {enc}=seg,ww=enc.ww,avoid=ref&&ref.kind!=='hand'?ref.m:null;
+  const ok=m=>!avoid||overlapFrac(m,avoid)<=.05;
+  const M=seg.masks,cands=maxb=>M.filter(m=>isFishShape(m.f,maxb)&&m!==ref?.m&&ok(m))
     .map(m=>{const cen=Math.hypot(m.f.c[0]/enc.ww-.5,m.f.c[1]/enc.hh-.5);return {m,sc:Math.sqrt(m.f.A)*m.s*(1.2-cen)};}).sort((a,b)=>b.sc-a.sc).slice(0,3);
   let C=cands(0);if(!C.length)C=cands(1);
-  let best=null;
-  for(const {m} of C){const fp=await fishProbOf(seg,m);const sc=fp*Math.pow(m.f.A,.25);if(fp>.5&&(!best||sc>best.sc))best={m,sc,fp};if(fp>.97&&best?.m===m)break;}
-  if(!best)return null;
+  let bb=null;
+  for(const {m} of C){const fp=await fishProbOf(seg,m);const sc=fp*Math.pow(m.f.A,.25);if(fp>.5&&(!bb||sc>bb.sc))bb={m,sc};if(fp>.97&&bb?.m===m)break;}
+  if(!bb)return null;
+  const best=bb.m;
   // rifinitura: 5 punti lungo il corpo per includere testa e coda
-  const f=best.m.f,ww=enc.ww,pts=[];
+  const f=best.f,pts=[];
   for(const q of [.12,.3,.5,.7,.88]){
-    const t=f.p1n+(f.p1x-f.p1n)*q;let px=Math.round(f.c[0]+t*f.ax[0]),py=Math.round(f.c[1]+t*f.ax[1]),ok=false;
-    for(let r=0;r<=6&&!ok;r++)for(let dy=-r;dy<=r&&!ok;dy++)for(let dx=-r;dx<=r&&!ok;dx++){const x=px+dx,y=py+dy;if(x>=0&&y>=0&&x<ww&&y<enc.hh&&best.m.b[y*ww+x]){px=x;py=y;ok=true;}}
+    const t=f.p1n+(f.p1x-f.p1n)*q;let px=Math.round(f.c[0]+t*f.ax[0]),py=Math.round(f.c[1]+t*f.ax[1]),found=false;
+    for(let r=0;r<=6&&!found;r++)for(let dy=-r;dy<=r&&!found;dy++)for(let dx=-r;dx<=r&&!found;dx++){const x=px+dx,y=py+dy;if(x>=0&&y>=0&&x<ww&&y<enc.hh&&best.b[y*ww+x]){px=x;py=y;found=true;}}
     pts.push([px*4+2,py*4+2]);
   }
-  let fin=best.m;
+  let fin=best;
   for(const r of await samDecode(enc,[pts],5)){
     if(r.n<12||r.s<=.75)continue;r.f=mShape(r,ww,enc.hh);
-    let inter=0;for(let i=0;i<r.b.length;i++)if(r.b[i]&&best.m.b[i])inter++;
-    if(r.f.border===0&&!overlaps(r)&&r.n>=best.m.n&&r.n<=2.5*best.m.n&&r.n>fin.n&&inter>.8*best.m.n)fin=r;
+    let inter=0;for(let i=0;i<r.b.length;i++)if(r.b[i]&&best.b[i])inter++;
+    if(r.f.border===0&&ok(r)&&r.n>=best.n&&r.n<=2.5*best.n&&r.n>fin.n&&inter>.8*best.n)fin=r;
   }
-  if(fin!==best.m&&(await fishProbOf(seg,fin))<.5)fin=best.m;
+  if(fin!==best&&(await fishProbOf(seg,fin))<.5)fin=best;
   return fin;
 }
-function findRef(seg,refIdx){
-  const spec=REFS[refIdx]?.[2];if(!spec)return null;const M=seg.masks;
-  if(spec.t==='circle'){
-    const C=M.filter(m=>m.f.asp<1.2&&m.f.circ>.78&&m.f.frac<.08&&m.f.border===0);if(!C.length)return null;
-    let best=C.reduce((a,m)=>m.f.circ*m.s>a.f.circ*a.s?m:a),r=Math.sqrt(best.f.A/Math.PI);
-    for(const m of C){const r2=Math.sqrt(m.f.A/Math.PI);if(r2>r&&Math.hypot(m.f.c[0]-best.f.c[0],m.f.c[1]-best.f.c[1])<.3*r&&r2<2.2*r){best=m;r=r2;}}  // anello esterno concentrico
-    return {m:best,kind:'circle',r};
-  }
-  const C=M.filter(m=>m.f.asp>spec.a[0]&&m.f.asp<spec.a[1]&&m.f.rect>.85&&m.f.frac<.25&&m.f.border===0);if(!C.length)return null;
-  return {m:C.reduce((a,m)=>m.f.rect*m.s*(1-Math.abs(m.f.asp-spec.r)/spec.r)>a.f.rect*a.s*(1-Math.abs(a.f.asp-spec.r)/spec.r)?m:a),kind:'rect'};
+// Larghezza del palmo: mediana della larghezza della sagoma nella parte centrale della mano
+function palmWidth(m,ww){
+  const f=m.f,ay=[-f.ax[1],f.ax[0]],bins=20,mn=new Array(bins).fill(1e9),mx=new Array(bins).fill(-1e9),[x0,y0,x1,y1]=m.bb;
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(m.b[y*ww+x]){const dx=x-f.c[0],dy=y-f.c[1],p=dx*f.ax[0]+dy*f.ax[1],q=dx*ay[0]+dy*ay[1];
+    const b=Math.min(bins-1,Math.max(0,Math.floor((p-f.p1n)/(f.p1x-f.p1n+1e-9)*bins)));if(q<mn[b])mn[b]=q;if(q>mx[b])mx[b]=q;}
+  const w=[];for(let b=Math.floor(bins*.3);b<Math.ceil(bins*.7);b++)if(mx[b]>mn[b])w.push(mx[b]-mn[b]+1);
+  w.sort((a,b)=>a-b);return w.length?w[w.length>>1]:f.W;
 }
-async function autoMeasure(src,refIdx,onp){
+async function autoMeasure(src,force,onp){
   if(!SEG||SEG.src!==src){
     onp&&onp(.02);const img=await loadImg(src);const enc=await samEncode(img);onp&&onp(.15);
     SEG={src,img,enc,masks:await samSegment(enc,onp)};
   }
-  const seg=SEG,rf=findRef(seg,refIdx),fk='fish_'+(rf?seg.masks.indexOf(rf.m):'none');
-  if(rf&&rf.kind==='circle'&&!rf.m.grown){
-    const f=rf.m.f;rf.m.grown=true;
-    for(const m of await samDecode(seg.enc,[[[f.c[0]*4+2,f.c[1]*4+2]]],1)){
-      if(m.n<12||m.s<.6)continue;m.f=mShape(m,seg.enc.ww,seg.enc.hh);const r2=Math.sqrt(m.f.A/Math.PI);
-      if(m.f.asp<1.2&&m.f.circ>.78&&m.f.border===0&&r2>rf.r*1.05&&r2<2.2*rf.r&&Math.hypot(m.f.c[0]-f.c[0],m.f.c[1]-f.c[1])<.3*rf.r&&r2>Math.sqrt(rf.m.f.A/Math.PI)){
-        Object.assign(rf.m,{b:m.b,n:m.n,bb:m.bb,f:m.f});rf.r=r2;}
-    }
-  }
-  if(seg[fk]===undefined)seg[fk]=await findFish(seg,rf?.m);seg.fish=seg[fk];onp&&onp(1);
+  const seg=SEG,key='r_'+(force??'auto');
+  if(!seg[key]){const {ref,big}=await detectRefs(seg,force,onp);seg[key]={ref,fish:await findFish2(seg,big,ref)};}
+  const {ref,fish}=seg[key];onp&&onp(1);
   const {img,enc}=seg,W=img.naturalWidth,H=img.naturalHeight,k=enc.k,P=([x,y])=>[((x*4+2)/k)/W,((y*4+2)/k)/H];
-  const out={ref:refIdx,fishOk:!!seg.fish,refOk:false,auto:!!REFS[refIdx]?.[2]};
-  const ends=seg.fish?[P(seg.fish.f.e1),P(seg.fish.f.e2)]:null;
-  if(rf){
-    const f=rf.m.f,cx=(f.c[0]*4+2)/k,cy=(f.c[1]*4+2)/k;
-    const half=rf.kind==='circle'?Math.sqrt(f.A/Math.PI)*4/k:f.L/2*4/k,ax=rf.kind==='circle'?[1,0]:f.ax;
-    out.refPts=[[(cx-ax[0]*half)/W,(cy-ax[1]*half)/H],[(cx+ax[0]*half)/W,(cy+ax[1]*half)/H]];out.refOk=true;
+  const out={ref:ref?.idx??null,fishOk:!!fish,refOk:!!ref,kind:ref?.kind||null,forced:force!=null};
+  const ends=fish?[P(fish.f.e1),P(fish.f.e2)]:null;
+  if(ref){
+    const f=ref.m.f,cx=(f.c[0]*4+2)/k,cy=(f.c[1]*4+2)/k;let half,ax;
+    if(ref.kind==='coin'){half=Math.sqrt(f.A/Math.PI)*4/k;ax=[1,0];}
+    else if(ref.kind==='hand'){half=palmWidth(ref.m,enc.ww)/2*4/k;ax=[-f.ax[1],f.ax[0]];}
+    else{half=f.L/2*4/k;ax=f.ax;}
+    out.refPts=[[(cx-ax[0]*half)/W,(cy-ax[1]*half)/H],[(cx+ax[0]*half)/W,(cy+ax[1]*half)/H]];
   }
-  if(ends&&out.refOk){
+  if(ends&&ref){
     out.pts=[...ends,...out.refPts];
     const d=(a,b)=>Math.hypot((a[0]-b[0])*W,(a[1]-b[1])*H);
-    out.len=Math.round(d(ends[0],ends[1])/d(out.refPts[0],out.refPts[1])*REFS[refIdx][1]*10)/10;
+    out.len=Math.round(d(ends[0],ends[1])/d(out.refPts[0],out.refPts[1])*refCm(ref.idx)*10)/10;
   }else out.pts=ends?[...ends]:null;
   return out;
 }
 const autoRefs=()=>REFS.map((r,i)=>[r,i]).filter(([r])=>r[2]);
 function measBlock(st,target){
   const m=st.m,sp=st.r?.species;if(!m)return '';
-  if(m.loading)return `<div class="mrow"><div class="aispin" style="width:22px;height:22px;border-width:2px"></div><span class="small">Misuro lunghezza e peso… <b>${Math.round((m.pct||0)*100)}%</b></span></div>`;
+  if(m.loading)return `<div class="mrow"><div class="aispin" style="width:22px;height:22px;border-width:2px"></div><span class="small">Cerco il riferimento e misuro… <b>${Math.round((m.pct||0)*100)}%</b></span></div>`;
   if(m.err)return `<div class="small" style="margin-top:8px;color:var(--acc2)">⚠️ ${esc(m.err)}</div>`;
-  const refChips=`<div class="chips" style="margin-top:6px">${autoRefs().map(([r,i])=>`<span class="chip" style="padding:3px 9px;font-size:12px;${m.ref===i?'background:var(--acc);color:#03282a':''}" onclick="setAutoRef('${target}',${i})">${r[0]}</span>`).join('')}</div>`;
+  const refChips=`<div class="chips" style="margin-top:6px">${autoRefs().map(([r,i])=>`<span class="chip" style="padding:3px 9px;font-size:12px;${m.ref===i?'background:var(--acc);color:#03282a':''}" onclick="setAutoRef('${target}',${i})">${esc(refName(i))}</span>`).join('')}</div>`;
   const manual=`<u style="cursor:pointer;color:var(--acc)" onclick="openMeasureFor('${target}')">📏 Controlla o correggi i punti</u>`;
-  if(m.len){const w=estW(sp,m.len);return `<div class="aigrid" style="margin-top:10px"><div><b>${fmt1(m.len)} cm</b><span>lunghezza</span></div><div><b>${w?fmt1(w)+' kg':'—'}</b><span>peso stimato</span></div><div><b style="font-size:12px">${esc(REFS[m.ref][0])}</b><span>riferimento</span></div></div><div class="small">${manual}</div>`;}
-  if(!m.auto)return `<div class="small" style="margin-top:8px">📏 Con «${esc(REFS[m.ref][0])}» la misura si fa a mano. Per la misura automatica metti accanto al pesce uno di questi:${refChips}<div style="margin-top:6px">${manual}</div></div>`;
-  if(!m.fishOk)return `<div class="small" style="margin-top:8px">📏 Non riesco a isolare il pesce: fotografalo intero, dall'alto, su uno sfondo uniforme. ${manual}</div>`;
-  return `<div class="small" style="margin-top:8px">📏 Non trovo «${esc(REFS[m.ref][0])}» nella foto: mettilo accanto al pesce, ben visibile. Oppure scegli il riferimento che hai usato:${refChips}<div style="margin-top:6px">${manual}</div></div>`;
+  if(m.len){const w=estW(sp,m.len);return `<div class="aigrid" style="margin-top:10px"><div><b>${fmt1(m.len)} cm</b><span>lunghezza</span></div><div><b>${w?fmt1(w)+' kg':'—'}</b><span>peso stimato</span></div><div><b style="font-size:12px">${esc(refName(m.ref))}</b><span>${m.forced?'riferimento scelto':'riferimento trovato'}</span></div></div>
+    ${m.kind==='hand'?'<div class="small" style="color:var(--acc2)">✋ Con la mano la misura è approssimativa (le mani sono diverse): meglio una moneta o un bancomat.</div>':''}
+    <div class="small">${manual}</div><details class="small" style="margin-top:4px"><summary class="mut" style="cursor:pointer">Il riferimento è un altro?</summary>${refChips}</details>`;}
+  if(!m.fishOk&&m.refOk)return `<div class="small" style="margin-top:8px">📏 Ho trovato «${esc(refName(m.ref))}» ma non riesco a isolare il pesce: fotografalo intero, dall'alto. ${manual}</div>`;
+  return `<div class="small" style="margin-top:8px">📏 Non trovo mano, scarpa, moneta o bancomat nella foto. <b>Segna punta e tallone della tua scarpa (n. ${shoeSize()})</b>${m.fishOk?', il pesce l\'ho già trovato':''}.
+    <button class="btn" style="margin-top:8px;padding:9px 14px" onclick="openMeasureFor('${target}',3)">👟 Segna la scarpa sulla foto</button>
+    <details style="margin-top:6px"><summary class="mut" style="cursor:pointer">Nella foto c'è un altro riferimento?</summary>${refChips}</details></div>`;
 }
 function stOf(t){return t==='live'?LIVEAI:t==='assist'?ASSIST?.st:ENTRYAI[+t];}
 function photoOf(t){return t==='live'?(LIVEQ.big||LIVEQ.photo):t==='assist'?(ASSIST.big||ASSIST.photo):(DRAFT.catches[+t].big||DRAFT.catches[+t].photo);}
@@ -1943,23 +2008,25 @@ function applyAuto(t){
   if(t==='live'){LIVEQ.l=String(Math.round(m.len));LIVEQ.w=w?String(Math.round(w*100)/100):LIVEQ.w;}
   else if(t!=='assist'){const c=DRAFT.catches[+t];if(c){c.l=Math.round(m.len);if(w)c.w=Math.round(w*100)/100;}}
 }
-async function runMeasure(t,refIdx){
+async function runMeasure(t,force){
   const st=stOf(t);if(!st)return;const src=photoOf(t);
   st.m={loading:true,pct:0};redraw(t);
   let last=0;
   try{
-    const m=await autoMeasure(src,refIdx??LS.get('lastref',2),p=>{st.m.pct=p;if(Date.now()-last>400){last=Date.now();const el=document.querySelector('.mrow b');if(el)el.textContent=Math.round(p*100)+'%';}});
+    const m=await autoMeasure(src,force,p=>{st.m.pct=p;if(Date.now()-last>400){last=Date.now();const el=document.querySelector('.mrow b');if(el)el.textContent=Math.round(p*100)+'%';}});
     if(stOf(t)!==st)return;st.m=m;applyAuto(t);
+    // nessun riferimento trovato: nella sessione di pesca si apre subito la foto per segnare la scarpa
+    if(!m.refOk&&!m.forced&&t==='live'&&S.tab==='live'){redraw(t);openMeasureFor(t,3);return;}
   }catch(e){st.m={err:'Misura automatica non riuscita: '+aiErrMsg(e)};}
   redraw(t);
 }
-function setAutoRef(t,i){LS.set('lastref',i);runMeasure(t,i);}
-function openMeasureFor(t){const st=stOf(t),m=st?.m;openMeasure(photoOf(t),t,m&&m.pts?{pts:m.pts,ref:m.ref}:null);}
+function setAutoRef(t,i){runMeasure(t,i);}
+function openMeasureFor(t,ref){const st=stOf(t),m=st?.m;openMeasure(photoOf(t),t,{pts:m?.pts||null,ref:ref??m?.ref??3});}
 
 /* ===================== Schede risultato ===================== */
 function aiCard(st,target){
   if(!st)return '';
-  if(st.needModel)return `<div class="aibox"><span style="font-size:24px">🧠</span><div style="flex:1"><b>Riconoscimento automatico gratuito</b><div class="small mut">Scarica una volta i modelli (circa 115 MB, meglio con Wi-Fi): poi specie, misura e peso si calcolano da soli, anche senza internet.</div>
+  if(st.needModel)return `<div class="aibox"><span style="font-size:24px">🧠</span><div style="flex:1"><b>Riconoscimento automatico gratuito</b><div class="small mut">Scarica una volta i modelli (circa 155 MB, meglio con Wi-Fi): poi specie, misura e peso si calcolano da soli, anche senza internet.</div>
     ${MODEL_DL?`<div class="dlb"><div id="dlbar" style="width:${(MODEL_DL.st.pct*100).toFixed(1)}%"></div></div><div class="small mut"><span id="dlpct">${Math.round(MODEL_DL.st.pct*100)}%</span> scaricato…</div>`:`<button class="btn" style="margin-top:8px;padding:9px 14px" onclick="downloadModel().then(()=>aiRetry('${target}')).catch(e=>toast(aiErrMsg(e)))">⬇️ Scarica e riconosci</button>`}</div></div>`;
   if(st.loading)return `<div class="aibox"><div class="aispin"></div><div><b>Riconosco il pesce…</b><div class="small mut">Poi misuro lunghezza e peso · sul telefono, senza internet</div></div></div>`;
   if(st.err)return `<div class="aibox err"><span style="font-size:22px">⚠️</span><div style="flex:1"><b>${esc(st.err)}</b><div class="small"><u style="cursor:pointer" onclick="aiRetry('${target}')">Riprova</u></div></div></div>`;
@@ -2023,7 +2090,7 @@ async function modelStatus(){
   const ok=await modelReady();
   el.innerHTML=MODEL_DL?`<div class="dlb"><div id="dlbar" style="width:${(MODEL_DL.st.pct*100).toFixed(1)}%"></div></div><div class="small mut"><span id="dlpct">${Math.round(MODEL_DL.st.pct*100)}%</span> scaricato…</div>`
     :ok?`<div class="small" style="color:var(--ok)">● Modelli installati: specie, misura e peso automatici anche offline</div><button class="btn danger full" style="margin-top:10px" onclick="deleteModel()">Elimina modello</button>`
-    :`<div class="small mut">○ Modelli non ancora scaricati</div><button class="btn full" style="margin-top:10px" onclick="downloadModel().then(()=>toast('Modello pronto!')).catch(e=>toast(aiErrMsg(e)))">⬇️ Scarica modelli (circa 115 MB)</button>`;
+    :`<div class="small mut">○ Modelli non ancora scaricati</div><button class="btn full" style="margin-top:10px" onclick="downloadModel().then(()=>toast('Modello pronto!')).catch(e=>toast(aiErrMsg(e)))">⬇️ Scarica modelli (circa 155 MB)</button>`;
 }
 
 /* ===================== Sheet ===================== */
