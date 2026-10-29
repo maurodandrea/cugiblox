@@ -308,7 +308,9 @@ async function findFish2(seg,big,ref){
   const {enc}=seg,ww=enc.ww,avoid=ref&&ref.kind!=='hand'?ref.m:null;
   // non è un pesce ciò che TinyCLIP ha già riconosciuto come mano, scarpa, moneta o carta
   const notObj=m=>!m.cls||!['hand','shoe','coin','card'].some(t=>m.cls[t]>.5);
-  const ok=m=>notObj(m)&&(!avoid||overlapFrac(m,avoid)<=.05);
+  // oggetti riconosciuti (scarpe, monete, carte): il pesce non può inglobarli, nemmeno quelli non usati come riferimento
+  const objs=(big||[]).filter(o=>o.cls&&['shoe','coin','card'].some(t=>o.cls[t]>.5&&o.cls[t]===Math.max(...Object.values(o.cls))));
+  const ok=m=>notObj(m)&&(!avoid||overlapFrac(m,avoid)<=.05)&&objs.every(o=>o===m||overlapFrac(m,o)<=.1);
   const M=seg.masks,cands=maxb=>M.filter(m=>isFishShape(m.f,maxb)&&m!==ref?.m&&ok(m))
     .map(m=>{const cen=Math.hypot(m.f.c[0]/enc.ww-.5,m.f.c[1]/enc.hh-.5);return {m,sc:Math.sqrt(m.f.A)*m.s*(1.2-cen)};}).sort((a,b)=>b.sc-a.sc).slice(0,3);
   let C=cands(0);if(!C.length)C=cands(1);
