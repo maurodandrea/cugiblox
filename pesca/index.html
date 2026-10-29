@@ -1937,11 +1937,11 @@ async function detectRefs(seg,force,onp){
     const C=M.filter(m=>m.f.asp>1.4&&m.f.asp<1.8&&m.f.rect>.85&&m.f.frac<.25&&m.f.border===0).sort((a,b)=>b.f.rect*b.s-a.f.rect*a.s).slice(0,2);
     for(const m of C){const c=await classifyMask(seg,m);if(c.card>(force!=null?.15:.35)){ref={m,idx:2,kind:'card'};break;}}
   }
-  for(const t of ['shoe','hand']){
+  for(const t of ['hand','shoe']){  // prima la mano: il modello la riconosce con sicurezza, la sabbia invece si scambia per scarpa
     if(ref||!want(t))continue;
     // scarpa trovata da sola solo se intera nella foto, non enorme e senza persone in posa
     if(t==='shoe'&&force==null&&person)continue;
-    let C=big.filter(m=>m.cls&&(force!=null?m.cls[t]>.15:(m.cls[t]>.5&&m.cls[t]===Math.max(...Object.values(m.cls))&&(t==='hand'||(m.f.border<=1&&m.f.frac<.2)))));
+    let C=big.filter(m=>m.cls&&(force!=null?m.cls[t]>.15:(m.cls[t]>.5&&m.cls[t]===Math.max(...Object.values(m.cls))&&(t==='hand'||(m.f.border<=1&&m.f.frac<.2&&m.f.rect>.45)))));
     if(C.length){const top=Math.max(...C.map(m=>m.cls[t]));C=C.filter(m=>m.cls[t]>=top-.15);
       ref={m:C.reduce((a,m)=>m.f.A<a.f.A?m:a),idx:t==='shoe'?3:4,kind:t};}  // a parità, la sagoma più piccola: la scarpa senza la gamba
   }
@@ -2188,7 +2188,9 @@ function closeSheet(){document.getElementById('sheet').classList.remove('on');}
 try{Object.keys(localStorage).filter(k=>k.startsWith('lenza.wx_')).forEach(k=>{const v=JSON.parse(localStorage.getItem(k));if(!v||Date.now()-v.ts>36*3600e3)localStorage.removeItem(k);});}catch(e){}
 {const t=location.hash.slice(1);if(PAGES.includes(t))S.tab=t;}
 // data e ora della versione pubblicata (inserite automaticamente da GitHub a ogni pubblicazione)
-{const el=document.getElementById('ver'),b=el.dataset.build;el.textContent=b.includes('BUILD')?'versione di sviluppo':'agg. '+b;}
+{const el=document.getElementById('ver'),b=el.dataset.build;const lm=new Date(document.lastModified),p2=n=>String(n).padStart(2,'0');
+  // GitHub Pages a volte pubblica anche la copia senza data: in quel caso uso la data del file inviata dal server
+  el.textContent='agg. '+(b.includes('BUILD')?`${p2(lm.getDate())}/${p2(lm.getMonth()+1)}/${lm.getFullYear()} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`:b);}
 buildProfile();
 checkBadges();
 render();
