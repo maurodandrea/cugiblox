@@ -121,7 +121,7 @@ function aiErrMsg(e){
 }
 
 /* ===================== Misura sulla foto ===================== */
-const REFS=[['Moneta da 2 €',2.575,{t:'coin'}],['Moneta da 1 €',2.325,{t:'coin'}],['Bancomat / carta',8.56,{t:'card'}],['Scarpa',null,{t:'shoe'}],['Mano (palmo)',8.5,{t:'hand'}],['Accendino',8,null],['Lattina 33 cl (altezza)',11.5,null],['Smartphone',15,null],['Metro: 10 cm',10,null],['Piede nudo',null,{t:'foot'}]];
+const REFS=[['Moneta da 2 €',2.575,{t:'coin'}],['Moneta da 1 €',2.325,{t:'coin'}],['Bancomat / carta',8.56,{t:'card'}],['Scarpa',null,{t:'shoe'}],['Mano (palmo)',12,{t:'hand'}],['Accendino',8,null],['Lattina 33 cl (altezza)',11.5,null],['Smartphone',15,null],['Metro: 10 cm',10,null],['Piede nudo',null,{t:'foot'}]];
 const FOOT=REFS.length-1;
 // scarpa: lunghezza esterna indicativa dal numero europeo (numero × 2/3 + 1 cm)
 const shoeSize=()=>LS.get('shoesize',44);
