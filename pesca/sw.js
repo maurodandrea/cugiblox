@@ -1,5 +1,5 @@
 // Service worker di Lenza: app disponibile offline; i dati meteo passano sempre dalla rete.
-const CACHE='lenza-v7';
+const CACHE='lenza-v10';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'];
@@ -9,7 +9,7 @@ self.addEventListener('fetch',e=>{
   const u=new URL(e.request.url);
   if(e.request.method!=='GET'||u.hostname.includes('open-meteo.com'))return;
   // il modello di riconoscimento viene salvato dall'app nella sua cache dedicata
-  if(u.pathname.includes('/models/bioclip'))return;
+  if(u.pathname.includes('/models/bioclip')||u.pathname.includes('/models/sam-'))return;
   const cacheable=u.origin===location.origin||/cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com|tile\.openstreetmap\.org/.test(u.hostname);
   if(!cacheable)return;
   if(e.request.mode==='navigate'){
