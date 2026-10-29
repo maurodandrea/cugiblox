@@ -1,5 +1,5 @@
 // Service worker di Lenza: app disponibile offline; i dati meteo passano sempre dalla rete.
-const CACHE='lenza-v15';
+const CACHE='lenza-v16';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'];
@@ -14,6 +14,11 @@ self.addEventListener('fetch',e=>{
   if(!cacheable)return;
   if(e.request.mode==='navigate'){
     e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const c=r.clone();caches.open(CACHE).then(k=>k.put('./index.html',c));return r;}).catch(()=>caches.match('./index.html')));
+    return;
+  }
+  // codice e dati dei modelli: prima la rete, così un aggiornamento arriva subito (offline: copia salvata)
+  if(u.origin===location.origin&&/\.(js|json)$/.test(u.pathname)){
+    e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r.ok){const c=r.clone();caches.open(CACHE).then(k=>k.put(e.request,c));}return r;}).catch(()=>caches.match(e.request)));
     return;
   }
   e.respondWith(caches.match(e.request).then(hit=>{

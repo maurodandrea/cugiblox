@@ -1,6 +1,6 @@
-// Motore di riconoscimento e misura di Lenza, copiato da pesca/index.html.
-// Usa i modelli e onnxruntime di ../pesca/ con le stesse chiavi di cache: chi li ha già scaricati nell'app non li riscarica.
-const BASE='../pesca/';
+// Motore di riconoscimento e misura di Lenza, usato dall'app (pesca/) e dalla pagina misurazione/.
+// window.LENZA_BASE: percorso di pesca/ rispetto alla pagina. Stesse chiavi di cache: i modelli si scaricano una volta sola.
+const BASE=window.LENZA_BASE||'';
 const LS = {
   get(k,d){try{const v=localStorage.getItem('lenza.'+k);return v?JSON.parse(v):d;}catch(e){return d;}},
   set(k,v){try{localStorage.setItem('lenza.'+k,JSON.stringify(v));return true;}catch(e){toast('Memoria piena: impossibile salvare');return false;}}
@@ -390,10 +390,24 @@ function minusMask(m,o,ww,hh){
   let x0=ww,y0=hh,x1=0,y1=0;for(let i=0;i<b.length;i++){b[i]=lab[i]===best?1:0;if(b[i]){const x=i%ww,y=(i/ww)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
   const r={...m,b,n:bestN,bb:[x0,y0,x1,y1]};r.f=mShape(r,ww,hh);return r;
 }
+// Lettura della foto con SlimSAM (la parte lenta). Parte già mentre guardi la specie, così la misura è quasi pronta.
+let PREP=null;
+function prepareSeg(src){
+  if(SEG&&SEG.src===src)return Promise.resolve(SEG);
+  if(PREP&&PREP.src===src)return PREP.p;
+  const st={src,t0:performance.now(),pct:0,enc:false};
+  st.p=(async()=>{const img=await loadImg(src),t=performance.now(),enc=await samEncode(img);LS.set('encms',Math.round(performance.now()-t));st.enc=true;
+    const seg={src,img,enc,masks:await samSegment(enc,p=>{st.pct=p;})};if(PREP===st)SEG=seg;return seg;})();
+  st.p.catch(()=>{if(PREP===st)PREP=null;});
+  PREP=st;return st.p;
+}
+// avanzamento: la lettura della foto è un unico calcolo, la stimo dal tempo che ha impiegato l'ultima volta
+function prepPct(){const st=PREP;if(!st)return 0;
+  return st.enc?.55+Math.max(0,st.pct-.15)/.7*.3:.02+.53*Math.min(.97,(performance.now()-st.t0)/LS.get('encms',SAMS_GPU?4000:15000));}
 async function autoMeasure(src,force,onp){
   if(!SEG||SEG.src!==src){
-    onp&&onp(.02);const img=await loadImg(src);const enc=await samEncode(img);onp&&onp(.15);
-    SEG={src,img,enc,masks:await samSegment(enc,onp)};
+    const p=prepareSeg(src),tm=onp?setInterval(()=>onp(prepPct()),250):null;
+    try{SEG=await p;}finally{clearInterval(tm);}
   }
   const seg=SEG,key='r_'+(force??'auto');
   if(!seg[key]){

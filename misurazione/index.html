@@ -47,7 +47,8 @@ input[type=number],select{background:#0a1d27;border:1px solid var(--line);color:
 <header><div class="word">Len<b>za</b> · misurazione</div><div class="ver" id="ver" data-build="__BUILD__"></div></header>
 <main id="app"></main>
 <div id="toast"></div>
-<script src="motore.js"></script>
+<script>window.LENZA_BASE='../pesca/';</script>
+<script src="../pesca/motore.js"></script>
 <script>
 // Pagina di prova: solo riconoscimento della specie e misura automatica dalla foto.
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -71,12 +72,13 @@ async function analyze(){
     P.r=await classifyFish(src,P.mode);if(P.photo!==src)return;
     // solo la specie: la misura (più lenta) parte col pulsante
     P.busy='';P.secs=(performance.now()-P.t0)/1000;render();
+    prepareSeg(src).catch(()=>{});  // intanto preparo la misura
   }catch(e){P.busy='';P.err=aiErrMsg(e);render();}
 }
 async function measure(force){
   const src=P.photo,t=performance.now();P.err=null;P.busy='Cerco pesce e riferimento…';P.pct=0;render();
   try{
-    const m=await autoMeasure(src,force,p=>{P.pct=p;const el=document.getElementById('pct');if(el)el.textContent=Math.round(p*100)+'%';});
+    const m=await autoMeasure(src,force,p=>{P.pct=p;const el=document.getElementById('pct');if(el)el.textContent=Math.round(p*100)+'%';const b=document.getElementById('pbar');if(b)b.style.width=(p*100).toFixed(1)+'%';});
     if(P.photo!==src)return;
     m.preview=await measPreview(src,m.pts).catch(()=>null);m.secs=(performance.now()-t)/1000;
     P.m=m;P.busy='';render();
@@ -136,7 +138,7 @@ function render(){
       <div class="small mut"><i>${esc(r.scientific_name||'')}</i>${r.is_fish===false?' · <span class="warn">non sembra un pesce</span>':''}</div>
       <div class="chips" style="margin-top:6px"><span class="small mut">Non è giusto? Tocca:</span>${(r.alternatives||[]).map(a=>`<span class="chip" onclick="pickSpecies('${esc(a.species)}')">${esc(a.species)} ${Math.round(a.confidence*100)}%</span>`).join('')}
       <select class="chip" onchange="if(this.value)pickSpecies(this.value)"><option value="">altra…</option></select></div></div>`;}
-    if(P.busy)h+=`<div class="row" style="margin-top:12px"><div class="spin"></div><span class="small">${P.busy} <b id="pct">${P.pct?Math.round(P.pct*100)+'%':''}</b></span></div>`;
+    if(P.busy)h+=`<div class="row" style="margin-top:12px"><div class="spin"></div><span class="small">${P.busy} <b id="pct">${P.pct?Math.round(P.pct*100)+'%':''}</b></span></div><div class="bar"><i id="pbar" style="width:${((P.pct||0)*100).toFixed(1)}%"></i></div>`;
     if(P.err)h+=`<p class="warn small">⚠️ ${esc(P.err)}</p>`;
     const m=P.m;
     if(P.r&&!m&&!P.busy&&!P.err)h+=`<div class="small mut" style="margin-top:6px">Riconosciuto in ${fmt1(P.secs||0)} s</div>
