@@ -609,22 +609,41 @@ async function loadWeather(force){
   if(WXTABS.includes(S.tab))render();
   waterInfo(sp).then(()=>{if(WXTABS.includes(S.tab))render();});
 }
-// Mare entro 500 m (laghi e fiumi non contano) e località sul mare più vicina, da OpenStreetMap (Overpass, gratuito). Salvato per spot.
-async function waterInfo(sp){
-  if(!sp||sp.lat==null)return null;const k='m500:'+(+sp.lat).toFixed(3)+','+(+sp.lon).toFixed(3);
-  if(sp.wq&&sp.wq.k===k)return sp.wq;
-  const a=`(around:%R,${sp.lat},${sp.lon})`,q=`[out:json][timeout:25];way["natural"="coastline"]${a.replace('%R',500)};out ids qt 1;way["natural"="coastline"]${a.replace('%R',25000)}->.c;node["place"~"^(city|town|village|suburb|hamlet)$"](around.c:2000)${a.replace('%R',25000)};out qt 60;`;
-  for(const base of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
-    try{
-      const r=await fetch(base+'?data='+encodeURIComponent(q));if(!r.ok)continue;const j=await r.json(),R=6371,rad=Math.PI/180;
-      const d=e=>2*R*Math.asin(Math.sqrt(Math.sin((e.lat-sp.lat)*rad/2)**2+Math.cos(sp.lat*rad)*Math.cos(e.lat*rad)*Math.sin((e.lon-sp.lon)*rad/2)**2));
-      const pl=j.elements.filter(e=>e.type==='node'&&e.tags?.name).sort((x,y)=>d(x)-d(y));
-      sp.wq={k,water:j.elements.some(e=>e.type!=='node'),near:pl[0]?.tags.name||null};
-      if(sp.here)sp.name='Posizione attuale'+(sp.wq.near?' · '+sp.wq.near:'');
-      LS.set('spots',S.spots);return sp.wq;
-    }catch(e){}
+// Mare entro 500 m (laghi e fiumi non contano) e località sul mare più vicina, da OpenStreetMap (gratuito). Salvato per spot.
+const OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+async function overpass(q){
+  let err='';
+  for(const u of OVERPASS){
+    try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),20000);
+      const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});clearTimeout(t);
+      if(r.ok)return await r.json();err=new URL(u).host+' '+r.status;
+    }catch(e){err=new URL(u).host+' '+(e.name==='AbortError'?'tempo scaduto':e.message);}
   }
-  return null;
+  throw new Error(err||'nessuna risposta');
+}
+const kmTo=(sp,lat,lon)=>{const R=6371,r=Math.PI/180;return 2*R*Math.asin(Math.sqrt(Math.sin((lat-sp.lat)*r/2)**2+Math.cos(sp.lat*r)*Math.cos(lat*r)*Math.sin((lon-sp.lon)*r/2)**2));};
+const WQ={};
+function waterInfo(sp){
+  if(!sp||sp.lat==null)return Promise.resolve(null);const k='m500b:'+(+sp.lat).toFixed(3)+','+(+sp.lon).toFixed(3);
+  if(sp.wq&&sp.wq.k===k)return Promise.resolve(sp.wq);
+  if(WQ[k])return WQ[k];  // una sola richiesta alla volta per lo stesso punto
+  return WQ[k]=(async()=>{
+    try{
+      // 1) costa del mare entro 500 m (richiesta leggerissima)
+      const c=await overpass(`[out:json][timeout:15];way["natural"="coastline"](around:500,${sp.lat},${sp.lon});out ids qt 1;`);
+      const wq={k,water:c.elements.length>0,near:null};
+      // 2) località sul mare: spiaggia o stabilimento più vicino, poi il nome del paese
+      try{
+        const b=await overpass(`[out:json][timeout:20];nwr["natural"="beach"](around:30000,${sp.lat},${sp.lon});nwr["leisure"="beach_resort"](around:30000,${sp.lat},${sp.lon});out center qt 80;`);
+        const pts=b.elements.map(e=>({lat:e.lat??e.center?.lat,lon:e.lon??e.center?.lon})).filter(p=>p.lat!=null).sort((x,y)=>kmTo(sp,x.lat,x.lon)-kmTo(sp,y.lat,y.lon));
+        if(pts[0]){const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=it&lat=${pts[0].lat}&lon=${pts[0].lon}`);
+          const a=(await r.json()).address||{};wq.near=a.village||a.town||a.suburb||a.city||a.hamlet||a.municipality||null;}
+      }catch(e){}
+      sp.wq=wq;if(sp.here)sp.name='Posizione attuale'+(wq.near?' · '+wq.near:'');
+      LS.set('spots',S.spots);return wq;
+    }catch(e){sp.wqErr=e.message;return null;}
+    finally{delete WQ[k];}
+  })();
 }
 const noWater=()=>activeSpot()?.wq?.water===false;
 const WXTABS=['home','meteo','ai','live','cal'];
@@ -853,7 +872,7 @@ function vHome(v){
       <div class="hero-wx"><div class="ic">${wmo(h.code)[0]}</div><b>${fmt0(h.temp)}°</b></div></div>
     ${noWater()?`<div class="gauge-wrap">${gauge(0)}<div class="num"><b>NA</b><span>Indice di pesca</span><span class="pill solid" style="background:#5d7381">Mare lontano</span></div></div>
     <p class="hero-exp">Il mare è a più di 500 m: qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
-    <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}</p>`}
+    <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}${!activeSpot()?.wq&&activeSpot()?.wqErr?`<br><span class="small" style="opacity:.75">Distanza dal mare non verificata (${esc(activeSpot().wqErr)})</span>`:''}</p>`}
     <div class="hero-stats">
       <div><div class="ic">${arrow(h.wd)}</div><b>${fmt0(h.ws)}</b><span>km/h</span></div>
       <div><div class="ic">${h.wave!=null?'🌊':'☁️'}</div><b>${h.wave!=null?fmt1(h.wave)+' m':fmt0(h.cc)+'%'}</b><span>${h.wave!=null?'onda':'nuvole'}</span></div>
