@@ -986,13 +986,17 @@ function nowLine(hs,x,y0,y1){
 }
 // grafico della marea: come quello dell'indice, con ore, ora attuale e selezione del punto
 function tideChart(hs){
-  const W=500,H=150,p=24,n=hs.length,vals=hs.map(h=>h.lvl),v=vals.filter(q=>q!=null);if(!v.length)return '';
-  const mn=Math.min(...v),mx=Math.max(...v),rg=mx-mn||1,x=i=>p+i*(W-2*p)/(n-1||1),y=q=>H-p-(q-mn)/rg*(H-2*p-14);
+  // livello rispetto alla media del giorno, in centimetri (il dato di Open-Meteo ha un riferimento globale: nel Mediterraneo è sempre negativo)
+  const W=500,H=150,p=24,n=hs.length,raw=hs.map(h=>h.lvl),v=raw.filter(q=>q!=null);if(!v.length)return '';
+  const avg=v.reduce((a,b)=>a+b,0)/v.length,vals=raw.map(q=>q==null?null:Math.round((q-avg)*100));
+  const vv=vals.filter(q=>q!=null),mn=Math.min(...vv),mx=Math.max(...vv),rg=mx-mn||1,x=i=>p+i*(W-2*p)/(n-1||1),y=q=>H-p-(q-mn)/rg*(H-2*p-14);
   const pts=vals.map((q,i)=>q==null?null:[x(i),y(q)]);const ok=pts.filter(Boolean);
-  CHARTS.tide={W,xs:pts.map(q=>q?q[0]:null),ys:pts.map(q=>q?q[1]:null),txt:i=>`${fmt2(vals[i])} m · ${pad(hs[i].t.getHours())}:00`,top:p,bot:H-p};
+  const cm=q=>(q>0?'+':'')+q+' cm',iMax=vals.indexOf(mx),iMin=vals.indexOf(mn);
+  CHARTS.tide={W,xs:pts.map(q=>q?q[0]:null),ys:pts.map(q=>q?q[1]:null),txt:i=>`${cm(vals[i])} · ${pad(hs[i].t.getHours())}:00`,top:p,bot:H-p};
   return `<svg viewBox="0 -22 ${W} ${H+44}" width="100%" data-ch="tide" style="touch-action:pan-y">${hourAxis(hs,x,H,p)}
+    ${mn<0&&mx>0?`<line x1="${p}" x2="${W-p}" y1="${y(0)}" y2="${y(0)}" stroke="rgba(255,255,255,.25)" stroke-dasharray="4 5"/>`:''}
     <path d="${smooth(ok)}" fill="none" stroke="${var_('--acc2')}" stroke-width="2.5"/>
-    ${nowLine(hs,x,p,H-p)}<g class="sel"></g></svg><div class="legend"><span>⬆️ max ${fmt2(mx)} m</span><span>⬇️ min ${fmt2(mn)} m</span></div>`;
+    ${nowLine(hs,x,p,H-p)}<g class="sel"></g></svg><div class="legend"><span>↕️ escursione ${mx-mn} cm</span><span>⬆️ alta ${pad(hs[iMax].t.getHours())}:00</span><span>⬇️ bassa ${pad(hs[iMin].t.getHours())}:00</span></div>`;
 }
 const fmt2=n=>(Math.round(n*100)/100).toLocaleString('it-IT');
 // tocco o trascinamento sul grafico: evidenzia il punto più vicino con il suo valore
