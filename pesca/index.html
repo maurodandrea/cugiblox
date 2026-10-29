@@ -91,6 +91,12 @@
   .btn.full{width:100%;padding:15px;font-size:15px;}
   .banner{background:rgba(255,181,71,.12);border:1px solid rgba(255,181,71,.35);color:#ffd79a;border-radius:16px;padding:10px 14px;font-size:13px;margin-bottom:14px;backdrop-filter:blur(10px);}
   /* --- hero --- */
+  .sdots{display:flex;justify-content:center;gap:6px;margin-top:12px;position:relative;z-index:2;}
+  .sdots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);}
+  .sdots i.on{background:#fff;width:18px;border-radius:4px;}
+  .hero.in-l{animation:inL .35s ease;}.hero.in-r{animation:inR .35s ease;}
+  @keyframes inL{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
+  @keyframes inR{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
   .hero{position:relative;overflow:hidden;border-radius:30px;padding:18px 18px 22px;margin-bottom:14px;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 50px -18px rgba(0,0,0,.7);isolation:isolate;}
   .hero.sky-night{background:linear-gradient(170deg,#101d4a 0%,#0b2d5c 55%,#06345a 100%);}
   .hero.sky-dawn{background:linear-gradient(170deg,#ff9a76 0%,#c86dd7 38%,#3557c9 75%,#0b3f73 100%);}
@@ -869,7 +875,7 @@ function vHome(v){
   const D=X.days.find(d=>d.date.toDateString()===today.toDateString())||X.days[1];
   const wins=bestWindows(X,today),sol=X.sol[today.toDateString()]||[],sky=skyPhase(D,now);
   v.innerHTML=simBanner()+`
-  <section class="hero sky-${sky}">${sky==='night'?'<div class="stars"></div>':''}<div class="orb"></div>
+  <section class="hero sky-${sky} ${SWIPE_DIR?'in-'+SWIPE_DIR:''}">${sky==='night'?'<div class="stars"></div>':''}<div class="orb"></div>
     <div class="hero-top"><div><div class="hero-loc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>${esc(activeSpot()?.name||'')}</div>
       <div class="hero-date">${now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} · ${hhmm(now)}</div></div>
       <div class="hero-wx"><div class="ic">${wmo(h.code)[0]}</div><b>${fmt0(h.temp)}°</b></div></div>
@@ -881,7 +887,7 @@ function vHome(v){
       <div><div class="ic">${h.wave!=null?'🌊':'☁️'}</div><b>${h.wave!=null?fmt1(h.wave)+' m':fmt0(h.cc)+'%'}</b><span>${h.wave!=null?'onda':'nuvole'}</span></div>
       <div><div class="ic">${h.dp>0.6?'📈':h.dp<-0.6?'📉':'⚖️'}</div><b>${fmt0(h.p)}</b><span>hPa</span></div>
       <div><div class="ic">${ph.e}</div><b>${Math.round(ph.illum*100)}%</b><span>luna</span></div>
-    </div>${WAVES}
+    </div>${S.spots.length>1?`<div class="sdots">${S.spots.map(x=>`<i class="${x.id===activeSpot()?.id?'on':''}"></i>`).join('')}</div>`:''}${WAVES}
   </section>
   ${S.live?`<div class="alert" style="background:linear-gradient(135deg,rgba(47,224,207,.18),rgba(59,140,255,.1));border-color:rgba(47,224,207,.4);cursor:pointer" onclick="go('live')"><span class="ai"><span class="rec"></span></span><div><b>Sessione in corso · <span id="liveT">${durStr(Date.now()-S.live.start)}</span></b>${S.live.catches.length} catture finora · tocca per aprire</div></div>`:''}
   ${weatherAlerts(X).map(a=>`<div class="alert"><span class="ai">${a[0]}</span><div><b>${a[1]}</b>${a[2]}</div></div>`).join('')}
@@ -1871,6 +1877,15 @@ try{Object.keys(localStorage).filter(k=>k.startsWith('lenza.wx_')).forEach(k=>{c
   // GitHub Pages a volte pubblica anche la copia senza data: in quel caso uso la data del file inviata dal server
   el.textContent='agg. '+(b.includes('BUILD')?`${p2(lm.getDate())}/${p2(lm.getMonth()+1)}/${lm.getFullYear()} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`:b);}
 buildProfile();
+// scorrendo a destra o sinistra il riquadro dell'indice nella Home si passa allo spot precedente o successivo
+let SWIPE_DIR='',SW0=null;
+document.addEventListener('touchstart',e=>{SW0=S.tab==='home'&&e.target.closest('.hero')&&S.spots.length>1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null;},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(!SW0)return;const t=e.changedTouches[0],dx=t.clientX-SW0.x,dy=t.clientY-SW0.y;SW0=null;
+  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;
+  const i=S.spots.findIndex(x=>x.id===activeSpot()?.id),n=S.spots.length,j=(i+(dx<0?1:-1)+n)%n;
+  S.active=S.spots[j].id;LS.set('active',S.active);SWIPE_DIR=dx<0?'l':'r';toast('📍 '+S.spots[j].name);loadWeather().finally(()=>{SWIPE_DIR='';});
+},{passive:true});
 checkBadges();
 render();
 loadWeather();
