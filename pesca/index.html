@@ -609,7 +609,7 @@ async function loadWeather(force){
   if(WXTABS.includes(S.tab))render();
   waterInfo(sp).then(()=>{if(WXTABS.includes(S.tab))render();});
 }
-// Mare entro 500 m e località sul mare più vicina, calcolati sul telefono (niente servizi esterni, funziona offline).
+// Mare entro 5 km e località sul mare più vicina, calcolati sul telefono (niente servizi esterni, funziona offline).
 // costa.json: linea di costa OpenStreetMap ritagliata sull'Italia e semplificata (~80 m) + centri abitati GeoNames entro 2 km dal mare.
 let COSTA=null;
 async function costa(){
@@ -632,15 +632,19 @@ function seaKm(C,lat,lon){
   return best;
 }
 const kmTo=(sp,lat,lon)=>{const R=6371,r=Math.PI/180;return 2*R*Math.asin(Math.sqrt(Math.sin((lat-sp.lat)*r/2)**2+Math.cos(sp.lat*r)*Math.cos(lat*r)*Math.sin((lon-sp.lon)*r/2)**2));};
+let LUOGHI=null;
+async function luoghi(){return LUOGHI||(LUOGHI=await (await fetch('luoghi.json')).json());}  // comuni e quartieri italiani (GeoNames)
 async function waterInfo(sp){
-  if(!sp||sp.lat==null)return null;const k='costa1:'+(+sp.lat).toFixed(4)+','+(+sp.lon).toFixed(4);
+  if(!sp||sp.lat==null)return null;const k='costa2:'+(+sp.lat).toFixed(4)+','+(+sp.lon).toFixed(4);
   if(sp.wq&&sp.wq.k===k)return sp.wq;
   // fuori dall'area coperta dai dati (Italia e mari vicini): non so dire, l'indice resta normale
   if(sp.lat<35.3||sp.lat>47.2||sp.lon<6||sp.lon>19.6)return null;
   try{
-    const C=await costa(),km=seaKm(C,+sp.lat,+sp.lon);let near=null,nd=1e9;
-    for(const [n,a,o] of C.T){const d=kmTo(sp,a,o);if(d<nd){nd=d;near=n;}}
-    sp.wq={k,water:km<=0.5,km,near};if(sp.here)sp.name='Posizione attuale'+(near?' · '+near:'');
+    const C=await costa(),km=seaKm(C,+sp.lat,+sp.lon),nb=(list,max)=>{let n=null,nd=max;for(const [m,a,o] of list){const d=kmTo(sp,a,o);if(d<nd){nd=d;n=m;}}return n;};
+    // località di mare entro 5 km; altrimenti comune e zona/quartiere dove sei
+    let near=nb(C.T,5);
+    if(!near){const P=await luoghi(),com=nb(P.c,30),zona=nb(P.x,2.5);near=[com,zona&&zona!==com?zona:null].filter(Boolean).join(', ')||null;}
+    sp.wq={k,water:km<=5,km,near};if(sp.here)sp.name='Posizione attuale'+(near?' · '+near:'');
     LS.set('spots',S.spots);return sp.wq;
   }catch(e){sp.wqErr=e.message;return null;}
 }
@@ -815,7 +819,7 @@ function render(){
   document.getElementById('nav').innerHTML=TABS.map(t=>t.id==='fab'?`<button class="fab ${S.live?'live':''}" onclick="fabTap()" aria-label="Sessione di pesca"><span class="fb">${svgI(S.live?'fish':'plus',2.4)}</span><em>${S.live?'In pesca':'Pesca'}</em></button>`
     :`<button class="${S.tab===t.id||(t.id==='altro'&&SUBS.includes(S.tab))?'on':''}" onclick="go('${t.id}')">${svgI(t.id)}${t.n}</button>`).join('');
   const v=document.getElementById('view');
-  if(S.tab!=='spot'&&MAP){MAP.remove();MAP=null;}
+  if(S.tab!=='spot'&&MAP){MAP.remove();MAP=null;NEWPIN=null;}
   ({home:vHome,meteo:vMeteo,spot:vSpot,diario:vDiario,stats:vStats,ai:vAI,pesce:vPesce,altro:vAltro,live:vLive,trofei:vTrofei,cal:vCal,compare:vCompare,guide:vGuide,settings:vSettings}[S.tab]||vHome)(v);
   countUp(v);
   if(S.tab==='settings')modelStatus();
@@ -870,7 +874,7 @@ function vHome(v){
       <div class="hero-date">${now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} · ${hhmm(now)}</div></div>
       <div class="hero-wx"><div class="ic">${wmo(h.code)[0]}</div><b>${fmt0(h.temp)}°</b></div></div>
     ${noWater()?`<div class="gauge-wrap">${gauge(0)}<div class="num"><b>NA</b><span>Indice di pesca</span><span class="pill solid" style="background:#5d7381">Mare lontano</span></div></div>
-    <p class="hero-exp">Il mare è a ${fmt1(activeSpot().wq.km)} km (più di 500 m): qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
+    <p class="hero-exp">Il mare è a ${fmt1(activeSpot().wq.km)} km (più di 5 km): qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
     <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}${!activeSpot()?.wq&&activeSpot()?.wqErr?`<br><span class="small" style="opacity:.75">Distanza dal mare non verificata (${esc(activeSpot().wqErr)})</span>`:''}</p>`}
     <div class="hero-stats">
       <div><div class="ic">${arrow(h.wd)}</div><b>${fmt0(h.ws)}</b><span>km/h</span></div>
@@ -884,7 +888,7 @@ function vHome(v){
   <div class="quick">${[['pesce','📸','Che pesce è?'],['compare','🧭','Dove pescare'],['ai','🤖','Consigli'],['cal','🌙','Calendario']].map(([t,e,n])=>`<button onclick="go('${t}')"><span>${e}</span>${n}</button>`).join('')}</div>
   <div class="card"><h3>Prossime ore</h3><div class="hstrip">${X.hours.slice(Math.max(0,i),Math.max(0,i)+18).map((x,k)=>`<div class="hcell ${k?'':'now'}"><span>${k?pad(x.t.getHours()):'Ora'}</span><div class="wi">${wmo(x.code)[0]}</div><b>${fmt0(x.temp)}°</b><div class="ib"><i style="height:${noWater()?0:x.idx}%;background:${idxColor(x.idx)}"></i></div><em style="color:${idxColor(x.idx)}">${x.idx}</em></div>`).join('')}</div></div>
   <div class="card"><h3>Finestre migliori oggi</h3>
-    ${noWater()?'<p class="small mut">Indice NA: il mare è a più di 500 m.</p>':wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
+    ${noWater()?'<p class="small mut">Indice NA: il mare è a più di 5 km.</p>':wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
   </div>
   <div class="card"><h3>Periodi solunari · ${ph.e} ${ph.name} (${Math.round(ph.illum*100)}%)</h3>
     ${timeline(sol,D)}
@@ -987,7 +991,7 @@ function vSpot(v){
   <div class="row" style="margin-bottom:10px"><input id="q" placeholder="Cerca località…" onkeydown="if(event.key==='Enter')searchPlace()"><button class="btn" onclick="searchPlace()">🔍</button><button class="btn ghost" onclick="locateMe()" title="La mia posizione">🎯</button></div>
   <div id="res"></div>
   <div id="map"></div>
-  <p class="small mut" style="margin:-4px 0 12px">Tocca la mappa per salvare un nuovo spot.</p>
+  <div id="newspot" style="margin:-4px 0 12px"><p class="small mut" style="margin:0">Tocca la mappa per mettere un nuovo spot.</p></div>
   <div class="card"><h3>I miei spot (${S.spots.length})</h3><div class="list">
   ${S.spots.length?S.spots.map(s=>{const n=S.diary.filter(e=>e.spot===s.id).length;return `<div class="it"><div class="ico">${MODES[s.mode]?.e||'📍'}</div>
     <div class="t" onclick="MAP&&MAP.setView([${s.lat},${s.lon}],14)"><b>${esc(s.name)} ${s.id===S.active?'<span class="pill" style="background:#2fd4c422;color:var(--acc)">attivo</span>':''}</b><span class="small mut">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)} · ${n} uscite${s.face!=null?' · mare a '+DIRS[s.face/22.5]:''}${s.note?' · '+esc(s.note):''}</span></div>
@@ -997,30 +1001,40 @@ function vSpot(v){
 }
 function initMap(){
   if(typeof L==='undefined'){document.getElementById('map').innerHTML='<div class="empty"><div>🗺️</div>Mappa non disponibile offline</div>';return;}
-  const sp=activeSpot()||{lat:42,lon:12.5};
+  const sp=activeSpot()||{lat:42,lon:12.5};NEWPIN=null;
   MAP=L.map('map',{zoomControl:true}).setView([sp.lat,sp.lon],12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(MAP);
   S.spots.forEach(s=>{
     const ic=L.divIcon({html:`<div class="pin ${s.id===S.active?'on':'off'}"><i></i></div>`,className:'',iconSize:[30,30],iconAnchor:[15,36],popupAnchor:[0,-34]});
     L.marker([s.lat,s.lon],{icon:ic}).addTo(MAP).bindPopup(`<b>${esc(s.name)}</b><br>${MODES[s.mode]?.n||''}<br><a href="#" onclick="useSpot('${s.id}');return false">Imposta come attivo</a>`);
   });
-  MAP.on('click',e=>editSpot(null,e.latlng.lat,e.latlng.lng));
+  MAP.on('click',e=>dropPin(e.latlng.lat,e.latlng.lng));
+}
+// nuovo spot: un pallino da trascinare dove vuoi, poi «Crea spot qui»
+let NEWPIN=null;
+function dropPin(lat,lon){
+  if(!MAP)return;
+  if(!NEWPIN){NEWPIN=L.marker([lat,lon],{draggable:true,icon:L.divIcon({html:'<div class="pin on"><i></i></div>',className:'',iconSize:[30,30],iconAnchor:[15,36]})}).addTo(MAP);}
+  else NEWPIN.setLatLng([lat,lon]);
+  document.getElementById('newspot').innerHTML=`<div class="row" style="gap:8px"><span class="small" style="flex:1">Trascina il pallino nel punto esatto, poi conferma.</span><button class="btn ghost" onclick="cancelPin()">Annulla</button><button class="btn" onclick="confirmPin()">📍 Crea spot qui</button></div>`;
+}
+function cancelPin(){if(NEWPIN&&MAP)MAP.removeLayer(NEWPIN);NEWPIN=null;const el=document.getElementById('newspot');if(el)el.innerHTML='<p class="small mut" style="margin:0">Tocca la mappa per mettere un nuovo spot.</p>';}
+function confirmPin(){if(!NEWPIN)return;const p=NEWPIN.getLatLng();editSpot(null,p.lat,p.lng);
 }
 function useSpot(id){S.active=id;LS.set('active',id);const sp=activeSpot();if(false){S.mode=sp.mode;LS.set('mode',sp.mode);}S.wx=null;loadWeather();toast('Spot attivo: '+sp.name);go('home');}
 function editSpot(id,lat,lon){
   const s=id?S.spots.find(x=>x.id===id):{name:'',lat,lon,mode:S.mode,note:'',face:null};
   openSheet(`<h2>${id?'Modifica spot':'Nuovo spot'}</h2><p class="small mut">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}</p>
     <label>Nome</label><input id="spN" value="${esc(s.name)}" placeholder="Es. Scogliera del faro">
-    <label>Tipo</label><select id="spM">${Object.entries(MODES).map(([k,m])=>`<option value="${k}" ${s.mode===k?'selected':''}>${m.e} ${m.n} – ${m.d}</option>`).join('')}</select>
     <label>Il mare / l'acqua è verso</label><select id="spF"><option value="">Non specificato</option>${['N','NE','E','SE','S','SO','O','NO'].map((d,k)=>`<option value="${k*45}" ${s.face===k*45?'selected':''}>${d} (${['Tramontana','Grecale','Levante','Scirocco','Ostro','Libeccio','Ponente','Maestrale'][k]})</option>`).join('')}</select>
     <p class="small mut" style="margin-top:4px">Serve a capire se il vento soffia dal mare o da terra e a calcolare meglio l'indice.</p>
     <label>Note</label><textarea id="spT" placeholder="Fondale, accesso, esche che funzionano…">${esc(s.note)}</textarea>
     <div class="row" style="margin-top:14px">${id?`<button class="btn danger" onclick="delSpot('${id}')">Elimina</button>`:''}<button class="btn ghost" style="margin-left:auto" onclick="closeSheet()">Annulla</button><button class="btn" onclick="saveSpot('${id||''}',${s.lat},${s.lon})">Salva</button></div>`);
 }
 function saveSpot(id,lat,lon){
-  const name=document.getElementById('spN').value.trim()||'Spot senza nome',mode=document.getElementById('spM').value,note=document.getElementById('spT').value.trim(),fv=document.getElementById('spF').value,face=fv===''?null:+fv;
+  const name=document.getElementById('spN').value.trim()||'Spot senza nome',mode=S.mode,note=document.getElementById('spT').value.trim(),fv=document.getElementById('spF').value,face=fv===''?null:+fv;
   if(id){Object.assign(S.spots.find(s=>s.id===id),{name,mode,note,face});if(id===S.active){S.wx=null;loadWeather();}COMP.rows=null;}
-  else{const s={id:uid(),name,lat,lon,mode,note,face};COMP.rows=null;S.spots.push(s);if(S.spots.length===1)S.active=s.id;}
+  else{const s={id:uid(),name,lat,lon,mode,note,face};COMP.rows=null;S.spots.push(s);NEWPIN=null;LS.set('spots',S.spots);closeSheet();useSpot(s.id);return;}
   LS.set('spots',S.spots);LS.set('active',S.active);closeSheet();toast('Spot salvato');render();
 }
 function delSpot(id){
