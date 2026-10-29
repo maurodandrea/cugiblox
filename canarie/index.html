@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Villa Alisio · Casa vacanze a Lanzarote, Canarie</title>
+<meta name="description" content="Villa Alisio: casa vacanze di design a Playa Blanca, Lanzarote. Piscina riscaldata, vista oceano, 3 camere, a 400 m dal mare. Prenota direttamente al miglior prezzo.">
+<meta property="og:title" content="Villa Alisio · Lanzarote">
+<meta property="og:description" content="La tua casa sull'oceano alle Canarie. Sole 365 giorni l'anno.">
+<meta property="og:image" content="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='30' fill='%230e3b43'/><path d='M14 40 Q24 30 32 40 T50 40' stroke='%23f2c48d' stroke-width='4' fill='none'/><circle cx='32' cy='24' r='7' fill='%23e8925b'/></svg>">
+<style>
+:root{
+  --ocean:#0e3b43; --ocean-2:#14535d; --deep:#0a2a30;
+  --sand:#f6efe6; --sand-2:#efe3d3; --cream:#fffaf3;
+  --lava:#2b2523; --terra:#c8643b; --sun:#e8925b; --gold:#c9a36a;
+  --ink:#1f2a2c; --muted:#5f6b6d; --line:rgba(14,59,67,.12);
+  --radius:18px; --shadow:0 20px 50px -20px rgba(10,42,48,.35);
+  --serif:'Cormorant Garamond',Georgia,serif; --sans:'Manrope',system-ui,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);background:var(--cream);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{width:min(1200px,100% - 40px);margin-inline:auto}
+.eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--terra);font-weight:600}
+h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.08;letter-spacing:-.01em}
+h2{font-size:clamp(36px,5vw,60px);margin:.25em 0 .4em}
+h2 em,h1 em{font-style:italic;color:var(--sun)}
+.lead{font-size:clamp(17px,1.6vw,19px);color:var(--muted);max-width:60ch}
+section{padding:clamp(80px,11vw,140px) 0;scroll-margin-top:60px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:15px 28px;border-radius:999px;border:0;cursor:pointer;font-weight:600;font-size:15px;letter-spacing:.02em;transition:transform .25s,box-shadow .25s,background .25s}
+.btn-sun{background:var(--sun);color:#fff;box-shadow:0 12px 30px -10px rgba(232,146,91,.8)}
+.btn-sun:hover{background:var(--terra);transform:translateY(-2px)}
+.btn-ghost{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(6px)}
+.btn-ghost:hover{background:rgba(255,255,255,.22)}
+.btn-dark{background:var(--ocean);color:#fff}
+.btn-dark:hover{background:var(--deep);transform:translateY(-2px)}
+
+/* NAV */
+.nav{position:fixed;inset:0 0 auto;z-index:50;transition:background .35s,box-shadow .35s,padding .35s;padding:22px 0}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.logo{display:flex;align-items:center;gap:12px;color:#fff;font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:.02em}
+.logo small{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.32em;text-transform:uppercase;opacity:.75;font-weight:500;margin-top:-2px}
+.logo svg{width:38px;height:38px}
+.nav ul{display:flex;gap:30px;list-style:none;font-size:14px;font-weight:500;color:#fff}
+.nav ul a{opacity:.85;position:relative;padding:4px 0}
+.nav ul a::after{content:"";position:absolute;left:0;bottom:-2px;height:1px;width:0;background:currentColor;transition:width .3s}
+.nav ul a:hover{opacity:1}.nav ul a:hover::after{width:100%}
+.nav .btn{padding:11px 22px;font-size:14px}
+.nav.scrolled{background:rgba(255,250,243,.92);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line);padding:12px 0}
+.nav.scrolled .logo,.nav.scrolled ul{color:var(--ocean)}
+.burger{display:none;background:none;border:0;color:#fff;cursor:pointer;width:42px;height:42px}
+.nav.scrolled .burger{color:var(--ocean)}
+.lang{display:flex;gap:6px;font-size:12px;font-weight:600;color:#fff;opacity:.85}
+.nav.scrolled .lang{color:var(--ocean)}
+.lang span{cursor:pointer;padding:3px 6px;border-radius:6px}
+.lang span.on{background:rgba(255,255,255,.2)}
+.nav.scrolled .lang span.on{background:var(--sand-2)}
+
+/* HERO */
+.hero{position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:flex-end;color:#fff;padding:140px 0 80px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=80') center/cover;transform:scale(1.08);animation:kenburns 22s ease-out forwards}
+@keyframes kenburns{to{transform:scale(1)}}
+.hero::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(10,42,48,.62) 0%,rgba(10,42,48,.25) 55%,rgba(10,42,48,0) 80%),linear-gradient(180deg,rgba(10,42,48,.55) 0%,rgba(10,42,48,.05) 30%,rgba(10,42,48,.2) 60%,rgba(10,42,48,.85) 100%)}
+.hero .wrap{position:relative;z-index:2}
+.hero-tag{display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.14);backdrop-filter:blur(8px);font-size:13px;font-weight:500;border:1px solid rgba(255,255,255,.25);margin-bottom:24px}
+.hero-tag b{color:#ffd9a8}
+.hero h1{font-size:clamp(46px,7vw,104px);font-weight:400;max-width:13ch;text-shadow:0 10px 40px rgba(0,0,0,.25)}
+.hero h1 em{color:#ffd9a8}
+.hero p{font-size:clamp(17px,1.7vw,21px);max-width:52ch;opacity:.92;margin:22px 0 34px;font-weight:300}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap}
+.hero-meta{display:flex;gap:40px;margin-top:60px;padding-top:28px;border-top:1px solid rgba(255,255,255,.22);flex-wrap:wrap}
+.hero-meta div{font-size:13px;opacity:.85;letter-spacing:.05em}
+.hero-meta b{display:block;font-family:var(--serif);font-size:34px;font-weight:500;opacity:1;letter-spacing:0;line-height:1.1}
+.scroll-cue{position:absolute;right:40px;bottom:60px;z-index:2;writing-mode:vertical-rl;font-size:11px;letter-spacing:.3em;text-transform:uppercase;display:flex;align-items:center;gap:14px;opacity:.8}
+.scroll-cue::after{content:"";width:1px;height:60px;background:linear-gradient(#fff,transparent);animation:cue 2s infinite}
+@keyframes cue{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* BOOKING BAR */
+.quick{position:relative;z-index:5;margin-top:-46px}
+.quick form{background:#fff;border-radius:22px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:0;padding:10px;align-items:stretch}
+.quick label{display:flex;flex-direction:column;padding:12px 22px;border-right:1px solid var(--line);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;cursor:pointer}
+.quick label:nth-child(3){border-right:0}
+.quick input,.quick select{min-width:0;border:0;outline:0;background:none;font-size:16px;color:var(--ink);letter-spacing:0;text-transform:none;font-weight:500;margin-top:4px;padding:2px 0;cursor:pointer;width:100%}
+.quick .btn{border-radius:16px;padding:0 34px}
+
+/* INTRO */
+.intro{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(40px,7vw,100px);align-items:center}
+.intro-imgs{position:relative;aspect-ratio:4/5}
+.intro-imgs img{position:absolute;object-fit:cover;border-radius:var(--radius);box-shadow:var(--shadow)}
+.intro-imgs .a{inset:0 18% 14% 0;width:82%;height:86%}
+.intro-imgs .b{right:0;bottom:0;width:52%;height:44%;border:8px solid var(--cream)}
+.badge{position:absolute;left:-18px;bottom:24%;background:var(--ocean);color:#fff;border-radius:50%;width:132px;height:132px;display:grid;place-items:center;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;box-shadow:var(--shadow);animation:float 6s ease-in-out infinite}
+.badge b{display:block;font-family:var(--serif);font-size:38px;letter-spacing:0;text-transform:none;font-weight:500;line-height:1;color:#ffd9a8}
+@keyframes float{50%{transform:translateY(-10px)}}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:36px 0}
+.stat{padding:20px;border-radius:14px;background:var(--sand);border:1px solid var(--line)}
+.stat b{display:block;font-family:var(--serif);font-size:36px;font-weight:500;color:var(--ocean);line-height:1}
+.stat span{font-size:13px;color:var(--muted)}
+.sign{font-family:var(--serif);font-style:italic;font-size:24px;color:var(--ocean);margin-top:10px}
+
+/* GALLERY */
+.gallery-sec{background:var(--sand)}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap;margin-bottom:50px}
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:220px;gap:14px}
+.gallery figure{position:relative;overflow:hidden;border-radius:14px;cursor:zoom-in;background:var(--sand-2)}
+.gallery img{width:100%;height:100%;object-fit:cover;transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.gallery figure:hover img{transform:scale(1.07)}
+.gallery figcaption{position:absolute;left:14px;bottom:12px;color:#fff;font-size:13px;font-weight:600;letter-spacing:.04em;opacity:0;transform:translateY(8px);transition:.4s;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.gallery figure::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.5));opacity:0;transition:.4s}
+.gallery figure:hover figcaption,.gallery figure:hover::after{opacity:1;transform:none}
+.g1{grid-column:span 2;grid-row:span 2}.g2{grid-row:span 2}.g5{grid-column:span 2}
+.lightbox{position:fixed;inset:0;z-index:100;background:rgba(6,22,26,.94);display:none;align-items:center;justify-content:center;padding:40px}
+.lightbox.on{display:flex;animation:fade .3s}
+@keyframes fade{from{opacity:0}}
+.lightbox img{max-width:min(1400px,100%);max-height:84vh;border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.lightbox p{position:absolute;bottom:24px;left:0;right:0;text-align:center;color:#fff;font-family:var(--serif);font-size:22px;font-style:italic}
+.lb-btn{position:absolute;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;width:54px;height:54px;border-radius:50%;cursor:pointer;font-size:24px;display:grid;place-items:center;transition:.2s}
+.lb-btn:hover{background:rgba(255,255,255,.25)}
+.lb-prev{left:24px;top:50%;translate:0 -50%}.lb-next{right:24px;top:50%;translate:0 -50%}.lb-close{right:24px;top:24px}
+
+/* AMENITIES */
+.amen{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.amen div{background:var(--cream);padding:34px 28px;transition:background .3s}
+.amen div:hover{background:#fff}
+.amen svg{width:34px;height:34px;stroke:var(--terra);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin-bottom:18px}
+.amen h3{font-family:var(--sans);font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:0}
+.amen p{font-size:14px;color:var(--muted);line-height:1.55}
+
+/* PARALLAX QUOTE */
+.parallax{position:relative;padding:clamp(120px,16vw,200px) 0;color:#fff;text-align:center;background:url('https://images.unsplash.com/photo-1543489822-c49534f3271f?w=2400&q=80') center/cover fixed}
+.parallax::before{content:"";position:absolute;inset:0;background:rgba(10,42,48,.45)}
+.parallax .wrap{position:relative}
+.parallax blockquote{font-family:var(--serif);font-size:clamp(32px,4.6vw,58px);font-style:italic;font-weight:400;line-height:1.15;max-width:22ch;margin:0 auto}
+.parallax cite{display:block;margin-top:24px;font-style:normal;font-size:13px;letter-spacing:.3em;text-transform:uppercase;opacity:.85}
+
+/* CLIMATE */
+.climate{background:var(--ocean);color:#fff}
+.climate .eyebrow{color:#ffd9a8}
+.climate .lead{color:rgba(255,255,255,.75)}
+.clim-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:60px;align-items:center}
+.months{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;height:260px;padding-top:20px}
+.month{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:8px;font-size:12px}
+.month .bar{width:100%;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,var(--sun),rgba(232,146,91,.25));position:relative;transform-origin:bottom;transform:scaleY(0);transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
+.in .month .bar{transform:scaleY(1)}
+.month .t{font-weight:700;font-size:13px}
+.month .w{opacity:.6;font-size:11px}
+.month .m{opacity:.75;text-transform:uppercase;letter-spacing:.08em;font-size:11px}
+.clim-legend{display:flex;gap:30px;margin-top:26px;font-size:13px;opacity:.8;flex-wrap:wrap}
+.clim-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--sun);margin-right:8px;vertical-align:-1px}
+.clim-facts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+.clim-facts div{border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:18px}
+.clim-facts b{font-family:var(--serif);font-size:34px;font-weight:500;color:#ffd9a8;display:block;line-height:1}
+.clim-facts span{font-size:13px;opacity:.75}
+
+/* EXPERIENCES */
+.exp{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.card{position:relative;border-radius:var(--radius);overflow:hidden;aspect-ratio:3/4;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:28px;isolation:isolate}
+.card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform 1s cubic-bezier(.2,.7,.2,1)}
+.card::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 35%,rgba(8,30,34,.88))}
+.card:hover img{transform:scale(1.08)}
+.card .km{position:absolute;top:22px;left:22px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);font-size:12px;font-weight:600}
+.card h3{font-size:32px;margin-bottom:8px}
+.card p{font-size:14px;opacity:.85;max-height:0;overflow:hidden;transition:max-height .5s,opacity .5s;opacity:0}
+.card:hover p{max-height:120px;opacity:.88}
+
+/* LOCATION */
+.loc{display:grid;grid-template-columns:1fr 1.25fr;gap:60px;align-items:center}
+.dist{list-style:none;margin-top:30px}
+.dist li{display:flex;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dist li b{font-weight:600;color:var(--ocean)}
+.map{border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);aspect-ratio:4/3;position:relative;background:var(--sand-2)}
+.map iframe{width:100%;height:100%;border:0;filter:saturate(.75) contrast(1.05)}
+
+/* PRICES & BOOKING */
+.book-sec{background:var(--sand)}
+.seasons{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:60px}
+.season{background:#fff;border-radius:var(--radius);padding:34px 30px;border:1px solid var(--line);position:relative;transition:transform .3s,box-shadow .3s}
+.season:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
+.season.hot{background:var(--ocean);color:#fff;border-color:var(--ocean)}
+.season.hot .muted{color:rgba(255,255,255,.7)}
+.season .tag{position:absolute;top:-12px;right:24px;background:var(--sun);color:#fff;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:6px 12px;border-radius:999px}
+.season h3{font-family:var(--sans);font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+.season .price{font-family:var(--serif);font-size:62px;line-height:1;margin:18px 0 4px;font-weight:500}
+.season .price small{font-family:var(--sans);font-size:15px;font-weight:400;opacity:.7}
+.muted{color:var(--muted);font-size:14px}
+.season ul{list-style:none;margin-top:20px;font-size:14px}
+.season li{padding:7px 0;display:flex;gap:10px}
+.season li::before{content:"✓";color:var(--sun);font-weight:700}
+
+.booking{display:grid;grid-template-columns:1.2fr 1fr;gap:30px;align-items:start}
+.cal{background:#fff;border-radius:var(--radius);padding:28px;border:1px solid var(--line)}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.cal-head h3{font-size:26px}
+.cal-nav{display:flex;gap:8px}
+.cal-nav button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:18px;transition:.2s}
+.cal-nav button:hover{background:var(--ocean);color:#fff}
+.cal-months{display:grid;grid-template-columns:1fr 1fr;gap:30px}
+.cal-month h4{font-family:var(--sans);font-size:14px;font-weight:700;text-transform:capitalize;margin-bottom:12px;text-align:center;letter-spacing:.04em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:13px}
+.cal-grid .dow{font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;font-weight:600;padding-bottom:6px}
+.day{aspect-ratio:1;display:grid;place-items:center;border-radius:10px;cursor:pointer;transition:background .15s,color .15s;font-weight:500;user-select:none}
+.day:hover{background:var(--sand-2)}
+.day.past,.day.busy{color:#b9b2a8;cursor:not-allowed;text-decoration:line-through;background:none}
+.day.busy{background:repeating-linear-gradient(45deg,#f3ece2,#f3ece2 4px,#fff 4px,#fff 8px);text-decoration:none}
+.day.range{background:rgba(232,146,91,.18);border-radius:0}
+.day.start,.day.end{background:var(--sun);color:#fff;border-radius:10px}
+.cal-legend{display:flex;gap:20px;margin-top:18px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.cal-legend i{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:6px;vertical-align:-2px}
+.summary{background:#fff;border-radius:var(--radius);padding:30px;border:1px solid var(--line);position:sticky;top:100px}
+.summary h3{font-size:30px;margin-bottom:6px}
+.sum-dates{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;margin:20px 0 12px;overflow:hidden}
+.sum-dates div{padding:12px 16px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sum-dates div+div{border-left:1px solid var(--line)}
+.sum-dates b{display:block;font-size:15px;color:var(--ink);letter-spacing:0;text-transform:none;margin-top:2px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+.field input,.field select,.field textarea{min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--cream);font-size:15px;outline:none;transition:border .2s,box-shadow .2s;color:var(--ink);font-weight:400;letter-spacing:0}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--sun);box-shadow:0 0 0 4px rgba(232,146,91,.15)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lines{margin:18px 0;font-size:15px}
+.lines div{display:flex;justify-content:space-between;padding:6px 0;color:var(--muted)}
+.lines .tot{border-top:1px solid var(--line);margin-top:8px;padding-top:14px;color:var(--ink);font-weight:700;font-size:18px}
+.lines .disc{color:#2f8a5b}
+.summary .btn{width:100%;justify-content:center}
+.note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+.err{color:var(--terra);font-size:13px;min-height:20px;margin-top:6px;text-align:center}
+
+/* REVIEWS */
+.rev-top{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.score{font-family:var(--serif);font-size:84px;line-height:1;color:var(--ocean)}
+.stars{color:var(--sun);letter-spacing:3px;font-size:18px}
+.reviews{display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 4px 30px;margin-top:40px;scrollbar-width:none}
+.reviews::-webkit-scrollbar{display:none}
+.review{flex:0 0 min(420px,85%);scroll-snap-align:start;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:34px;display:flex;flex-direction:column}
+.review q{font-family:var(--serif);font-size:23px;line-height:1.35;quotes:"“" "”";flex:1;margin:16px 0 26px}
+.who{display:flex;align-items:center;gap:14px;font-size:14px}
+.av{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px}
+.who span{display:block;color:var(--muted);font-size:13px}
+.rev-nav{display:flex;gap:10px}
+.rev-nav button{width:50px;height:50px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:20px;transition:.2s}
+.rev-nav button:hover{background:var(--ocean);color:#fff}
+
+/* FAQ */
+.faq-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:60px}
+details{border-bottom:1px solid var(--line);padding:22px 0}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:20px;font-weight:600;font-size:17px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:26px;font-weight:300;color:var(--terra);transition:transform .3s}
+details[open] summary::after{transform:rotate(45deg)}
+details p{color:var(--muted);margin-top:12px;max-width:62ch}
+
+/* CTA + FOOTER */
+.cta{position:relative;color:#fff;text-align:center;overflow:hidden}
+.cta-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=2400&q=80') center/cover}
+.cta::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(10,42,48,.35),rgba(10,42,48,.7))}
+.cta .wrap{position:relative;z-index:2}
+.cta h2{font-size:clamp(44px,7vw,92px);font-weight:400}
+.cta p{opacity:.9;margin:0 auto 34px;max-width:50ch;font-size:18px}
+.cta .hero-ctas{justify-content:center}
+footer{background:var(--deep);color:rgba(255,255,255,.7);padding:70px 0 30px;font-size:14px}
+.foot{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;margin-bottom:50px}
+footer h4{color:#fff;font-family:var(--sans);font-size:12px;letter-spacing:.24em;text-transform:uppercase;margin-bottom:18px;font-weight:600}
+footer li{list-style:none;padding:5px 0}
+footer a:hover{color:#ffd9a8}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:24px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:12px;opacity:.7}
+.social{display:flex;gap:10px;margin-top:20px}
+.social a{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;transition:.2s}
+.social a:hover{background:var(--sun);border-color:var(--sun)}
+.social svg{width:17px;height:17px;fill:#fff}
+
+.wa{position:fixed;right:22px;bottom:22px;z-index:60;width:60px;height:60px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 12px 30px -8px rgba(37,211,102,.7);transition:transform .25s}
+.wa:hover{transform:scale(1.08)}
+.wa svg{width:30px;height:30px;fill:#fff}
+
+.modal{position:fixed;inset:0;z-index:120;background:rgba(6,22,26,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex;animation:fade .3s}
+.modal-box{background:var(--cream);border-radius:24px;padding:46px 40px;max-width:480px;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.4)}
+.modal-box .ok{width:74px;height:74px;border-radius:50%;background:var(--ocean);color:#ffd9a8;display:grid;place-items:center;margin:0 auto 20px;font-size:34px}
+.modal-box h3{font-size:36px;margin-bottom:10px}
+.modal-box p{color:var(--muted);margin-bottom:26px}
+
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}
+
+@media (max-width:1000px){
+  .nav ul,.nav .btn,.lang{display:none}
+  .burger{display:block}
+  .nav.open{background:var(--cream)}
+  .nav.open .logo,.nav.open .burger{color:var(--ocean)}
+  .nav.open ul{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:var(--cream);padding:10px 20px 30px;gap:0;color:var(--ocean);box-shadow:0 20px 30px -20px rgba(0,0,0,.2)}
+  .nav.open ul a{display:block;padding:14px 0;border-bottom:1px solid var(--line);font-size:17px}
+  .quick form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .quick label:nth-child(3){grid-column:span 2}
+  .quick label{border-right:0;border-bottom:1px solid var(--line)}
+  .quick .btn{grid-column:span 2;padding:16px;margin-top:8px}
+  .intro,.clim-grid,.loc,.faq-grid,.booking{grid-template-columns:1fr}
+  .intro-imgs{max-width:560px}
+  .gallery{grid-template-columns:repeat(2,1fr);grid-auto-rows:180px}
+  .g5{grid-column:span 2}
+  .amen{grid-template-columns:repeat(2,1fr)}
+  .exp,.seasons{grid-template-columns:1fr}
+  .card{aspect-ratio:16/11}
+  .card p{max-height:120px;opacity:.88}
+  .foot{grid-template-columns:1fr 1fr}
+  .summary{position:static}
+  .scroll-cue{display:none}
+  .parallax{background-attachment:scroll}
+}
+@media (max-width:600px){
+  .hero-meta{gap:18px;margin-top:40px}
+  .hero-meta div{font-size:11px}
+  .hero-meta b{font-size:24px}
+  .stats{grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .stat{padding:14px}.stat b{font-size:28px}
+  .cal-months{grid-template-columns:1fr}
+  .cal-months .cal-month:nth-child(2){display:none}
+  .amen{grid-template-columns:1fr}
+  .months{gap:4px}
+  .month .w{display:none}
+  .foot{grid-template-columns:1fr}
+  .badge{width:104px;height:104px;left:-6px}.badge b{font-size:30px}
+  .lb-prev,.lb-next{top:auto;bottom:70px;translate:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="wrap">
+    <a href="#top" class="logo">
+      <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="19" stroke="currentColor" stroke-width="1.2"/><circle cx="20" cy="15" r="5" fill="#e8925b"/><path d="M7 26c4-3 8-3 13 0s9 3 13 0" stroke="currentColor" stroke-width="1.5"/><path d="M9 30.5c3.5-2.4 7.3-2.4 11 0s7.5 2.4 11 0" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg>
+      <span>Villa Alisio<small>Lanzarote · Canarie</small></span>
+    </a>
+    <ul id="menu">
+      <li><a href="#casa">La casa</a></li>
+      <li><a href="#galleria">Galleria</a></li>
+      <li><a href="#servizi">Servizi</a></li>
+      <li><a href="#isola">L'isola</a></li>
+      <li><a href="#prenota">Prezzi</a></li>
+      <li><a href="#recensioni">Recensioni</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <div class="lang" aria-label="Lingua"><span class="on">IT</span><span>EN</span><span>ES</span></div>
+    <a href="#prenota" class="btn btn-sun">Prenota ora</a>
+    <button class="burger" id="burger" aria-label="Menu"><svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.6" fill="none"><path d="M3 7h18M3 12h18M3 17h18"/></svg></button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <div class="hero-tag">★ 4,97 · <b>Superhost</b> · 180+ soggiorni</div>
+    <h1>La tua casa <em>sull'oceano</em>, dove è sempre estate.</h1>
+    <p>Una villa di design immersa nella luce di Lanzarote: piscina riscaldata a sfioro, terrazza vista Atlantico e la spiaggia di Playa Dorada a soli 400 metri.</p>
+    <div class="hero-ctas">
+      <a href="#prenota" class="btn btn-sun">Verifica disponibilità →</a>
+      <a href="#galleria" class="btn btn-ghost">Scopri la villa</a>
+    </div>
+    <div class="hero-meta">
+      <div><b>6</b>ospiti</div>
+      <div><b>3</b>camere da letto</div>
+      <div><b>180 m²</b>di spazio interno</div>
+      <div><b>23 °C</b>media annuale</div>
+    </div>
+  </div>
+  <div class="scroll-cue">Scorri</div>
+</header>
+
+<div class="quick">
+  <div class="wrap">
+    <form id="quickForm">
+      <label>Arrivo<input type="date" id="qIn"></label>
+      <label>Partenza<input type="date" id="qOut"></label>
+      <label>Ospiti
+        <select id="qGuests"><option>1 adulto</option><option selected>2 adulti</option><option>3 ospiti</option><option>4 ospiti</option><option>5 ospiti</option><option>6 ospiti</option></select>
+      </label>
+      <button class="btn btn-dark" type="submit">Cerca</button>
+    </form>
+  </div>
+</div>
+
+<section id="casa">
+  <div class="wrap intro">
+    <div class="intro-imgs reveal">
+      <img class="a" src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80" alt="Living luminoso con divano bianco e pareti in legno" loading="lazy">
+      <img class="b" src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=900&q=80" alt="Terrazza con lettini e piscina affacciata sull'oceano" loading="lazy">
+      <div class="badge"><div><b>400 m</b>dal mare</div></div>
+    </div>
+    <div class="reveal d1">
+      <span class="eyebrow">Benvenuti a Villa Alisio</span>
+      <h2>Architettura bianca, <em>pietra lavica</em> e orizzonte blu.</h2>
+      <p class="lead">Progettata seguendo la tradizione di César Manrique, Villa Alisio unisce la calce bianca delle case canarie a interni contemporanei, grandi vetrate e materiali naturali. Ogni stanza guarda verso l'oceano e verso Fuerteventura, che all'orizzonte si accende al tramonto.</p>
+      <div class="stats">
+        <div class="stat"><b>3</b><span>camere con bagno</span></div>
+        <div class="stat"><b>12 m</b><span>piscina a sfioro</span></div>
+        <div class="stat"><b>90 m²</b><span>di terrazze</span></div>
+      </div>
+      <p class="lead" style="font-size:16px">Qui le giornate scorrono lente: colazione sotto il pergolato, un tuffo prima di pranzo, un calice di Malvasia vulcanica mentre il sole scende dietro i Los Ajaches.</p>
+      <p class="sign">— Lucia &amp; Marco, i vostri host</p>
+    </div>
+  </div>
+</section>
+
+<section class="gallery-sec" id="galleria">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Galleria</span><h2>Ogni angolo, <em>una cartolina</em>.</h2></div>
+      <p class="lead" style="max-width:40ch">Clicca su una foto per ingrandirla. Spazi pensati per vivere dentro e fuori, dall'alba al tramonto.</p>
+    </div>
+    <div class="gallery reveal" id="gallery">
+      <figure class="g1"><img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1400&q=80" alt="Facciata della villa e piscina" loading="lazy"><figcaption>La villa e la piscina</figcaption></figure>
+      <figure class="g2"><img src="https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=900&q=80" alt="Interni con vetrate sulla piscina" loading="lazy"><figcaption>Living con vetrate</figcaption></figure>
+      <figure><img src="https://images.unsplash.com/photo-1559599238-308793637427?w=900&q=80" alt="Camera matrimoniale padronale" loading="lazy"><figcaption>Suite padronale</figcaption></figure>
+      <figure><img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=900&q=80" alt="Salotto luminoso" loading="lazy"><figcaption>Salotto</figcaption></figure>
+      <figure class="g5"><img src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=1400&q=80" alt="Solarium in legno con piscina e vista mare" loading="lazy"><figcaption>Solarium vista oceano</figcaption></figure>
+      <figure><img src="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=900&q=80" alt="Seconda camera da letto" loading="lazy"><figcaption>Camera Timanfaya</figcaption></figure>
+      <figure><img src="https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=900&q=80" alt="Bagno bianco con piante" loading="lazy"><figcaption>Bagno con doccia walk-in</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="servizi">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Servizi inclusi</span><h2>Tutto il comfort, <em>nessun pensiero</em>.</h2></div>
+      <p class="lead" style="max-width:40ch">Nel prezzo è già compreso tutto ciò che serve per una vacanza perfetta. Niente sorprese al check-out.</p>
+    </div>
+    <div class="amen reveal">
+      <div><svg viewBox="0 0 24 24"><path d="M2 18c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 6 0M2 14c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 6 0M8 12V4a2 2 0 0 1 4 0M16 12V4a2 2 0 0 0-4 0"/></svg><h3>Piscina riscaldata</h3><p>12 m a sfioro, 28 °C tutto l'anno grazie ai pannelli solari.</p></div>
+      <div><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a14.5 14.5 0 0 1 20 0"/><circle cx="12" cy="19.5" r=".8"/></svg><h3>Wi-Fi in fibra 600 Mb</h3><p>Ideale per lo smart working, con postazione dedicata.</p></div>
+      <div><svg viewBox="0 0 24 24"><path d="M12 2v20M4.9 4.9l14.2 14.2M2 12h20M4.9 19.1 19.1 4.9"/></svg><h3>Aria condizionata</h3><p>In tutte le camere e nel living, con controllo individuale.</p></div>
+      <div><svg viewBox="0 0 24 24"><path d="M3 11h18v3a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7v-3ZM7 11V8M12 11V6M17 11V8"/></svg><h3>Cucina gourmet</h3><p>Forno, piano a induzione, lavastoviglie, macchina espresso.</p></div>
+      <div><svg viewBox="0 0 24 24"><path d="M12 3c-3 4-6 6-6 10a6 6 0 0 0 12 0c0-4-3-6-6-10Z"/><path d="M8 21h8"/></svg><h3>Barbecue in pietra</h3><p>Con area pranzo all'aperto per 8 persone sotto il pergolato.</p></div>
+      <div><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M5 17v3M19 17v3M6 11l2-5h8l2 5"/></svg><h3>Parcheggio privato</h3><p>Due posti auto coperti e colonnina di ricarica per auto elettriche.</p></div>
+      <div><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 8h14M9 5h2"/><circle cx="12" cy="15" r="3.5"/></svg><h3>Lavanderia</h3><p>Lavatrice, asciugatrice, ferro da stiro. Teli mare inclusi.</p></div>
+      <div><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z"/></svg><h3>Benvenuto canario</h3><p>Cesto con vino locale, formaggio majorero e frutta di stagione.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="parallax">
+  <div class="wrap reveal">
+    <blockquote>«Lanzarote è un'opera d'arte della natura: chi la visita una volta, ritorna.»</blockquote>
+    <cite>César Manrique · artista lanzaroteño</cite>
+  </div>
+</div>
+
+<section class="climate">
+  <div class="wrap clim-grid">
+    <div class="reveal">
+      <span class="eyebrow">L'eterna primavera</span>
+      <h2>Sole in <em>ogni stagione</em>.</h2>
+      <p class="lead">Grazie agli alisei e alla corrente delle Canarie, Lanzarote gode di uno dei climi più miti al mondo. Anche a gennaio si fa il bagno e si pranza in terrazza.</p>
+      <div class="clim-facts">
+        <div><b>300+</b><span>giorni di sole all'anno</span></div>
+        <div><b>19–24 °C</b><span>temperatura del mare</span></div>
+        <div><b>4 h</b><span>di volo dall'Italia</span></div>
+        <div><b>–1 h</b><span>di fuso orario rispetto all'Italia</span></div>
+      </div>
+    </div>
+    <div class="reveal d2" id="climateBox">
+      <div class="months" id="months"></div>
+      <div class="clim-legend"><span><i></i>Temperatura massima media (°C)</span><span style="opacity:.7">Sotto: temperatura del mare</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="isola">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Da vivere</span><h2>L'isola dei <em>vulcani</em>.</h2></div>
+      <p class="lead" style="max-width:40ch">Ti prepariamo una guida personalizzata con i nostri posti del cuore. Ecco qualche anticipazione.</p>
+    </div>
+    <div class="exp">
+      <a class="card reveal" href="#isola"><img src="https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=1000&q=80" alt="Costa rocciosa e mare turchese" loading="lazy"><span class="km">7 km</span><h3>Playas de Papagayo</h3><p>Calette di sabbia dorata e acqua cristallina nel parco naturale di Los Ajaches. Le spiagge più belle dell'isola.</p></a>
+      <a class="card reveal d1" href="#isola"><img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1000&q=80" alt="Subacqueo tra i pesci" loading="lazy"><span class="km">2 km</span><h3>Immersioni &amp; snorkeling</h3><p>Fondali vulcanici ricchi di vita e il Museo Atlántico, il primo museo sottomarino d'Europa.</p></a>
+      <a class="card reveal d2" href="#isola"><img src="https://images.unsplash.com/photo-1495954484750-af469f2f9be5?w=1000&q=80" alt="Passerella di legno verso la spiaggia" loading="lazy"><span class="km">25 min di traghetto</span><h3>Dune di Corralejo</h3><p>Una gita in giornata a Fuerteventura tra dune bianche e lagune turchesi, partendo dal porto di Playa Blanca.</p></a>
+      <a class="card reveal" href="#isola"><img src="https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=1000&q=80" alt="Surfista in un tubo d'onda" loading="lazy"><span class="km">35 km</span><h3>Surf a Famara</h3><p>Onde atlantiche sotto scogliere di 600 m. Scuole per tutti i livelli, dal primo giorno alla tavola corta.</p></a>
+      <a class="card reveal d1" href="#isola"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1000&q=80" alt="Cena in un ristorante" loading="lazy"><span class="km">1,5 km</span><h3>Sapori canari</h3><p>Papas arrugadas con mojo, pesce del giorno al Marina Rubicón e i vini della valle de La Geria.</p></a>
+      <a class="card reveal d2" href="#isola"><img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1000&q=80" alt="Onda al tramonto" loading="lazy"><span class="km">18 km</span><h3>Los Hervideros</h3><p>Grotte laviche dove l'oceano ribolle tra le rocce. Da vedere al tramonto, sulla strada per El Golfo.</p></a>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap loc">
+    <div class="reveal">
+      <span class="eyebrow">Posizione</span>
+      <h2>Playa Blanca, <em>Lanzarote</em>.</h2>
+      <p class="lead">Una zona residenziale tranquilla nel sud dell'isola, a pochi passi dal lungomare, da ristoranti e dal porto turistico Marina Rubicón.</p>
+      <ul class="dist">
+        <li>Spiaggia Playa Dorada <b>400 m · 5 min a piedi</b></li>
+        <li>Supermercato e farmacia <b>650 m</b></li>
+        <li>Marina Rubicón <b>1,5 km</b></li>
+        <li>Parco Nazionale di Timanfaya <b>28 km</b></li>
+        <li>Aeroporto di Arrecife (ACE) <b>35 km · 30 min</b></li>
+      </ul>
+    </div>
+    <div class="map reveal d1">
+      <iframe title="Mappa di Playa Blanca, Lanzarote" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=-13.8700%2C28.8450%2C-13.7950%2C28.8800&amp;layer=mapnik&amp;marker=28.8622%2C-13.8265"></iframe>
+    </div>
+  </div>
+</section>
+
+<section class="book-sec" id="prenota">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Tariffe 2026 – 2027</span><h2>Prenota diretto, <em>risparmia</em>.</h2></div>
+      <p class="lead" style="max-width:42ch">Prezzi per notte per l'intera villa (fino a 6 ospiti). Prenotando qui eviti le commissioni dei portali: <b>-10%</b> per soggiorni di 7 notti o più.</p>
+    </div>
+    <div class="seasons">
+      <div class="season reveal"><h3>Bassa stagione</h3><div class="price">€ 190<small> /notte</small></div><p class="muted">Maggio – giugno · ottobre</p><ul><li>Soggiorno minimo 4 notti</li><li>Mare a 21 °C, spiagge tranquille</li><li>Cancellazione gratuita fino a 30 giorni</li></ul></div>
+      <div class="season hot reveal d1"><span class="tag">Più richiesta</span><h3>Inverno al sole</h3><div class="price">€ 260<small> /notte</small></div><p class="muted">Novembre – aprile</p><ul><li>Soggiorno minimo 5 notti</li><li>24 °C mentre in Italia nevica</li><li>Transfer aeroporto incluso da 10 notti</li></ul></div>
+      <div class="season reveal d2"><h3>Alta stagione</h3><div class="price">€ 320<small> /notte</small></div><p class="muted">Luglio – settembre · Natale</p><ul><li>Soggiorno minimo 7 notti</li><li>Arrivi e partenze il sabato</li><li>Pulizia infrasettimanale inclusa</li></ul></div>
+    </div>
+
+    <div class="booking">
+      <div class="cal reveal">
+        <div class="cal-head"><h3>Disponibilità</h3><div class="cal-nav"><button id="calPrev" aria-label="Mese precedente">‹</button><button id="calNext" aria-label="Mese successivo">›</button></div></div>
+        <div class="cal-months" id="calMonths"></div>
+        <div class="cal-legend"><span><i style="background:#fff;border:1px solid var(--line)"></i>Libero</span><span><i style="background:repeating-linear-gradient(45deg,#f3ece2,#f3ece2 3px,#fff 3px,#fff 6px);border:1px solid var(--line)"></i>Occupato</span><span><i style="background:var(--sun)"></i>Le tue date</span></div>
+        <p class="note" style="text-align:left;margin-top:14px">Seleziona sul calendario la data di arrivo e poi quella di partenza.</p>
+      </div>
+      <form class="summary reveal d1" id="bookForm" novalidate>
+        <h3>Richiesta di prenotazione</h3>
+        <p class="muted">Nessun pagamento ora: ti rispondiamo entro 2 ore.</p>
+        <div class="sum-dates"><div>Arrivo<b id="sIn">—</b></div><div>Partenza<b id="sOut">—</b></div></div>
+        <div class="row2">
+          <label class="field">Adulti<select id="adults"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label>
+          <label class="field">Bambini<select id="kids"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+        </div>
+        <label class="field">Nome e cognome<input id="fName" required placeholder="Mario Rossi" autocomplete="name"></label>
+        <label class="field">Email<input id="fMail" type="email" required placeholder="mario@email.it" autocomplete="email"></label>
+        <div class="lines" id="lines"><div><span>Seleziona le date per vedere il prezzo</span></div></div>
+        <button class="btn btn-sun" type="submit">Invia richiesta</button>
+        <div class="err" id="err"></div>
+        <p class="note">🔒 Pagamento sicuro · Cauzione € 300 rimborsabile · Licenza VV-35-3-0001234 (demo)</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="recensioni">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="rev-top"><div class="score">4,97</div><div><div class="stars">★★★★★</div><span class="muted">186 recensioni verificate</span><span class="eyebrow" style="display:block;margin-top:8px">Dicono di noi</span></div></div>
+      <div class="rev-nav"><button id="revPrev" aria-label="Precedente">←</button><button id="revNext" aria-label="Successiva">→</button></div>
+    </div>
+    <div class="reviews" id="reviews">
+      <article class="review"><div class="stars">★★★★★</div><q>Foto bellissime, ma dal vivo è ancora meglio. Ci siamo svegliati ogni mattina con l'oceano davanti. I bambini non volevano più uscire dalla piscina!</q><div class="who"><div class="av" style="background:#c8643b">G</div><div><b>Giulia</b><span>Milano · Famiglia · febbraio 2026</span></div></div></article>
+      <article class="review"><div class="stars">★★★★★</div><q>Lucia e Marco sono host straordinari: la loro guida dell'isola ci ha portato in posti che non avremmo mai trovato da soli. Pulizia impeccabile.</q><div class="who"><div class="av" style="background:#14535d">A</div><div><b>Andrea</b><span>Torino · Coppia · maggio 2026</span></div></div></article>
+      <article class="review"><div class="stars">★★★★★</div><q>Ho lavorato da remoto per tre settimane a gennaio: Wi-Fi perfetto, scrivania con vista e pausa pranzo in piscina. Tornerò sicuramente.</q><div class="who"><div class="av" style="background:#c9a36a">F</div><div><b>Francesca</b><span>Bologna · Smart worker · gennaio 2026</span></div></div></article>
+      <article class="review"><div class="stars">★★★★★</div><q>Villa moderna, curata in ogni dettaglio, cucina attrezzatissima. A cinque minuti a piedi dalla spiaggia e dai ristoranti del lungomare.</q><div class="who"><div class="av" style="background:#2b2523">L</div><div><b>Luca</b><span>Roma · Amici · settembre 2025</span></div></div></article>
+      <article class="review"><div class="stars">★★★★★</div><q>I tramonti dalla terrazza valgono da soli il viaggio. Il cesto di benvenuto con il vino di La Geria è stato un pensiero meraviglioso.</q><div class="who"><div class="av" style="background:#e8925b">S</div><div><b>Sara</b><span>Napoli · Coppia · dicembre 2025</span></div></div></article>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:0">
+  <div class="wrap faq-grid">
+    <div class="reveal">
+      <span class="eyebrow">Domande frequenti</span>
+      <h2>Tutto quello che <em>vuoi sapere</em>.</h2>
+      <p class="lead">Non trovi la risposta? Scrivici su WhatsApp: rispondiamo in italiano, inglese e spagnolo.</p>
+    </div>
+    <div class="reveal d1">
+      <details open><summary>Come si raggiunge la villa?</summary><p>Lanzarote è collegata con voli diretti da Milano, Roma, Bologna, Venezia e altre città italiane (circa 4 ore). Dall'aeroporto di Arrecife la villa dista 35 km: ti consigliamo di noleggiare un'auto, oppure possiamo organizzare il transfer privato (€ 60 a tratta).</p></details>
+      <details><summary>Quali sono gli orari di check-in e check-out?</summary><p>Check-in dalle 16:00, check-out entro le 10:30. Ti accogliamo di persona e, se gli altri ospiti lo permettono, siamo flessibili sugli orari.</p></details>
+      <details><summary>Cosa è incluso nel prezzo?</summary><p>Biancheria da letto e da bagno, teli mare, pulizia finale (€ 90 una tantum, indicata nel totale), consumi di acqua, luce e gas, Wi-Fi, riscaldamento piscina e il cesto di benvenuto. Alle Canarie non è prevista tassa di soggiorno.</p></details>
+      <details><summary>Sono ammessi animali?</summary><p>Sì, accettiamo un cane di piccola o media taglia su richiesta, con un supplemento di € 40 per soggiorno.</p></details>
+      <details><summary>Qual è la politica di cancellazione?</summary><p>Cancellazione gratuita fino a 30 giorni prima dell'arrivo. Fino a 14 giorni prima rimborsiamo il 50%. Al momento della conferma è richiesto un acconto del 30%.</p></details>
+      <details><summary>La villa è adatta ai bambini?</summary><p>Assolutamente sì: su richiesta forniamo culla, seggiolone e cancelletto per la piscina. La zona è tranquilla e il mare di Playa Dorada è calmo e poco profondo.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="cta-bg"></div>
+  <div class="wrap reveal">
+    <span class="eyebrow" style="color:#ffd9a8">Il tuo prossimo inverno</span>
+    <h2>Ci vediamo <em>al tramonto</em>.</h2>
+    <p>Le date più belle si esauriscono in fretta. Blocca la tua settimana di sole a Lanzarote.</p>
+    <div class="hero-ctas"><a href="#prenota" class="btn btn-sun">Verifica disponibilità →</a><a href="https://wa.me/34600000000" class="btn btn-ghost" target="_blank" rel="noopener">Scrivici su WhatsApp</a></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a href="#top" class="logo" style="color:#fff">Villa Alisio</a>
+        <p style="margin-top:14px;max-width:34ch">Casa vacanze di design a Playa Blanca, Lanzarote. Gestita con amore da una famiglia italiana innamorata delle Canarie.</p>
+        <div class="social">
+          <a href="#top" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 7.3A4.7 4.7 0 1 0 16.7 12 4.7 4.7 0 0 0 12 7.3Zm0 7.7a3 3 0 1 1 3-3 3 3 0 0 1-3 3Zm6-7.9a1.1 1.1 0 1 1-1.1-1.1A1.1 1.1 0 0 1 18 7.1ZM21.9 8a6.3 6.3 0 0 0-1.7-4.4A6.3 6.3 0 0 0 15.8 2C14 1.9 10 1.9 8.2 2a6.3 6.3 0 0 0-4.4 1.7A6.3 6.3 0 0 0 2 8.2c-.1 1.8-.1 5.8 0 7.6a6.3 6.3 0 0 0 1.7 4.4A6.3 6.3 0 0 0 8.2 22c1.8.1 5.8.1 7.6 0a6.3 6.3 0 0 0 4.4-1.7 6.3 6.3 0 0 0 1.7-4.4c.1-1.8.1-5.8 0-7.6Z"/></svg></a>
+          <a href="#top" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 8V6.2c0-.8.2-1.2 1.4-1.2H17V2h-2.6C11.4 2 10.5 3.5 10.5 6v2H8v3h2.5v11H14V11h2.7l.3-3Z"/></svg></a>
+          <a href="https://wa.me/34600000000" aria-label="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-1 1.2-.4.2-.7.1a8 8 0 0 1-4-3.5c-.3-.5.3-.5.9-1.6a.6.6 0 0 0 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6a1.2 1.2 0 0 0-.8.4 3.5 3.5 0 0 0-1.1 2.6 6 6 0 0 0 1.3 3.2 13.8 13.8 0 0 0 5.3 4.7c2 .8 2.7.9 3.7.8a3.2 3.2 0 0 0 2.1-1.5 2.6 2.6 0 0 0 .2-1.5c-.1-.1-.3-.2-.6-.3ZM12 21.8a9.9 9.9 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.8 9.8 0 1 1 12 21.8Z"/></svg></a>
+        </div>
+      </div>
+      <div><h4>La villa</h4><ul><li><a href="#casa">La casa</a></li><li><a href="#galleria">Galleria</a></li><li><a href="#servizi">Servizi</a></li><li><a href="#prenota">Tariffe</a></li></ul></div>
+      <div><h4>Scopri</h4><ul><li><a href="#isola">Esperienze</a></li><li><a href="#recensioni">Recensioni</a></li><li><a href="#faq">FAQ</a></li></ul></div>
+      <div><h4>Contatti</h4><ul><li>Calle del Mar 12 (demo)<br>35580 Playa Blanca, Lanzarote</li><li><a href="mailto:ciao@villaalisio.example">ciao@villaalisio.example</a></li><li><a href="https://wa.me/34600000000">+34 600 000 000</a></li></ul></div>
+    </div>
+    <div class="foot-bottom"><span>© 2026 Villa Alisio · Sito dimostrativo · Foto: Unsplash</span><span>Privacy · Cookie · Termini</span></div>
+  </div>
+</footer>
+
+<a class="wa" href="https://wa.me/34600000000" target="_blank" rel="noopener" aria-label="Contattaci su WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-1 1.2-.4.2-.7.1a8 8 0 0 1-4-3.5c-.3-.5.3-.5.9-1.6a.6.6 0 0 0 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6a1.2 1.2 0 0 0-.8.4 3.5 3.5 0 0 0-1.1 2.6 6 6 0 0 0 1.3 3.2 13.8 13.8 0 0 0 5.3 4.7c2 .8 2.7.9 3.7.8a3.2 3.2 0 0 0 2.1-1.5 2.6 2.6 0 0 0 .2-1.5c-.1-.1-.3-.2-.6-.3ZM12 21.8a9.9 9.9 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.8 9.8 0 1 1 12 21.8Zm0-21.6A11.8 11.8 0 0 0 1.8 17.9L.2 23.8l6-1.6A11.8 11.8 0 1 0 12 .2Z"/></svg></a>
+
+<div class="lightbox" id="lightbox">
+  <button class="lb-btn lb-close" id="lbClose" aria-label="Chiudi">✕</button>
+  <button class="lb-btn lb-prev" id="lbPrev" aria-label="Precedente">‹</button>
+  <img id="lbImg" alt="">
+  <button class="lb-btn lb-next" id="lbNext" aria-label="Successiva">›</button>
+  <p id="lbCap"></p>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="ok">✓</div>
+    <h3>Grazie!</h3>
+    <p id="modalText">Abbiamo ricevuto la tua richiesta.</p>
+    <button class="btn btn-dark" id="modalClose">Perfetto</button>
+  </div>
+</div>
+
+<script>
+// Nav
+const nav=document.getElementById('nav');
+const onScroll=()=>nav.classList.toggle('scrolled',scrollY>60);
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+document.getElementById('burger').onclick=()=>nav.classList.toggle('open');
+document.querySelectorAll('#menu a').forEach(a=>a.onclick=()=>nav.classList.remove('open'));
+document.querySelectorAll('.lang span').forEach(s=>s.onclick=()=>{document.querySelectorAll('.lang span').forEach(x=>x.classList.remove('on'));s.classList.add('on')});
+
+// Reveal
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// Clima
+const clima=[[21,19],[22,18],[23,19],[24,19],[25,20],[27,21],[29,22],[29,23],[28,23],[27,22],[24,21],[22,20]];
+const mn=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+document.getElementById('months').innerHTML=clima.map(([t,w],i)=>`<div class="month"><span class="t">${t}°</span><div class="bar" style="height:${(t-10)*8}px;transition-delay:${i*60}ms"></div><span class="m">${mn[i]}</span><span class="w">${w}°</span></div>`).join('');
+
+// Lightbox
+const figs=[...document.querySelectorAll('#gallery figure')];
+const lb=document.getElementById('lightbox'),lbImg=document.getElementById('lbImg'),lbCap=document.getElementById('lbCap');
+let lbI=0;
+const showLb=i=>{lbI=(i+figs.length)%figs.length;const im=figs[lbI].querySelector('img');lbImg.src=im.src.replace(/w=\d+/,'w=2000');lbImg.alt=im.alt;lbCap.textContent=figs[lbI].querySelector('figcaption').textContent;lb.classList.add('on')};
+figs.forEach((f,i)=>f.onclick=()=>showLb(i));
+document.getElementById('lbClose').onclick=()=>lb.classList.remove('on');
+document.getElementById('lbPrev').onclick=e=>{e.stopPropagation();showLb(lbI-1)};
+document.getElementById('lbNext').onclick=e=>{e.stopPropagation();showLb(lbI+1)};
+lb.onclick=e=>{if(e.target===lb)lb.classList.remove('on')};
+addEventListener('keydown',e=>{if(!lb.classList.contains('on'))return;if(e.key==='Escape')lb.classList.remove('on');if(e.key==='ArrowLeft')showLb(lbI-1);if(e.key==='ArrowRight')showLb(lbI+1)});
+
+// Calendario e prezzi
+const DAY=864e5;
+const today=new Date();today.setHours(0,0,0,0);
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const fmt=d=>d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+const eur=n=>'€ '+n.toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:0});
+// Date occupate demo: blocchi pseudo-casuali ma stabili a partire da oggi
+const busy=new Set();
+(()=>{let d=new Date(today.getTime()+3*DAY),seed=7;
+  const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  while(d-today<400*DAY){const len=4+Math.floor(rnd()*7);for(let i=0;i<len;i++){busy.add(iso(d));d=new Date(d.getTime()+DAY)}d=new Date(d.getTime()+(5+Math.floor(rnd()*14))*DAY)}})();
+const rate=d=>{const m=d.getMonth(),day=d.getDate();
+  if((m===11&&day>=20)||(m===0&&day<=6)||(m>=6&&m<=8))return 320;
+  if(m>=10||m<=3)return 260;return 190};
+const minStay=d=>({320:7,260:5,190:4})[rate(d)];
+let ci=null,co=null,view=new Date(today.getFullYear(),today.getMonth(),1);
+const calEl=document.getElementById('calMonths');
+function renderCal(){
+  calEl.innerHTML='';
+  for(let k=0;k<2;k++){
+    const first=new Date(view.getFullYear(),view.getMonth()+k,1);
+    const days=new Date(first.getFullYear(),first.getMonth()+1,0).getDate();
+    const off=(first.getDay()+6)%7;
+    let h=`<div class="cal-month"><h4>${first.toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</h4><div class="cal-grid">`+['L','M','M','G','V','S','D'].map(x=>`<span class="dow">${x}</span>`).join('');
+    h+='<span></span>'.repeat(off);
+    for(let i=1;i<=days;i++){
+      const d=new Date(first.getFullYear(),first.getMonth(),i),s=iso(d);let c='day';
+      if(d<today)c+=' past';else if(busy.has(s))c+=' busy';
+      if(ci&&s===iso(ci))c+=' start';
+      if(co&&s===iso(co))c+=' end';
+      if(ci&&co&&d>ci&&d<co)c+=' range';
+      h+=`<span class="${c}" data-d="${s}">${i}</span>`;
+    }
+    calEl.insertAdjacentHTML('beforeend',h+'</div></div>');
+  }
+}
+const rangeFree=(a,b)=>{for(let t=a.getTime();t<b.getTime();t+=DAY){if(busy.has(iso(new Date(t))))return false}return true};
+calEl.addEventListener('click',e=>{
+  const el=e.target.closest('.day');if(!el||el.classList.contains('past'))return;
+  const d=parse(el.dataset.d);
+  if(!ci||co||d<=ci){ if(busy.has(el.dataset.d))return; ci=d;co=null; }
+  else{ if(!rangeFree(ci,d)){showErr('Nel periodo selezionato ci sono notti già occupate.');return} co=d; }
+  update();
+});
+document.getElementById('calPrev').onclick=()=>{const p=new Date(view.getFullYear(),view.getMonth()-1,1);if(p>=new Date(today.getFullYear(),today.getMonth(),1)){view=p;renderCal()}};
+document.getElementById('calNext').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCal()};
+const errEl=document.getElementById('err');
+const showErr=m=>{errEl.textContent=m;clearTimeout(showErr.t);showErr.t=setTimeout(()=>errEl.textContent='',4500)};
+function quote(){
+  if(!ci||!co)return null;
+  const n=Math.round((co-ci)/DAY);let sub=0;
+  for(let i=0;i<n;i++)sub+=rate(new Date(ci.getTime()+i*DAY));
+  const disc=n>=7?Math.round(sub*.10):0, clean=90;
+  return{n,sub,disc,clean,tot:sub-disc+clean,min:minStay(ci)};
+}
+function update(){
+  renderCal();
+  document.getElementById('sIn').textContent=ci?fmt(ci):'—';
+  document.getElementById('sOut').textContent=co?fmt(co):'—';
+  const L=document.getElementById('lines');const q=quote();
+  if(!q){L.innerHTML=`<div><span>${ci?'Ora scegli la data di partenza':'Seleziona le date per vedere il prezzo'}</span></div>`;return}
+  L.innerHTML=`<div><span>${eur(Math.round(q.sub/q.n))} × ${q.n} notti</span><span>${eur(q.sub)}</span></div>`+
+    (q.disc?`<div class="disc"><span>Sconto prenotazione diretta −10%</span><span>−${eur(q.disc)}</span></div>`:'')+
+    `<div><span>Pulizia finale</span><span>${eur(q.clean)}</span></div>`+
+    `<div class="tot"><span>Totale</span><span>${eur(q.tot)}</span></div>`+
+    (q.n<q.min?`<div style="color:var(--terra)"><span>Soggiorno minimo in questo periodo: ${q.min} notti</span></div>`:'');
+  document.getElementById('qIn').value=iso(ci);document.getElementById('qOut').value=iso(co);
+}
+renderCal();
+
+// Barra rapida -> calendario
+const qIn=document.getElementById('qIn'),qOut=document.getElementById('qOut');
+qIn.min=iso(today);qOut.min=iso(new Date(today.getTime()+DAY));
+qIn.onchange=()=>{if(qIn.value){qOut.min=iso(new Date(parse(qIn.value).getTime()+DAY))}};
+document.getElementById('quickForm').onsubmit=e=>{
+  e.preventDefault();
+  const g=parseInt(document.getElementById('qGuests').value)||2;
+  document.getElementById('adults').value=String(Math.min(g,6));
+  if(qIn.value){ci=parse(qIn.value);co=qOut.value&&parse(qOut.value)>ci?parse(qOut.value):null;view=new Date(ci.getFullYear(),ci.getMonth(),1);
+    if(co&&!rangeFree(ci,co))showErr('Alcune notti nel periodo scelto sono già occupate: prova altre date.');
+    update()}
+  document.getElementById('prenota').scrollIntoView({behavior:'smooth'});
+};
+
+// Invio richiesta (demo)
+const modal=document.getElementById('modal');
+document.getElementById('bookForm').onsubmit=e=>{
+  e.preventDefault();
+  const q=quote(),name=document.getElementById('fName').value.trim(),mail=document.getElementById('fMail').value.trim();
+  const guests=+document.getElementById('adults').value+ +document.getElementById('kids').value;
+  if(!q)return showErr('Seleziona le date di arrivo e partenza sul calendario.');
+  if(!rangeFree(ci,co))return showErr('Nel periodo selezionato ci sono notti già occupate.');
+  if(q.n<q.min)return showErr(`Il soggiorno minimo per queste date è di ${q.min} notti.`);
+  if(guests>6)return showErr('La villa ospita al massimo 6 persone.');
+  if(!name)return showErr('Inserisci il tuo nome.');
+  if(!/^\S+@\S+\.\S+$/.test(mail))return showErr('Inserisci un indirizzo email valido.');
+  document.getElementById('modalText').innerHTML=`Ciao <b>${name.split(' ')[0].replace(/[<>&]/g,'')}</b>, abbiamo ricevuto la tua richiesta per <b>${q.n} notti</b> dal ${fmt(ci)} al ${fmt(co)} (totale ${eur(q.tot)}).<br>Ti scriveremo a breve per confermare. <br><small>(Sito dimostrativo: nessuna richiesta è stata inviata.)</small>`;
+  modal.classList.add('on');
+};
+document.getElementById('modalClose').onclick=()=>modal.classList.remove('on');
+modal.onclick=e=>{if(e.target===modal)modal.classList.remove('on')};
+
+// Recensioni
+const rv=document.getElementById('reviews');
+document.getElementById('revPrev').onclick=()=>rv.scrollBy({left:-rv.clientWidth*.8,behavior:'smooth'});
+document.getElementById('revNext').onclick=()=>rv.scrollBy({left:rv.clientWidth*.8,behavior:'smooth'});
+</script>
+</body>
+</html>
