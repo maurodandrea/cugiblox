@@ -773,7 +773,7 @@ function render(){
   document.getElementById('spotName').textContent=activeSpot()?.name||'Nessuno spot';
   const mk=Object.keys(MODES),mi=mk.indexOf(S.mode);
   document.getElementById('modes').innerHTML=`<div class="slider" style="transform:translateX(calc(${mi*100}% + ${mi*4}px))"></div>`+mk.map(k=>`<button class="mode ${S.mode===k?'on':''}" onclick="setMode('${k}')">${svgI(k,2)}${MODES[k].n}</button>`).join('');
-  document.getElementById('modes').style.display=['home','meteo','spot','ai','pesce'].includes(S.tab)?'':'none';
+  document.getElementById('modes').style.display='none';  // barra Costa/Mare/Lago/Fiume nascosta: resta l'ambiente salvato (costa di default)
   document.getElementById('nav').innerHTML=TABS.map(t=>t.id==='fab'?`<button class="fab ${S.live?'live':''}" onclick="fabTap()" aria-label="Sessione di pesca"><span class="fb">${svgI(S.live?'fish':'plus',2.4)}</span><em>${S.live?'In pesca':'Pesca'}</em></button>`
     :`<button class="${S.tab===t.id||(t.id==='altro'&&SUBS.includes(S.tab))?'on':''}" onclick="go('${t.id}')">${svgI(t.id)}${t.n}</button>`).join('');
   const v=document.getElementById('view');
