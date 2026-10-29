@@ -1,5 +1,5 @@
 // Service worker di Lenza: app disponibile offline; i dati meteo passano sempre dalla rete.
-const CACHE='lenza-v12';
+const CACHE='lenza-v13';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'];
