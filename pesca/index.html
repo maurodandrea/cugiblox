@@ -518,6 +518,8 @@ function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString
 function activeSpot(){return S.spots.find(s=>s.id===S.active)||S.spots[0];}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),2200);}
+// altezza dell'onda: sotto il metro in centimetri (il mare quasi piatto non è mai "0 m")
+const fmtOnda=w=>w==null||isNaN(w)?'—':w<.05?'meno di 5 cm':w<1?Math.round(w*100)+' cm':fmt1(w)+' m';
 const fmt1=n=>n==null||isNaN(n)?'—':(Math.round(n*10)/10).toLocaleString('it-IT');
 const fmt0=n=>n==null||isNaN(n)?'—':Math.round(n).toLocaleString('it-IT');
 const pad=n=>String(n).padStart(2,'0');
@@ -899,7 +901,7 @@ function vHome(v){
     <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}${!activeSpot()?.wq&&activeSpot()?.wqErr?`<br><span class="small" style="opacity:.75">Distanza dal mare non verificata (${esc(activeSpot().wqErr)})</span>`:''}</p>`}
     <div class="hero-stats">
       <div><div class="ic">${arrow(h.wd)}</div><b>${fmt0(h.ws)}</b><span>km/h</span></div>
-      <div><div class="ic">${h.wave!=null?'🌊':'☁️'}</div><b>${h.wave!=null?fmt1(h.wave)+' m':fmt0(h.cc)+'%'}</b><span>${h.wave!=null?'onda':'nuvole'}</span></div>
+      <div><div class="ic">${h.wave!=null?'🌊':'☁️'}</div><b>${h.wave!=null?fmtOnda(h.wave):fmt0(h.cc)+'%'}</b><span>${h.wave!=null?'onda':'nuvole'}</span></div>
       <div><div class="ic">${h.dp>0.6?'📈':h.dp<-0.6?'📉':'⚖️'}</div><b>${fmt0(h.p)}</b><span>hPa</span></div>
       <div><div class="ic">${ph.e}</div><b>${Math.round(ph.illum*100)}%</b><span>luna</span></div>
     </div>${S.spots.length>1?`<div class="sdots">${S.spots.map(x=>`<i class="${x.id===activeSpot()?.id?'on':''}"></i>`).join('')}</div>`:''}${WAVES}
@@ -920,7 +922,7 @@ function vHome(v){
     <div class="tile"><div class="k">Meteo</div><div class="v">${wmo(h.code)[0]} ${fmt0(h.temp)}°</div><div class="s">${wmo(h.code)[1]}</div></div>
     <div class="tile"><div class="k">Vento</div><div class="v">${arrow(h.wd)} ${fmt0(h.ws)}</div><div class="s">km/h ${dirName(h.wd)} · ${windName(h.wd)}${h.expo?` · ${h.expo==='traverso'?'al traverso':'di '+h.expo}`:''}</div></div>
     <div class="tile"><div class="k">Pressione</div><div class="v">${fmt0(h.p)}</div><div class="s">hPa ${h.dp>0.6?'↗ in salita':h.dp<-0.6?'↘ in calo':'→ stabile'}</div></div>
-    ${h.wave!=null?`<div class="tile"><div class="k">Mare</div><div class="v">${fmt1(h.wave)} m</div><div class="s">${seaState(h.wave)} · ${fmt0(h.wper)} s</div></div>
+    ${h.wave!=null?`<div class="tile"><div class="k">Mare</div><div class="v">${fmtOnda(h.wave)}</div><div class="s">${seaState(h.wave)} · ${fmt0(h.wper)} s</div></div>
     <div class="tile"><div class="k">Temp. acqua</div><div class="v">${fmt1(h.sst)}°</div><div class="s">superficie</div></div>`:`<div class="tile"><div class="k">Nuvole</div><div class="v">${fmt0(h.cc)}%</div><div class="s">copertura</div></div>
     <div class="tile"><div class="k">Pioggia</div><div class="v">${fmt1(h.pr)}</div><div class="s">mm/h</div></div>`}
     <div class="tile"><div class="k">Sole</div><div class="v" style="font-size:15px">🌅 ${D?hhmm(D.sr):'—'}</div><div class="s">🌇 ${D?hhmm(D.ss):'—'}</div></div>
@@ -970,7 +972,7 @@ function vMeteo(v){
     <div class="hr mut small" style="font-weight:700"><span>Ora</span><span></span><span>°C</span><span>Vento km/h</span><span>${X.marine?'Onda':'hPa'}</span><span>Indice</span></div>
     <div class="hours">${hs.map(h=>`<div class="hr ${Math.abs(h.t.getTime()+1800e3-Date.now())<1800e3?'now':''}"><b>${pad(h.t.getHours())}:00</b><span>${wmo(h.code)[0]}</span><span>${fmt0(h.temp)}°</span>
       <span>${arrow(h.wd)} ${fmt0(h.ws)} <span class="mut small">(${fmt0(h.wg)}) ${dirName(h.wd)}</span></span>
-      <span>${X.marine&&h.wave!=null?fmt1(h.wave)+' m':fmt0(h.p)}</span>
+      <span>${X.marine&&h.wave!=null?fmtOnda(h.wave):fmt0(h.p)}</span>
       <span><div class="bar"><div style="width:${h.idx}%;background:linear-gradient(90deg,${idxColor(h.idx)}88,${idxColor(h.idx)})"></div></div><span class="small" style="color:${idxColor(h.idx)}">${h.idx}</span></span></div>`).join('')}</div>
   </div>`;
 }
@@ -1173,7 +1175,7 @@ function drawEntry(){
   <button class="btn ghost full" style="margin-top:8px" onclick="DRAFT.catches.push({sp:'',w:'',l:'',rel:false});drawEntry()">＋ Aggiungi cattura</button>
   <label>Foto dell'uscita</label>${e.photo?`<div class="cphoto"><img src="${e.photo}" alt="" onclick="viewPhoto(DRAFT.photo)"><span onclick="DRAFT.photo=null;drawEntry()">✕</span></div>`:photoPicker('pickPhoto(this)','Scatta una foto')}
   <label>Note</label><textarea onchange="DRAFT.note=this.value" placeholder="Com'è andata?">${esc(e.note)}</textarea>
-  ${e.cond?`<p class="small mut" style="margin-top:8px">Condizioni registrate: vento ${fmt0(e.cond.ws)} km/h, ${e.cond.wave!=null?'onda '+fmt1(e.cond.wave)+' m, ':''}pressione ${fmt0(e.cond.p)} hPa, ${esc(e.cond.moon||'')}</p>`:''}
+  ${e.cond?`<p class="small mut" style="margin-top:8px">Condizioni registrate: vento ${fmt0(e.cond.ws)} km/h, ${e.cond.wave!=null?'onda '+fmtOnda(e.cond.wave)+', ':''}pressione ${fmt0(e.cond.p)} hPa, ${esc(e.cond.moon||'')}</p>`:''}
   ${e.id?`<button class="btn ghost full" style="margin-top:14px" onclick="shareEntry('${e.id}')">📤 Crea cartolina da condividere</button>`:''}
   <div class="row" style="margin-top:10px">${e.id?`<button class="btn danger" onclick="delEntry('${e.id}')">Elimina</button>`:''}<button class="btn ghost" style="margin-left:auto" onclick="closeSheet()">Annulla</button><button class="btn" onclick="saveEntry()">Salva</button></div>`);
 }
@@ -1255,7 +1257,7 @@ function vStats(v){
   ${byMoon.length?`<div class="card"><h3>Fase lunare</h3>${hb(byMoon)}</div>`:''}
   ${okE.length&&noE.length?`<div class="card"><h3>Condizioni: fruttuose vs cappotto</h3>
     <div class="hr mut small" style="grid-template-columns:1fr 80px 80px"><span></span><b>🐟 Sì</b><b>🚫 No</b></div>
-    ${[['Vento km/h','ws',fmt0],['Onda m','wave',fmt1],['Pressione hPa','p',fmt0],['Δ pressione 3h','dp',fmt1],['Indice','idx',fmt0]].map(([n,k,f])=>`<div class="hr" style="grid-template-columns:1fr 80px 80px"><span>${n}</span><b>${f(avgOf(okE,k))}</b><span>${f(avgOf(noE,k))}</span></div>`).join('')}</div>`:''}`;
+    ${[['Vento km/h','ws',fmt0],['Onda','wave',fmtOnda],['Pressione hPa','p',fmt0],['Δ pressione 3h','dp',fmt1],['Indice','idx',fmt0]].map(([n,k,f])=>`<div class="hr" style="grid-template-columns:1fr 80px 80px"><span>${n}</span><b>${f(avgOf(okE,k))}</b><span>${f(avgOf(noE,k))}</span></div>`).join('')}</div>`:''}`;
 }
 function exportData(){
   const b=new Blob([JSON.stringify({v:1,spots:S.spots,diary:S.diary},null,1)],{type:'application/json'});
@@ -1324,7 +1326,7 @@ function advice(){
     if(h.ws>25)out.push(['💨',`Vento sostenuto (${fmt0(h.ws)} km/h): scegli spot sottovento e piombi a grappino.`]);
   }else if(S.mode==='sea'){
     if(h.ws>25||(h.wave||0)>1.5)out.push(['⛔','Condizioni marine impegnative: valuta di non uscire in barca.']);
-    else out.push(['🚤',`Vento ${fmt0(h.ws)} km/h${h.wave!=null?', onda '+fmt1(h.wave)+' m':''}: ${h.ws<12?'ottimo per bolentino e vertical jigging':'meglio la traina costiera o il drifting con ancora galleggiante'}.`]);
+    else out.push(['🚤',`Vento ${fmt0(h.ws)} km/h${h.wave!=null?', onda '+fmtOnda(h.wave):''}: ${h.ws<12?'ottimo per bolentino e vertical jigging':'meglio la traina costiera o il drifting con ancora galleggiante'}.`]);
   }else if(S.mode==='lake'){
     out.push(['🏞️',h.ws>=5&&h.ws<=15?'Il vento increspa la superficie e ossigena: cerca la sponda sottovento, i pesci seguono il cibo spinto dal vento.':'Acqua calma: lavora in profondità con esche naturali o drop shot, e prova la superficie al tramonto.']);
   }else{
