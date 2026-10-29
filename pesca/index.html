@@ -496,7 +496,7 @@ const svgI=(k,sw=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 /* ===================== Stato & storage ===================== */
 const S = {
   tab:'home',
-  mode:LS.get('mode','coast'),
+  mode:'coast',  // modalità unica: niente differenze tra spiaggia, barca, lago, fiume
   spots:LS.get('spots',null),
   active:LS.get('active',null),
   diary:LS.get('diary',[]),
@@ -768,7 +768,7 @@ const PAGES=['home','meteo','spot','diario','altro','stats','ai','pesce','live',
 const SUBS=['stats','ai','pesce','trofei','cal','compare','guide','settings'];
 function go(t){if(location.hash.slice(1)!==t)location.hash=t;else{S.tab=t;window.scrollTo(0,0);render();}}
 window.addEventListener('hashchange',()=>{const t=location.hash.slice(1)||'home';if(!PAGES.includes(t))return;closeSheet();S.tab=t;window.scrollTo(0,0);render();});
-function setMode(m){S.mode=m;LS.set('mode',m);if(S.wx)loadWeather();render();}
+function setMode(m){}
 function render(){
   document.getElementById('spotName').textContent=activeSpot()?.name||'Nessuno spot';
   const mk=Object.keys(MODES),mi=mk.indexOf(S.mode);
@@ -967,7 +967,7 @@ function initMap(){
   });
   MAP.on('click',e=>editSpot(null,e.latlng.lat,e.latlng.lng));
 }
-function useSpot(id){S.active=id;LS.set('active',id);const sp=activeSpot();if(sp.mode&&sp.mode!==S.mode){S.mode=sp.mode;LS.set('mode',sp.mode);}S.wx=null;loadWeather();toast('Spot attivo: '+sp.name);go('home');}
+function useSpot(id){S.active=id;LS.set('active',id);const sp=activeSpot();if(false){S.mode=sp.mode;LS.set('mode',sp.mode);}S.wx=null;loadWeather();toast('Spot attivo: '+sp.name);go('home');}
 function editSpot(id,lat,lon){
   const s=id?S.spots.find(x=>x.id===id):{name:'',lat,lon,mode:S.mode,note:'',face:null};
   openSheet(`<h2>${id?'Modifica spot':'Nuovo spot'}</h2><p class="small mut">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}</p>
