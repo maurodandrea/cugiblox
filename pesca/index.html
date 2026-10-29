@@ -360,6 +360,9 @@
   .shoot input,.snap input,.snapalt input{display:none;}
   .shoot .cam{width:64px;height:64px;border-radius:22px;display:grid;place-items:center;font-size:32px;background:var(--grad);box-shadow:0 10px 24px -8px rgba(47,224,207,.9);margin-bottom:6px;}
   .shoot b{font-size:16px;}
+  .shoot2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .shoot2 .shoot{padding:16px 8px;}
+  .shoot2 .cam{width:54px;height:54px;font-size:27px;}
   .shoot small{font-size:12px;color:var(--mut);}
   .snap{display:flex;gap:8px;margin-top:8px;}
   .snapbtn{flex:1;text-align:center;padding:10px;border-radius:14px;background:rgba(47,224,207,.12);border:1px solid rgba(47,224,207,.35);color:var(--acc);font-weight:700;font-size:13px;cursor:pointer;}
@@ -1088,7 +1091,7 @@ async function pickPhoto(inp){const d=await readPhoto(inp);if(d){DRAFT.photo=d;d
 async function pickCatchPhoto(inp,i){const d=await readPhoto(inp);if(d){DRAFT.catches[i].photo=d;delete ENTRYAI[i];drawEntry();entryAnalyze(i,readPhoto.big);}}
 const entryPhoto=e=>e.photo||(e.catches||[]).find(c=>c.photo)?.photo||null;
 function viewPhoto(src,cap){openSheet(`<img src="${src}" style="width:100%;border-radius:20px;display:block" alt="">${cap?`<p style="margin-top:10px;text-align:center"><b>${cap}</b></p>`:''}<button class="btn ghost full" style="margin-top:12px" onclick="closeSheet()">Chiudi</button>`);}
-function photoPicker(fn,label){return `<div class="snap"><label class="snapbtn">📸 ${label}<input type="file" accept="image/*" capture="environment" onchange="${fn}"></label><label class="snapalt">🖼️ Galleria<input type="file" accept="image/*" onchange="${fn}"></label></div>`;}
+function photoPicker(fn,label){return `<div class="snap"><label class="snapbtn">📸 Scatta<input type="file" accept="image/*" capture="environment" onchange="${fn}"></label><label class="snapbtn">🖼️ Galleria<input type="file" accept="image/*" onchange="${fn}"></label></div>`;}
 function snapshot(e){
   const st=parseLocal(e.start),ph=moonPhase(st),sp=S.spots.find(s=>s.id===e.spot);
   const cond={moon:ph.name,illum:ph.illum};
@@ -1176,8 +1179,9 @@ function vAI(v){
   </div>
   <div class="card"><h3>Riconosci dalla foto</h3>
     ${ASSIST?`<div class="cphoto big"><img src="${ASSIST.photo}" alt="" onclick="viewPhoto(ASSIST.photo)"><span onclick="ASSIST=null;render()">✕</span></div>${aiCard(ASSIST.st,'assist')}`
-      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">🔍</span><b>Che pesce è?</b><small>Fotografalo: lo riconosco sul telefono, gratis e anche offline</small></label>
-        <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 0">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="assistSnap(this)"></label>`}
+      :`<div class="shoot2"><label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">📸</span><b>Scatta</b><small>Che pesce è?</small></label>
+        <label class="shoot"><input type="file" accept="image/*" onchange="assistSnap(this)"><span class="cam">🖼️</span><b>Galleria</b><small>Foto già fatta</small></label></div>
+        <p class="small mut" style="margin:0;text-align:center">Lo riconosco sul telefono, gratis e anche offline. Con una moneta o una carta accanto misuro anche lunghezza e peso.</p>`}
   </div>
   <div class="card"><h3>Riconosci per caratteristiche</h3>
     <p class="small mut">Funziona anche senza internet: seleziona le caratteristiche del pesce.</p>
@@ -1298,8 +1302,9 @@ function vLive(v){
   </section>
   <div class="card"><h3>Registra una cattura</h3>
     ${LIVEQ.photo?`<div class="cphoto big"><img src="${LIVEQ.photo}" alt="" onclick="viewPhoto(LIVEQ.photo)"><span onclick="LIVEQ.photo=null;LIVEQ.big=null;LIVEAI=null;render()">✕</span></div>${aiCard(LIVEAI,'live')}`
-      :`<label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Fotografa il pesce</b><small>Dall'alto, pesce intero, con accanto una moneta da 2 € o una carta: calcolo da solo specie, lunghezza e peso</small></label>
-        <label class="snapalt" style="display:block;text-align:center;margin:-4px 0 12px">🖼️ oppure scegli dalla galleria<input type="file" accept="image/*" onchange="liveSnap(this)"></label>`}
+      :`<div class="shoot2"><label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="liveSnap(this)"><span class="cam">📸</span><b>Scatta</b><small>Fotocamera</small></label>
+        <label class="shoot"><input type="file" accept="image/*" onchange="liveSnap(this)"><span class="cam">🖼️</span><b>Galleria</b><small>Foto già fatta</small></label></div>
+        <p class="small mut" style="margin:-4px 0 12px;text-align:center">Pesce intero visto dall'alto, con accanto una moneta da 2 € o una carta: calcolo da solo specie, lunghezza e peso</p>`}
     <div class="chips">${chips.map(n=>`<span class="chip ${LIVEQ.sp===n?'on':''}" onclick="LIVEQ.sp='${n.replace(/'/g,"\\'")}';render()">${esc(n)}</span>`).join('')}</div>
     <label>Specie</label><input list="spl2" value="${esc(LIVEQ.sp)}" oninput="LIVEQ.sp=this.value" placeholder="Scegli sopra o scrivi">
     <datalist id="spl2">${[...new Set([...SPECIES.map(s=>s.n),...Object.keys(LW)])].map(n=>`<option value="${n}">`).join('')}</datalist>
@@ -1640,7 +1645,7 @@ async function downloadModel(){
 function drawDl(){const el=document.getElementById('dlbar');if(el&&MODEL_DL)el.style.width=(MODEL_DL.st.pct*100).toFixed(1)+'%';const t=document.getElementById('dlpct');if(t&&MODEL_DL)t.textContent=Math.round(MODEL_DL.st.pct*100)+'%';}
 async function deleteModel(){if(!confirm('Eliminare i modelli dal dispositivo? Potrai riscaricarli quando vuoi.'))return;try{await caches.delete(MODEL_CACHE);}catch(e){}SESS=null;SAMS=null;SEG=null;toast('Modelli eliminati');render();}
 function loadScript(u){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('ort'));document.head.appendChild(s);});}
-async function ensureOrt(){if(!window.ort){await loadScript(ORT_URL+'ort.wasm.min.js');ort.env.wasm.wasmPaths=new URL(ORT_URL,location.href).href;ort.env.wasm.numThreads=self.crossOriginIsolated?Math.min(4,navigator.hardwareConcurrency||1):1;}}
+async function ensureOrt(){if(!window.ort){await loadScript(ORT_URL+'ort.wasm.min.js');ort.env.wasm.wasmPaths=new URL(ORT_URL,location.href).href;ort.env.wasm.numThreads=1;}}
 async function cachedSession(key){
   const c=await caches.open(MODEL_CACHE),r=await c.match(key);if(!r)throw new Error('nomodel');
   return ort.InferenceSession.create(new Uint8Array(await r.arrayBuffer()),{executionProviders:['wasm'],graphOptimizationLevel:'all'});
