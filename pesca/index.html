@@ -996,7 +996,7 @@ function tideChart(hs){
   const pts=vals.map((q,i)=>q==null?null:[x(i),y(q)]);const ok=pts.filter(Boolean);
   const cm=q=>(q>0?'+':'')+q+' cm',iMax=vals.indexOf(mx),iMin=vals.indexOf(mn);
   CHARTS.tide={W,xs:pts.map(q=>q?q[0]:null),ys:pts.map(q=>q?q[1]:null),txt:i=>`${cm(vals[i])} · ${pad(hs[i].t.getHours())}:00`,top:p,bot:H-p};
-  return `<svg viewBox="0 -22 ${W} ${H+44}" data-ch="tide" style="touch-action:pan-y;width:calc(100% + 20px);margin:0 -10px;display:block">${hourAxis(hs,x,H,p)}
+  return `<svg viewBox="0 -66 ${W} ${H+88}" data-ch="tide" style="touch-action:pan-y;width:calc(100% + 20px);margin:0 -10px;display:block">${hourAxis(hs,x,H,p)}
     ${mn<0&&mx>0?`<line x1="${p}" x2="${W-p}" y1="${y(0)}" y2="${y(0)}" stroke="rgba(255,255,255,.25)" stroke-dasharray="4 5"/>`:''}
     <path d="${smooth(ok)}" fill="none" stroke="${var_('--acc2')}" stroke-width="2.5"/>
     ${nowLine(hs,x,p,H-p)}<g class="sel"></g></svg><div class="legend"><span>↕️ escursione ${mx-mn} cm</span><span>⬆️ alta ${pad(hs[iMax].t.getHours())}:00</span><span>⬇️ bassa ${pad(hs[iMin].t.getHours())}:00</span></div>`;
@@ -1010,8 +1010,8 @@ function bindCharts(root){
     const pick=ev=>{const r=svg.getBoundingClientRect(),vx=(ev.clientX-r.left)/r.width*C.W;let b=-1,bd=1e9;
       C.xs.forEach((q,i)=>{if(q!=null&&C.ys[i]!=null&&Math.abs(q-vx)<bd){bd=Math.abs(q-vx);b=i;}});if(b<0)return;
       const X=C.xs[b],Y=C.ys[b],t=C.txt(b),tw=t.length*11.5+24,tx=clamp(X-tw/2,2,C.W-tw-2);
-      g.innerHTML=`<line x1="${X}" x2="${X}" y1="${C.top}" y2="${C.bot}" stroke="#2fe0cf" stroke-width="1.5"/><circle cx="${X}" cy="${Y}" r="6" fill="#fff" stroke="#2fe0cf" stroke-width="3"/>
-        <rect x="${tx}" y="${Math.max(0,Y-52)}" width="${tw}" height="40" rx="12" fill="rgba(6,20,28,.94)" stroke="#2fe0cf" stroke-width="2"/><text x="${tx+tw/2}" y="${Math.max(0,Y-52)+28}" fill="#fff" font-size="22" font-weight="800" text-anchor="middle">${t}</text>`;};
+      g.innerHTML=`<line x1="${X}" x2="${X}" y1="-24" y2="${C.bot}" stroke="#2fe0cf" stroke-width="1.5"/><circle cx="${X}" cy="${Y}" r="6" fill="#fff" stroke="#2fe0cf" stroke-width="3"/>
+        <rect x="${tx}" y="-64" width="${tw}" height="40" rx="12" fill="rgba(6,20,28,.94)" stroke="#2fe0cf" stroke-width="2"/><text x="${tx+tw/2}" y="-36" fill="#fff" font-size="22" font-weight="800" text-anchor="middle">${t}</text>`;};
     svg.addEventListener('pointerdown',e=>{pick(e);svg._drag=true;});
     svg.addEventListener('pointermove',e=>{if(svg._drag||e.pointerType==='mouse')pick(e);});
     svg.addEventListener('pointerup',()=>{svg._drag=false;});svg.addEventListener('pointerleave',()=>{svg._drag=false;});
@@ -1041,7 +1041,7 @@ function chart(hs){
   const grid=[.25,.5,.75,1].map(k=>`<line x1="${p}" x2="${W-p}" y1="${y(k)}" y2="${y(k)}" stroke="rgba(255,255,255,.06)"/>`).join('');
   const lbl=hourAxis(hs,x,H,p);
   CHARTS.idx={W,xs:ip.map(q=>q[0]),ys:ip.map(q=>q[1]),txt:i=>`${hs[i].idx} · vento ${fmt0(hs[i].ws)} km/h`,top:p,bot:H-p};
-  return `<svg viewBox="0 -22 ${W} ${H+44}" data-ch="idx" style="touch-action:pan-y;width:calc(100% + 20px);margin:0 -10px;display:block"><defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fe0cf" stop-opacity=".55"/><stop offset="1" stop-color="#3b8cff" stop-opacity="0"/></linearGradient>
+  return `<svg viewBox="0 -66 ${W} ${H+88}" data-ch="idx" style="touch-action:pan-y;width:calc(100% + 20px);margin:0 -10px;display:block"><defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fe0cf" stop-opacity=".55"/><stop offset="1" stop-color="#3b8cff" stop-opacity="0"/></linearGradient>
     <linearGradient id="ln" x1="0" x2="1"><stop offset="0" stop-color="#2fe0cf"/><stop offset="1" stop-color="#3b8cff"/></linearGradient></defs>
     ${grid}<path d="${area}" fill="url(#ar)"/><path d="${line}" fill="none" stroke="url(#ln)" stroke-width="3" stroke-linecap="round"/>
     <path d="${smooth(wp)}" fill="none" stroke="#ffb547" stroke-width="2" stroke-dasharray="5 5" opacity=".9"/>
