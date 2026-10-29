@@ -978,7 +978,10 @@ function vMeteo(v){
 }
 function var_(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 // asse delle ore (ogni 3 ore, con tacche) e linea verticale dell'ora attuale
-function hourAxis(hs,x,H,p){return hs.map((h,i)=>[h,i]).filter(([h])=>h.t.getHours()%3===0).map(([h,i])=>`<line x1="${x(i)}" x2="${x(i)}" y1="${p}" y2="${H-p}" stroke="rgba(255,255,255,.05)"/><text x="${x(i)}" y="${H+16}" fill="#c3d6e8" font-size="21" font-weight="700" text-anchor="middle">${pad(h.t.getHours())}</text>`).join('');}
+function hourAxis(hs,x,H,p){
+  // una linea verticale leggera per ogni ora, un po' più marcata ogni 3 ore (dove c'è l'etichetta)
+  return hs.map((h,i)=>{const k=h.t.getHours()%3===0;return `<line x1="${x(i)}" x2="${x(i)}" y1="${p}" y2="${H-p}" stroke="rgba(255,255,255,${k?.16:.07})" stroke-width="${k?1.2:1}"/>`+(k?`<text x="${x(i)}" y="${H+16}" fill="#c3d6e8" font-size="21" font-weight="700" text-anchor="middle">${pad(h.t.getHours())}</text>`:'');}).join('');
+}
 function nowLine(hs,x,y0,y1){
   const now=Date.now(),t0=hs[0]?.t.getTime();if(!hs.length||now<t0||now>hs[hs.length-1].t.getTime()+3600e3)return '';
   const f=(now-t0)/3600e3,X=x(0)+(x(1)-x(0))*f;
