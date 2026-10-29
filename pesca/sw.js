@@ -1,19 +1,26 @@
 // Service worker di Lenza: app disponibile offline; i dati meteo passano sempre dalla rete.
-const CACHE='lenza-v7';
+const CACHE='lenza-v9';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+// Intestazioni di isolamento: permettono al riconoscimento di usare più processori del telefono
+// (GitHub Pages non consente di impostarle dal server). "credentialless" lascia funzionare mappe e font esterni.
+function isolate(r){
+  if(!r)return r;const h=new Headers(r.headers);
+  h.set('Cross-Origin-Opener-Policy','same-origin');h.set('Cross-Origin-Embedder-Policy','credentialless');
+  return new Response(r.body,{status:r.status,statusText:r.statusText,headers:h});
+}
 self.addEventListener('fetch',e=>{
   const u=new URL(e.request.url);
   if(e.request.method!=='GET'||u.hostname.includes('open-meteo.com'))return;
   // il modello di riconoscimento viene salvato dall'app nella sua cache dedicata
-  if(u.pathname.includes('/models/bioclip'))return;
+  if(u.pathname.includes('/models/bioclip')||u.pathname.includes('/models/sam-'))return;
   const cacheable=u.origin===location.origin||/cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com|tile\.openstreetmap\.org/.test(u.hostname);
   if(!cacheable)return;
   if(e.request.mode==='navigate'){
-    e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(k=>k.put('./index.html',c));return r;}).catch(()=>caches.match('./index.html')));
+    e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(k=>k.put('./index.html',c));return isolate(r);}).catch(()=>caches.match('./index.html').then(isolate)));
     return;
   }
   e.respondWith(caches.match(e.request).then(hit=>{
