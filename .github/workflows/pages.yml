@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Data e ora della versione di Lenza
+        run: sed -i "s|__BUILD__|$(TZ=Europe/Rome date '+%d/%m/%Y %H:%M')|" pesca/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

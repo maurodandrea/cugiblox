@@ -48,6 +48,7 @@
   .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.3px;}
   .logo .mark{width:38px;height:38px;border-radius:13px;background:var(--grad);display:grid;place-items:center;box-shadow:0 6px 20px -4px rgba(47,224,207,.55);}
   .logo .mark svg{width:22px;height:22px;}
+  .logo .ver{font-size:10.5px;font-weight:600;color:var(--mut);letter-spacing:.2px;margin-top:-2px;white-space:nowrap;}
   .logo .word b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .spotchip{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:999px;padding:8px 14px 8px 10px;color:var(--txt);font:600 13px 'Outfit',sans-serif;cursor:pointer;max-width:58%;backdrop-filter:blur(10px);transition:.2s;}
   .spotchip:hover{background:rgba(255,255,255,.12);}
@@ -414,7 +415,7 @@
 <div class="ocean"><div class="rays"></div><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div id="bubbles"></div></div>
 <div id="app">
   <header>
-    <div class="logo"><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#03282a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v9.5a4.5 4.5 0 1 1-9 0V10l3 3"/><circle cx="14" cy="3" r="1"/></svg></div><span class="word">Len<b>za</b></span></div>
+    <div class="logo"><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#03282a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v9.5a4.5 4.5 0 1 1-9 0V10l3 3"/><circle cx="14" cy="3" r="1"/></svg></div><div><span class="word">Len<b>za</b></span><div class="ver" id="ver" data-build="__BUILD__"></div></div></div>
     <button class="spotchip" id="spotChip" onclick="go('spot')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span id="spotName">—</span></button>
   </header>
   <div class="modes" id="modes"></div>
@@ -2164,6 +2165,8 @@ function closeSheet(){document.getElementById('sheet').classList.remove('on');}
 (function(){const b=document.getElementById('bubbles');let h='';for(let i=0;i<14;i++){const z=4+Math.random()*12;h+=`<span class="bub" style="left:${Math.random()*100}%;width:${z}px;height:${z}px;animation-duration:${10+Math.random()*16}s;animation-delay:${-Math.random()*20}s"></span>`;}b.innerHTML=h;})();
 try{Object.keys(localStorage).filter(k=>k.startsWith('lenza.wx_')).forEach(k=>{const v=JSON.parse(localStorage.getItem(k));if(!v||Date.now()-v.ts>36*3600e3)localStorage.removeItem(k);});}catch(e){}
 {const t=location.hash.slice(1);if(PAGES.includes(t))S.tab=t;}
+// data e ora della versione pubblicata (inserite automaticamente da GitHub a ogni pubblicazione)
+{const el=document.getElementById('ver'),b=el.dataset.build;el.textContent=b.includes('BUILD')?'versione di sviluppo':'agg. '+b;}
 buildProfile();
 checkBadges();
 render();
