@@ -708,7 +708,7 @@ function build(w,m,sp,mode=S.mode){
 
 /* ===================== Indice di Pesca ===================== */
 const WEIGHTS={
-  coast:{press:16,wind:6,wave:20,sol:14,moon:8,light:14,cloud:0,rain:0,sst:6,expo:6,tide:20,calm:15,scir:12},  // pioggia e nuvole tolte; marea: 2 ore prima e 1 dopo l'alta
+  coast:{press:13,wind:6,wave:20,sol:14,moon:8,light:14,cloud:0,rain:0,sst:6,expo:6,tide:20,calm:15,scir:12},  // pioggia e nuvole tolte; marea: 2 ore prima e 1 dopo l'alta
   sea:{press:16,wind:20,wave:18,sol:14,moon:8,light:12,cloud:4,rain:4,sst:4,expo:6},
   lake:{press:24,wind:12,wave:0,sol:16,moon:8,light:18,cloud:10,rain:8,sst:4},
   river:{press:20,wind:8,wave:0,sol:12,moon:6,light:18,cloud:10,rain:20,sst:6}
@@ -716,7 +716,9 @@ const WEIGHTS={
 function factors(X,i,mode){
   const h=X.hours[i],f={};
   const prev=X.hours[Math.max(0,i-3)],dp=h.p-prev.p; h.dp=dp;
-  f.press= dp<-3?.45: dp<-0.6?1: dp<=0.6?.8: dp<=2?.6:.4;
+  // pressione stabile o in leggero calo, meglio ancora se nelle prossime 6 ore cala (cambio del tempo in arrivo)
+  const nx=X.hours[Math.min(X.hours.length-1,i+6)],dpf=nx.p-h.p,change=dpf<-1;
+  f.press= dp<-3?.45: dp<-0.6?1: dp<=0.6?(change?1:.9): dp<=2?.55:.4;
   if(h.p<1000||h.p>1028) f.press*=.8;
   const ws=h.ws;
   if(mode==='coast') f.wind= ws<4?.55: ws<=22?1: ws<=32?.6: ws<=45?.3:.1;
