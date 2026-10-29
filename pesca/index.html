@@ -1694,8 +1694,9 @@ function b64ToEmb(b){const bin=atob(b),e=new Float32Array(bin.length);for(let i=
 function learnFish(sp,emb){
   if(!emb||!sp)return;const l=myFish();l.push({sp:String(sp).trim(),e:emb});while(l.length>200)l.shift();LS.set('myfish',l);
 }
-async function classifyFish(src,mode){
-  const F=await fishData(),e=await embedPhoto(src),L=F.labels;
+async function classifyFish(src,mode){return classifyEmb(await embedPhoto(src),mode);}
+async function classifyEmb(e,mode){
+  const F=await fishData(),L=F.labels;
   // somiglianza testo e foto di esempio, più le tue catture confermate (stesso nome)
   const mine={};for(const m of myFish()){const v=b64ToEmb(m.e);let s=0;for(let i=0;i<v.length;i++)s+=v[i]*e[i];const k=m.sp.toLowerCase();if(!(k in mine)||s>mine[k])mine[k]=s;}
   const lg=L.map((l,i)=>{let sp=dotRow(F.P,i,e);const my=mine[l.n.toLowerCase()];if(my!=null)sp=Math.max(sp,my);return F.scale*(dotRow(F.T,i,e)+F.w*sp);});
@@ -1869,11 +1870,16 @@ async function classifyMask(seg,m){
   m.cls={};F.ON.forEach((n,i)=>m.cls[n]=ex[i]/t);return m.cls;
 }
 // probabilità che un ritaglio sia un pesce secondo BioCLIP (specie ittiche contro oggetti comuni)
-async function fishProbOf(seg,m){
-  if(m.fp!=null)return m.fp;
+async function embedMask(seg,m){
+  if(m.emb)return m.emb;
   const F=await fishData(),s=await session(),cr=maskedCrop(seg,m),fake={naturalWidth:cr.w,naturalHeight:cr.h},e=new Float32Array(F.dim);
   for(const how of F.prep){const o=await s.run({pixels:new ort.Tensor('float32',toTensor(fake,how,F.mean,F.std,cr.px),[1,3,224,224])});const v=o.embedding.data;for(let i=0;i<F.dim;i++)e[i]+=v[i];}
   let nn=0;for(let i=0;i<F.dim;i++)nn+=e[i]*e[i];nn=Math.sqrt(nn);for(let i=0;i<F.dim;i++)e[i]/=nn;
+  return m.emb=e;
+}
+async function fishProbOf(seg,m){
+  if(m.fp!=null)return m.fp;
+  const F=await fishData(),e=await embedMask(seg,m);
   const tl=[],nl=[];for(let r=0;r<F.T.rows;r++)tl.push(100*dotRow(F.T,r,e));for(let r=0;r<F.N.rows;r++)nl.push(100*dotRow(F.N,r,e));
   const mx=Math.max(...tl,...nl),fm=tl.reduce((a,x)=>a+Math.exp(x-mx),0),nm=nl.reduce((a,x)=>a+Math.exp(x-mx),0);
   return m.fp=fm/(fm+nm);
@@ -1969,7 +1975,7 @@ async function autoMeasure(src,force,onp){
   if(!seg[key]){const {ref,big}=await detectRefs(seg,force,onp);seg[key]={ref,fish:await findFish2(seg,big,ref)};}
   const {ref,fish}=seg[key];onp&&onp(1);
   const {img,enc}=seg,W=img.naturalWidth,H=img.naturalHeight,k=enc.k,P=([x,y])=>[((x*4+2)/k)/W,((y*4+2)/k)/H];
-  const out={ref:ref?.idx??null,fishOk:!!fish,refOk:!!ref,kind:ref?.kind||null,forced:force!=null};
+  const out={ref:ref?.idx??null,fishOk:!!fish,refOk:!!ref,kind:ref?.kind||null,forced:force!=null,fishMask:fish||null};
   const ends=fish?[P(fish.f.e1),P(fish.f.e2)]:null;
   if(ref){
     const f=ref.m.f,cx=(f.c[0]*4+2)/k,cy=(f.c[1]*4+2)/k;let half,ax;
@@ -2014,7 +2020,19 @@ async function runMeasure(t,force){
   let last=0;
   try{
     const m=await autoMeasure(src,force,p=>{st.m.pct=p;if(Date.now()-last>400){last=Date.now();const el=document.querySelector('.mrow b');if(el)el.textContent=Math.round(p*100)+'%';}});
-    if(stOf(t)!==st)return;st.m=m;applyAuto(t);
+    if(stOf(t)!==st)return;
+    // specie ricalcolata sul solo pesce ritagliato (senza persone, mani o sfondo), se non l'hai già scelta tu
+    if(m.fishMask&&st.r&&st.r.confidence!=null&&!st.r.cropped){
+      try{
+        const mode=t==='live'?(S.live?.mode||S.mode):t==='assist'?S.mode:DRAFT.mode;
+        const r2=await classifyEmb(await embedMask(SEG,m.fishMask),mode);
+        if(stOf(t)!==st)return;
+        st.r={...r2,is_fish:true,cropped:true};
+        if(t==='live'){LIVEQ.sp=r2.species;LIVEQ.emb=r2.emb;}
+        else if(t!=='assist'){const c=DRAFT.catches[+t];if(c){c.sp=r2.species;c.emb=r2.emb;}}
+      }catch(e){}
+    }
+    st.m=m;applyAuto(t);
     // nessun riferimento trovato: nella sessione di pesca si apre subito la foto per segnare la scarpa
     if(!m.refOk&&!m.forced&&t==='live'&&S.tab==='live'){redraw(t);openMeasureFor(t,3);return;}
   }catch(e){st.m={err:'Misura automatica non riuscita: '+aiErrMsg(e)};}
@@ -2034,7 +2052,7 @@ function aiCard(st,target){
   if(!r.is_fish)return `<div class="aibox err"><span style="font-size:22px">🤔</span><div><b>Non sembra un pesce</b><div class="small mut">Inquadra il pesce intero, da vicino e di lato. Se è un pesce, scegli la specie qui sotto.</div>${target!=='assist'?`<div class="small" style="margin-top:6px"><u style="cursor:pointer;color:var(--acc)" onclick="openMeasureFor('${target}')">📏 Misura a mano sulla foto</u></div>`:''}</div></div>`;
   const pick=r.confidence==null,pc=pick?100:Math.round(r.confidence*100),col=pc>=70?'var(--ok)':pc>=40?'var(--acc2)':'var(--bad)';
   return `<div class="aibox ok"><div style="flex:1;min-width:0">
-    <div class="small mut" style="text-transform:uppercase;letter-spacing:1px;font-weight:700">🧠 Riconosciuto sul telefono</div>
+    <div class="small mut" style="text-transform:uppercase;letter-spacing:1px;font-weight:700">🧠 ${r.cropped?'Riconosciuto sul pesce ritagliato':'Riconosciuto sul telefono'}</div>
     <div style="font-size:19px;font-weight:800;margin-top:2px">${esc(r.species)} <span class="pill" style="background:${col}22;color:${col}">${pick?'scelta da te':pc+'%'}</span></div>
     <div class="small mut">${pick?'':`<i>${esc(r.scientific_name)}</i>`}${!pick&&pc<40?' · poco sicuro, controlla le alternative':''}</div>
     ${r.alternatives?.length?`<div class="small" style="margin-top:6px">Oppure: ${r.alternatives.map(a=>`<span class="chip" style="padding:3px 9px;font-size:12px" onclick="aiPick('${target}','${esc(a.species).replace(/'/g,"\\'")}')">${esc(a.species)} ${Math.round(a.confidence*100)}%</span>`).join(' ')}</div>`:''}
