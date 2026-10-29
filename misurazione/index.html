@@ -69,7 +69,8 @@ async function analyze(){
   try{
     P.busy='Riconosco la specie…';render();
     P.r=await classifyFish(src,P.mode);if(P.photo!==src)return;
-    await measure(null);
+    // solo la specie: la misura (più lenta) parte col pulsante
+    P.busy='';P.secs=(performance.now()-P.t0)/1000;render();
   }catch(e){P.busy='';P.err=aiErrMsg(e);render();}
 }
 async function measure(force){
@@ -145,6 +146,9 @@ function render(){
     if(P.busy)h+=`<div class="row" style="margin-top:12px"><div class="spin"></div><span class="small">${P.busy} <b id="pct">${P.pct?Math.round(P.pct*100)+'%':''}</b></span></div>`;
     if(P.err)h+=`<p class="warn small">⚠️ ${esc(P.err)}</p>`;
     const m=P.m;
+    if(P.r&&!m&&!P.busy&&!P.err)h+=`<div class="small mut" style="margin-top:6px">Riconosciuto in ${fmt1(P.secs||0)} s</div>
+      <button class="btn" style="margin-top:12px;width:100%" onclick="measure(null)">📏 Misura lunghezza e peso</button>
+      <div class="small mut" style="margin-top:6px">Facoltativo, circa 30 secondi. Serve un riferimento accanto al pesce: moneta, bancomat, scarpa, piede o mano aperta.</div>`;
     if(m&&!P.busy){
       if(m.len){const w=estW(P.r?.species,m.len);h+=`<div class="grid"><div><b>${fmt1(m.len)} cm</b><span>lunghezza</span></div><div><b>${w?fmtW(w):'—'}</b><span>peso stimato</span></div><div><b style="font-size:13px">${esc(refName(m.ref))}</b><span>${m.manual?'segnato da te':m.forced?'scelto da te':'trovato'}</span></div></div>`;
         if(m.kind==='hand'&&!m.manual)h+=`<div class="small warn">✋ Con la mano la misura è approssimativa (palmo di ${fmt1(refCm(4))} cm).</div>`;
@@ -172,7 +176,7 @@ function render(){
 }
 {const el=document.getElementById('ver'),b=el.dataset.build,lm=new Date(document.lastModified),p2=n=>String(n).padStart(2,'0');
   el.textContent='agg. '+(b.includes('BUILD')?`${p2(lm.getDate())}/${p2(lm.getMonth()+1)}/${lm.getFullYear()} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`:b);}
-modelReady().then(r=>{P.ready=r;render();});render();
+modelReady().then(r=>{P.ready=r;render();if(r)session().catch(()=>{});});  // modello delle specie già caricato in memoria: la prima foto è più velocerender();
 </script>
 </body>
 </html>
