@@ -961,7 +961,7 @@ function vMeteo(v){
 }
 function var_(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 // asse delle ore (ogni 3 ore, con tacche) e linea verticale dell'ora attuale
-function hourAxis(hs,x,H,p){return hs.map((h,i)=>[h,i]).filter(([h])=>h.t.getHours()%3===0).map(([h,i])=>`<line x1="${x(i)}" x2="${x(i)}" y1="${p}" y2="${H-p}" stroke="rgba(255,255,255,.05)"/><text x="${x(i)}" y="${H-4}" fill="#a9c2da" font-size="15" font-weight="600" text-anchor="middle">${pad(h.t.getHours())}</text>`).join('');}
+function hourAxis(hs,x,H,p){return hs.map((h,i)=>[h,i]).filter(([h])=>h.t.getHours()%3===0).map(([h,i])=>`<line x1="${x(i)}" x2="${x(i)}" y1="${p}" y2="${H-p}" stroke="rgba(255,255,255,.05)"/><text x="${x(i)}" y="${H+16}" fill="#c3d6e8" font-size="21" font-weight="700" text-anchor="middle">${pad(h.t.getHours())}</text>`).join('');}
 function nowLine(hs,x,y0,y1){
   const now=Date.now(),t0=hs[0]?.t.getTime();if(!hs.length||now<t0||now>hs[hs.length-1].t.getTime()+3600e3)return '';
   const f=(now-t0)/3600e3,X=x(0)+(x(1)-x(0))*f;
@@ -973,7 +973,7 @@ function tideChart(hs){
   const mn=Math.min(...v),mx=Math.max(...v),rg=mx-mn||1,x=i=>p+i*(W-2*p)/(n-1||1),y=q=>H-p-(q-mn)/rg*(H-2*p-14);
   const pts=vals.map((q,i)=>q==null?null:[x(i),y(q)]);const ok=pts.filter(Boolean);
   CHARTS.tide={W,xs:pts.map(q=>q?q[0]:null),ys:pts.map(q=>q?q[1]:null),txt:i=>`${fmt2(vals[i])} m · ${pad(hs[i].t.getHours())}:00`,top:p,bot:H-p};
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" data-ch="tide" style="touch-action:pan-y">${hourAxis(hs,x,H,p)}
+  return `<svg viewBox="0 0 ${W} ${H+22}" width="100%" data-ch="tide" style="touch-action:pan-y">${hourAxis(hs,x,H,p)}
     <path d="${smooth(ok)}" fill="none" stroke="${var_('--acc2')}" stroke-width="2.5"/>
     <text x="${p}" y="12" fill="#93b0cc" font-size="11">max ${fmt2(mx)} m</text><text x="${W-p}" y="12" fill="#93b0cc" font-size="11" text-anchor="end">min ${fmt2(mn)} m</text>${nowLine(hs,x,p,H-p)}<g class="sel"></g></svg>`;
 }
@@ -985,9 +985,9 @@ function bindCharts(root){
     const C=CHARTS[svg.dataset.ch];if(!C)return;const g=svg.querySelector('.sel');
     const pick=ev=>{const r=svg.getBoundingClientRect(),vx=(ev.clientX-r.left)/r.width*C.W;let b=-1,bd=1e9;
       C.xs.forEach((q,i)=>{if(q!=null&&C.ys[i]!=null&&Math.abs(q-vx)<bd){bd=Math.abs(q-vx);b=i;}});if(b<0)return;
-      const X=C.xs[b],Y=C.ys[b],t=C.txt(b),tw=t.length*8.4+20,tx=clamp(X-tw/2,2,C.W-tw-2);
+      const X=C.xs[b],Y=C.ys[b],t=C.txt(b),tw=t.length*11.5+24,tx=clamp(X-tw/2,2,C.W-tw-2);
       g.innerHTML=`<line x1="${X}" x2="${X}" y1="${C.top}" y2="${C.bot}" stroke="#2fe0cf" stroke-width="1.5"/><circle cx="${X}" cy="${Y}" r="6" fill="#fff" stroke="#2fe0cf" stroke-width="3"/>
-        <rect x="${tx}" y="${Math.max(0,Y-42)}" width="${tw}" height="30" rx="10" fill="rgba(6,20,28,.92)" stroke="#2fe0cf"/><text x="${tx+tw/2}" y="${Math.max(0,Y-42)+21}" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">${t}</text>`;};
+        <rect x="${tx}" y="${Math.max(0,Y-52)}" width="${tw}" height="40" rx="12" fill="rgba(6,20,28,.94)" stroke="#2fe0cf" stroke-width="2"/><text x="${tx+tw/2}" y="${Math.max(0,Y-52)+28}" fill="#fff" font-size="22" font-weight="800" text-anchor="middle">${t}</text>`;};
     svg.addEventListener('pointerdown',e=>{pick(e);svg._drag=true;});
     svg.addEventListener('pointermove',e=>{if(svg._drag||e.pointerType==='mouse')pick(e);});
     svg.addEventListener('pointerup',()=>{svg._drag=false;});svg.addEventListener('pointerleave',()=>{svg._drag=false;});
@@ -1015,7 +1015,7 @@ function chart(hs){
   const grid=[.25,.5,.75,1].map(k=>`<line x1="${p}" x2="${W-p}" y1="${y(k)}" y2="${y(k)}" stroke="rgba(255,255,255,.06)"/>`).join('');
   const lbl=hourAxis(hs,x,H,p);
   CHARTS.idx={W,xs:ip.map(q=>q[0]),ys:ip.map(q=>q[1]),txt:i=>`${hs[i].idx} · vento ${fmt0(hs[i].ws)} km/h`,top:p,bot:H-p};
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" data-ch="idx" style="touch-action:pan-y"><defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fe0cf" stop-opacity=".55"/><stop offset="1" stop-color="#3b8cff" stop-opacity="0"/></linearGradient>
+  return `<svg viewBox="0 0 ${W} ${H+22}" width="100%" data-ch="idx" style="touch-action:pan-y"><defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fe0cf" stop-opacity=".55"/><stop offset="1" stop-color="#3b8cff" stop-opacity="0"/></linearGradient>
     <linearGradient id="ln" x1="0" x2="1"><stop offset="0" stop-color="#2fe0cf"/><stop offset="1" stop-color="#3b8cff"/></linearGradient></defs>
     ${grid}<path d="${area}" fill="url(#ar)"/><path d="${line}" fill="none" stroke="url(#ln)" stroke-width="3" stroke-linecap="round"/>
     <path d="${smooth(wp)}" fill="none" stroke="#ffb547" stroke-width="2" stroke-dasharray="5 5" opacity=".9"/>
