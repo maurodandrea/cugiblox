@@ -950,7 +950,7 @@ function vMeteo(v){
   </div>
   <div style="margin-top:12px">${timeline(sol,d)}</div></div>
   <div class="card"><h3>Andamento</h3>${chart(hs)}</div>
-  ${X.marine&&hs.some(h=>h.lvl!=null)?`<div class="card"><h3>Livello del mare (marea)</h3>${tideChart(hs)}</div>`:''}
+  ${X.marine&&hs.some(h=>h.lvl!=null)?`<div class="card"><h3>Marea</h3>${tideChart(hs)}</div>`:''}
   <div class="card"><h3>Ora per ora</h3>
     <div class="hr mut small" style="font-weight:700"><span>Ora</span><span></span><span>°C</span><span>Vento km/h</span><span>${X.marine?'Onda':'hPa'}</span><span>Indice</span></div>
     <div class="hours">${hs.map(h=>`<div class="hr ${Math.abs(h.t.getTime()+1800e3-Date.now())<1800e3?'now':''}"><b>${pad(h.t.getHours())}:00</b><span>${wmo(h.code)[0]}</span><span>${fmt0(h.temp)}°</span>
