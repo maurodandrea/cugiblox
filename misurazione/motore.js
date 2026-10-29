@@ -21,7 +21,7 @@ async function fishData(){
   const j=await (await fetch(BASE+'models/fish.json')).json();
   FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N),O:decI8(j.O),S:j.S?decI8(j.S):null};if(j.O2)FISH.O2=decI8(j.O2);if(j.OH)FISH.O=decI8(j.OH);if(j.LIN)FISH.LIN={W:decI8(j.LIN.W),b:j.LIN.b,a:j.LIN.a};if(j.F2)FISH.F=decI8(j.F2);return FISH;
 }
-async function modelItems(){const F=await fishData();return [{key:MODEL_KEY,parts:F.model.parts,size:F.model.size},...(F.sam||[]).map(s=>({key:s.path,parts:[s.path],size:s.size})),...(F.tc?[{key:F.tc.path,parts:[F.tc.path],size:F.tc.size}]:[])];}
+async function modelItems(){const F=await fishData();return [{key:MODEL_KEY,parts:F.model.parts,size:F.model.size},...(F.sam||[]).map(s=>({key:s.path,parts:[s.path],size:s.size})),...(F.tc?[{key:F.tc.path,parts:[F.tc.path],size:F.tc.size}]:[]),...(GPU&&F.samgpu?[{key:F.samgpu.path,parts:[F.samgpu.path],size:F.samgpu.size}]:[])];}
 async function modelReady(){try{const c=await caches.open(MODEL_CACHE);for(const it of await modelItems())if(!(await c.match(it.key)))return false;return true;}catch(e){return false;}}
 async function downloadModel(){
   if(MODEL_DL)return MODEL_DL.p;
@@ -46,7 +46,9 @@ async function downloadModel(){
 function drawDl(){const el=document.getElementById('dlbar');if(el&&MODEL_DL)el.style.width=(MODEL_DL.st.pct*100).toFixed(1)+'%';const t=document.getElementById('dlpct');if(t&&MODEL_DL)t.textContent=Math.round(MODEL_DL.st.pct*100)+'%';}
 async function deleteModel(){if(!confirm('Eliminare i modelli dal dispositivo? Potrai riscaricarli quando vuoi.'))return;try{await caches.delete(MODEL_CACHE);}catch(e){}SESS=null;SAMS=null;SEG=null;TCS=null;toast('Modelli eliminati');render();}
 function loadScript(u){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('ort'));document.head.appendChild(s);});}
-async function ensureOrt(){if(!window.ort){await loadScript(ORT_URL+'ort.wasm.min.js');ort.env.wasm.wasmPaths=new URL(ORT_URL,location.href).href;ort.env.wasm.numThreads=1;}}
+// con WebGPU (scheda grafica del telefono) SlimSAM è molto più veloce; senza, tutto come prima sul processore
+const GPU=false;
+async function ensureOrt(){if(!window.ort){await loadScript(ORT_URL+(GPU?'ort.webgpu.min.js':'ort.wasm.min.js'));ort.env.wasm.wasmPaths=new URL(ORT_URL,location.href).href;ort.env.wasm.numThreads=1;}}
 async function cachedSession(key){
   const c=await caches.open(MODEL_CACHE),r=await c.match(key);if(!r)throw new Error('nomodel');
   return ort.InferenceSession.create(new Uint8Array(await r.arrayBuffer()),{executionProviders:['wasm'],graphOptimizationLevel:'all'});
@@ -132,7 +134,11 @@ const shoeSize=()=>LS.get('shoesize',44);
 const refCm=i=>i===3?Math.round((shoeSize()*2/3+1)*10)/10:i===FOOT?Math.round((shoeSize()*2/3-1)*10)/10:REFS[i]?.[1];
 const refName=i=>i===3?`Scarpa n. ${shoeSize()}`:i===FOOT?`Piede nudo n. ${shoeSize()}`:REFS[i]?.[0]||'';
 let SAMS=null,SEG=null;
-async function samSessions(){if(SAMS)return SAMS;await ensureOrt();const F=await fishData();SAMS={enc:await cachedSession(F.sam[0].path),dec:await cachedSession(F.sam[1].path)};return SAMS;}
+async function samSessions(){if(SAMS)return SAMS;await ensureOrt();const F=await fishData();
+  let enc=null;
+  if(GPU&&F.samgpu)try{const r=await (await caches.open(MODEL_CACHE)).match(F.samgpu.path);if(r)enc=await ort.InferenceSession.create(new Uint8Array(await r.arrayBuffer()),{executionProviders:['webgpu']});SAMS_GPU=!!enc;}catch(e){enc=null;}
+  SAMS={enc:enc||await cachedSession(F.sam[0].path),dec:await cachedSession(F.sam[1].path)};return SAMS;}
+var SAMS_GPU=false;
 async function samEncode(img){
   const W=img.naturalWidth,H=img.naturalHeight,k=1024/Math.max(W,H),w=Math.round(W*k),h=Math.round(H*k);
   const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(img,0,0,w,h);
@@ -175,7 +181,7 @@ function maskIoU(a,b,ww){
 // Griglia rada (5×5) per pesce e sfondo; poi punti mirati sulle zone rimaste scoperte,
 // dove di solito stanno gli oggetti piccoli come monete e carte.
 async function samSegment(enc,onp){
-  const {ww,hh}=enc,n=5,all=[];const add=ms=>ms.forEach(m=>{if(m.s>0.8&&m.n>=12)all.push(m);});
+  const {ww,hh}=enc,n=4,all=[];const add=ms=>ms.forEach(m=>{if(m.s>0.8&&m.n>=12)all.push(m);});
   const grid=[];for(let j=0;j<n;j++)for(let i=0;i<n;i++)grid.push([[(i+.5)/n*enc.w,(j+.5)/n*enc.h]]);
   for(let b=0;b<grid.length;b+=9){add(await samDecode(enc,grid.slice(b,b+9),1));onp&&onp(.15+.45*(b+9)/grid.length);}
   const cov=new Uint8Array(ww*hh);for(const m of all)if(m.n>0.02*ww*hh)for(let i=0;i<cov.length;i++)if(m.b[i])cov[i]=1;
@@ -185,7 +191,7 @@ async function samSegment(enc,onp){
     while(st.length){const q=st.pop(),x=q%ww,y=(q/ww)|0;a++;sx+=x;sy+=y;
       for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=ww||Y>=hh)continue;const k=Y*ww+X;if(!cov[k]&&!lab[k]){lab[k]=id;st.push(k);}}}
     if(a>=6&&a<=0.08*ww*hh)comps.push({a,pt:[[sx/a*4+2,sy/a*4+2]]});}
-  const extra=comps.sort((p,q)=>q.a-p.a).slice(0,12).map(c=>c.pt);
+  const extra=comps.sort((p,q)=>q.a-p.a).slice(0,8).map(c=>c.pt);
   for(let b=0;b<extra.length;b+=6){add(await samDecode(enc,extra.slice(b,b+6),1));onp&&onp(.6+.25*(b+6)/Math.max(1,extra.length));}
   all.sort((a,b)=>b.s-a.s);const keep=[];
   for(const m of all)if(!keep.some(k=>maskIoU(m,k,ww)>=0.7))keep.push(m);
@@ -235,7 +241,7 @@ async function classifyMask(seg,m){
 async function embedMask(seg,m){
   if(m.emb)return m.emb;
   const F=await fishData(),s=await session(),cr=maskedCrop(seg,m),fake={naturalWidth:cr.w,naturalHeight:cr.h},e=new Float32Array(F.dim);
-  for(const how of F.prep){const o=await s.run({pixels:new ort.Tensor('float32',toTensor(fake,how,F.mean,F.std,cr.px),[1,3,224,224])});const v=o.embedding.data;for(let i=0;i<F.dim;i++)e[i]+=v[i];}
+  for(const how of ['pad']){const o=await s.run({pixels:new ort.Tensor('float32',toTensor(fake,how,F.mean,F.std,cr.px),[1,3,224,224])});const v=o.embedding.data;for(let i=0;i<F.dim;i++)e[i]+=v[i];}
   let nn=0;for(let i=0;i<F.dim;i++)nn+=e[i]*e[i];nn=Math.sqrt(nn);for(let i=0;i<F.dim;i++)e[i]/=nn;
   return m.emb=e;
 }
@@ -275,7 +281,7 @@ async function detectRefs(seg,force,onp){
   const {enc}=seg,M=seg.masks,ww=enc.ww;
   // oggetti grandi: una sola classificazione serve sia per il pesce sia per scarpa e mano
   const big=M.filter(m=>m.f.frac>.005&&m.f.frac<.7&&m.f.border<=3&&!(m.f.asp<1.25&&m.f.circ>.75)).sort((a,b)=>Math.sqrt(b.f.A)*b.s-Math.sqrt(a.f.A)*a.s)
-    .reduce((k,m)=>{if(k.length<16&&!k.some(o=>maskIoU(m,o,ww)>.6))k.push(m);return k;},[]);  // sagome diverse tra loro: anche gli oggetti piccoli (la scarpa accanto a pesci e secchio)
+    .reduce((k,m)=>{if(k.length<10&&!k.some(o=>maskIoU(m,o,ww)>.6))k.push(m);return k;},[]);  // sagome diverse tra loro: anche gli oggetti piccoli (la scarpa accanto a pesci e secchio)
   let i=0;for(const m of big){await classifyMask(seg,m);onp&&onp(.86+.08*(++i)/big.length);}
   const want=t=>force==null||REFS[force]?.[2]?.t===t;
   // foto trofeo (pesce in mano a una persona): le scarpe sono lontane dal pesce e il busto si scambia per una scarpa
@@ -307,6 +313,8 @@ async function detectRefs(seg,force,onp){
 }
 // testa o coda sul bordo della foto: il pesce non è intero e la lunghezza non si può misurare
 function fishCut(f,ww,hh){return [f.e1,f.e2].some(([x,y])=>x<=1||y<=1||x>=ww-2||y>=hh-2);}
+// pesce o no con TinyCLIP (veloce) invece di BioCLIP: un po' meno preciso, molto più rapido
+async function fishFast(seg,m){return (await classifyMask(seg,m)).fish;}
 async function findFish2(seg,big,ref){
   const {enc}=seg,ww=enc.ww,avoid=ref&&ref.kind!=='hand'?ref.m:null;
   // non è un pesce ciò che TinyCLIP ha già riconosciuto come mano, scarpa, moneta o carta
@@ -318,10 +326,10 @@ async function findFish2(seg,big,ref){
     .map(m=>{const cen=Math.hypot(m.f.c[0]/enc.ww-.5,m.f.c[1]/enc.hh-.5);return {m,sc:Math.sqrt(m.f.A)*m.s*(1.2-cen)};}).sort((a,b)=>b.sc-a.sc).slice(0,3);
   let C=cands(0);if(!C.length)C=cands(1);
   let bb=null;
-  for(const {m} of C){const fp=await fishProbOf(seg,m);const sc=fp*Math.pow(m.f.A,.25);if(fp>.5&&(!bb||sc>bb.sc))bb={m,sc};if(fp>.97&&bb?.m===m)break;}
+  for(const {m} of C){const fp=await fishFast(seg,m);const sc=fp*Math.pow(m.f.A,.25);if(fp>.5&&(!bb||sc>bb.sc))bb={m,sc};if(fp>.97&&bb?.m===m)break;}
   // pesce molto alto (orata, sarago) o tagliato dal bordo: forma meno allungata, ma riconosciuto come pesce dai modelli
   if(!bb)for(const m of big.filter(m=>m!==ref?.m&&ok(m)&&m.f.asp>1.15&&m.cls&&m.cls.fish>.5&&m.cls.fish===Math.max(...Object.values(m.cls)))){
-    const fp=await fishProbOf(seg,m);if(fp>.6&&(!bb||m.f.A>bb.m.f.A))bb={m};}
+    if(!bb||m.f.A>bb.m.f.A)bb={m};}
   if(!bb)return null;
   const best=bb.m;
   // rifinitura: 5 punti lungo il corpo per includere testa e coda
@@ -337,7 +345,7 @@ async function findFish2(seg,big,ref){
     let inter=0;for(let i=0;i<r.b.length;i++)if(r.b[i]&&best.b[i])inter++;
     if(r.f.border===0&&ok(r)&&r.n>=best.n&&r.n<=2.5*best.n&&r.n>fin.n&&inter>.8*best.n)fin=r;
   }
-  if(fin!==best&&(await fishProbOf(seg,fin))<.5)fin=best;
+  if(fin!==best&&(await fishFast(seg,fin))<.5)fin=best;
   return fin;
 }
 // Larghezza del palmo: mediana della larghezza della sagoma nella parte centrale della mano
@@ -391,7 +399,7 @@ async function autoMeasure(src,force,onp){
   if(!seg[key]){
     let {ref,big,person}=await detectRefs(seg,force,onp);let fish=await findFish2(seg,big,ref);
     // se una mano regge il pesce è il riferimento più affidabile dopo moneta e carta
-    if(fish&&(force==null?(!ref||ref.kind==='shoe'||ref.kind==='hand'):force===4)){const h=await handNearFish(seg,fish);if(h)ref={m:h,idx:4,kind:'hand'};}
+    if(fish&&(force==null?!ref:force===4&&ref?.kind!=='hand')){const h=await handNearFish(seg,fish);if(h)ref={m:h,idx:4,kind:'hand'};}
     // la mano tocca spesso il pesce: SlimSAM può unirli e il "muso" finisce sulle dita. Tolgo la mano dal pesce.
     if(fish&&ref?.kind==='hand')fish=minusMask(fish,ref.m,seg.enc.ww,seg.enc.hh)||fish;
     seg[key]={ref,fish,person};
