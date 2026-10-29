@@ -1741,7 +1741,6 @@ async function liveAnalyze(){
     if(r.is_fish){LIVEQ.sp=r.species;LIVEQ.emb=r.emb;if(LIVEQ.l){const w=estW(r.species,LIVEQ.l);if(w)LIVEQ.w=String(Math.round(w*100)/100);}}
   }catch(e){LIVEAI={err:aiErrMsg(e)};}
   if(S.tab==='live')render();
-  if(LIVEAI?.r?.is_fish)prepareSeg(photoOf('live')).catch(()=>{});  // la misura parte col pulsante; intanto preparo la foto
 }
 /* Modulo uscita */
 const ENTRYAI={};
@@ -1753,7 +1752,6 @@ async function entryAnalyze(i,big){
   try{const r=await classifyFish(big||c.photo,DRAFT.mode);ENTRYAI[i]={r};if(r.is_fish&&DRAFT.catches[i]===c){c.sp=r.species;c.emb=r.emb;}}
   catch(e){ENTRYAI[i]={err:aiErrMsg(e)};}
   if(document.getElementById('sheet').classList.contains('on')&&DRAFT&&!MEAS_OPEN())drawEntry();
-  if(ENTRYAI[i]?.r?.is_fish)prepareSeg(photoOf(String(i))).catch(()=>{});
 }
 const MEAS_OPEN=()=>!!document.getElementById('mcv');
 function aiRetry(t){if(t==='live')liveAnalyze();else if(t==='assist')assistAnalyze();else entryAnalyze(+t);}
@@ -1771,7 +1769,6 @@ async function assistAnalyze(){
   ASSIST.st={loading:true};render();
   try{ASSIST.st={r:await classifyFish(ASSIST.big||ASSIST.photo,S.mode)};}catch(e){ASSIST.st={err:aiErrMsg(e)};}
   if(S.tab==='ai')render();
-  if(ASSIST?.st?.r?.is_fish)prepareSeg(photoOf('assist')).catch(()=>{});
 }
 /* Impostazioni: stato del modello */
 async function modelStatus(){

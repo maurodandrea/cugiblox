@@ -72,7 +72,6 @@ async function analyze(){
     P.r=await classifyFish(src,P.mode);if(P.photo!==src)return;
     // solo la specie: la misura (più lenta) parte col pulsante
     P.busy='';P.secs=(performance.now()-P.t0)/1000;render();
-    prepareSeg(src).catch(()=>{});  // intanto preparo la misura
   }catch(e){P.busy='';P.err=aiErrMsg(e);render();}
 }
 async function measure(force){
