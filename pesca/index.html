@@ -1730,7 +1730,7 @@ const refName=i=>i===3?`Scarpa n. ${shoeSize()}`:REFS[i]?.[0]||'';
 let MEAS=null;
 function openMeasure(src,target,pre){
   MEAS={src,target,pts:pre?.pts?pre.pts.map(p=>[...p]):[],ref:pre?.ref??3,refCm:null,drag:-1};
-  openSheet(`<h2>📏 Misura il pesce</h2><p class="small mut" id="mhelp"></p>
+  openSheet(`<h2>📏 Misura il pesce</h2><p class="small mut" id="mhelp"></p><p class="small" id="mrefnow" style="margin:2px 0 8px"></p>
     <div class="mwrap"><canvas id="mcv"></canvas></div>
     <label>Oggetto di riferimento nella foto</label><div class="chips" id="mrefs"></div>
     <div id="mcustom" style="display:none;margin-top:8px"><input type="number" step="0.1" min="0.5" placeholder="Lunghezza del riferimento in cm" oninput="MEAS.refCm=+this.value;drawMeasure()"></div>
@@ -1763,6 +1763,7 @@ function drawMeasure(){
   const steps=['Tocca la punta del <b>muso</b> del pesce','Ora tocca la fine della <b>coda</b>',shoe?`Tocca la <b>punta della scarpa</b> (n. ${shoeSize()})`:'Tocca un\'estremità dell\'<b>oggetto di riferimento</b>',shoe?'Ora tocca il <b>tallone</b> della scarpa':'Tocca l\'altra estremità del riferimento','Puoi trascinare i punti per correggerli'];
   document.getElementById('mhelp').innerHTML=steps[Math.min(4,M.pts.length)];
   document.getElementById('mshoe').style.display=shoe?'flex':'none';
+  document.getElementById('mrefnow').innerHTML=`Riferimento: <b style="color:var(--acc2)">${esc(M.ref<REFS.length?refName(M.ref):'Altro')}</b> · se nella foto hai usato altro (per esempio la mano), sceglilo qui sotto`;
   document.getElementById('mrefs').innerHTML=[...REFS.map((r,i)=>`<span class="chip ${M.ref===i?'on':''}" onclick="MEAS.ref=${i};document.getElementById('mcustom').style.display='none';drawMeasure()">${refName(i)}</span>`),`<span class="chip ${M.ref===REFS.length?'on':''}" onclick="MEAS.ref=${REFS.length};document.getElementById('mcustom').style.display='block';drawMeasure()">Altro…</span>`].join('');
   document.getElementById('mcustom').style.display=M.ref===REFS.length?'block':'none';
   const len=measResult(),w=len?estW(measSpecies(),len):null;
@@ -1773,7 +1774,7 @@ function drawMeasure(){
 }
 function applyMeasure(){
   const len=measResult();if(!len)return;const t=MEAS.target,sp=measSpecies(),w=estW(sp,len);
-  const st=stOf(t);if(st?.m){st.m.len=len;st.m.pts=MEAS.pts.map(p=>[...p]);st.m.ref=MEAS.ref;st.m.refOk=st.m.fishOk=true;}
+  const st=stOf(t);if(st?.m){st.m.len=len;st.m.pts=MEAS.pts.map(p=>[...p]);st.m.ref=MEAS.ref;st.m.refOk=st.m.fishOk=true;st.m.manual=true;st.m.kind=REFS[MEAS.ref]?.[2]?.t||null;const mm=st.m;measPreview(MEAS.src,mm.pts).then(u=>{mm.preview=u;redraw(t);}).catch(()=>{});}
   if(t==='assist'){closeSheet();render();toast(`📏 ${fmt1(len)} cm${w?' · ≈ '+fmt1(w)+' kg':''}`);return;}
   closeSheet();
   if(t==='live'){LIVEQ.l=String(Math.round(len));if(w)LIVEQ.w=String(Math.round(w*100)/100);render();}
@@ -1966,13 +1967,41 @@ function palmWidth(m,ww){
   const w=[];for(let b=Math.floor(bins*.3);b<Math.ceil(bins*.7);b++)if(mx[b]>mn[b])w.push(mx[b]-mn[b]+1);
   w.sort((a,b)=>a-b);return w.length?w[w.length>>1]:f.W;
 }
+// Mano che regge il pesce: interroga SlimSAM appena fuori dal contorno del pesce e cerca un ritaglio
+// classificato "mano" che tocca il pesce (sta alla sua stessa distanza dalla fotocamera: buon riferimento).
+async function handNearFish(seg,fish){
+  const {enc}=seg,ww=enc.ww,hh=enc.hh,f=fish.f,ay=[-f.ax[1],f.ax[0]],L=f.p1x-f.p1n,pts=[];
+  for(const q of [-.06,.12,.3,.5,.7,.88,1.06])for(const side of (q<0||q>1)?[0]:[-1,1]){
+    const t=f.p1n+L*q,off=side*(f.W/2+3),x=f.c[0]+t*f.ax[0]+off*ay[0],y=f.c[1]+t*f.ax[1]+off*ay[1];
+    if(x>=0&&y>=0&&x<ww&&y<hh&&!fish.b[Math.round(y)*ww+Math.round(x)])pts.push([[x*4+2,y*4+2]]);
+  }
+  if(!pts.length)return null;
+  const near=new Uint8Array(ww*hh);  // pesce allargato di 3 pixel: "tocca il pesce"
+  for(let y=0;y<hh;y++)for(let x=0;x<ww;x++)if(fish.b[y*ww+x])for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<ww&&Y<hh)near[Y*ww+X]=1;}
+  let ms=[];for(let b=0;b<pts.length;b+=6)ms=ms.concat(await samDecode(enc,pts.slice(b,b+6),1));
+  ms=ms.filter(m=>m.s>.75&&m.n>=12&&m.n<.06*ww*hh&&m.n<1.2*fish.n).sort((a,b)=>b.s-a.s);  // una mano non è più grande del pesce
+  const uniq=[];for(const m of ms)if(!uniq.some(k=>maskIoU(m,k,ww)>=.7))uniq.push(m);
+  let best=null;
+  for(const m of uniq.slice(0,6)){
+    let touch=0,inFish=0;for(let i=0;i<m.b.length;i++)if(m.b[i]){if(near[i])touch++;if(fish.b[i])inFish++;}
+    if(!touch||inFish>.5*m.n)continue;
+    m.f=mShape(m,ww,hh);const c=await classifyMask(seg,m);
+    if(c.hand>.4&&(!best||c.hand>best.cls.hand))best=m;
+  }
+  return best;
+}
 async function autoMeasure(src,force,onp){
   if(!SEG||SEG.src!==src){
     onp&&onp(.02);const img=await loadImg(src);const enc=await samEncode(img);onp&&onp(.15);
     SEG={src,img,enc,masks:await samSegment(enc,onp)};
   }
   const seg=SEG,key='r_'+(force??'auto');
-  if(!seg[key]){const {ref,big}=await detectRefs(seg,force,onp);seg[key]={ref,fish:await findFish2(seg,big,ref)};}
+  if(!seg[key]){
+    let {ref,big}=await detectRefs(seg,force,onp);const fish=await findFish2(seg,big,ref);
+    // se una mano regge il pesce è il riferimento più affidabile dopo moneta e carta
+    if(fish&&(force==null?(!ref||ref.kind==='shoe'||ref.kind==='hand'):force===4)){const h=await handNearFish(seg,fish);if(h)ref={m:h,idx:4,kind:'hand'};}
+    seg[key]={ref,fish};
+  }
   const {ref,fish}=seg[key];onp&&onp(1);
   const {img,enc}=seg,W=img.naturalWidth,H=img.naturalHeight,k=enc.k,P=([x,y])=>[((x*4+2)/k)/W,((y*4+2)/k)/H];
   const out={ref:ref?.idx??null,fishOk:!!fish,refOk:!!ref,kind:ref?.kind||null,forced:force!=null,fishMask:fish||null};
@@ -1998,8 +2027,10 @@ function measBlock(st,target){
   if(m.err)return `<div class="small" style="margin-top:8px;color:var(--acc2)">⚠️ ${esc(m.err)}</div>`;
   const refChips=`<div class="chips" style="margin-top:6px">${autoRefs().map(([r,i])=>`<span class="chip" style="padding:3px 9px;font-size:12px;${m.ref===i?'background:var(--acc);color:#03282a':''}" onclick="setAutoRef('${target}',${i})">${esc(refName(i))}</span>`).join('')}</div>`;
   const manual=`<u style="cursor:pointer;color:var(--acc)" onclick="openMeasureFor('${target}')">📏 Controlla o correggi i punti</u>`;
-  if(m.len){const w=estW(sp,m.len);return `<div class="aigrid" style="margin-top:10px"><div><b>${fmt1(m.len)} cm</b><span>lunghezza</span></div><div><b>${w?fmt1(w)+' kg':'—'}</b><span>peso stimato</span></div><div><b style="font-size:12px">${esc(refName(m.ref))}</b><span>${m.forced?'riferimento scelto':'riferimento trovato'}</span></div></div>
+  if(m.len){const w=estW(sp,m.len);return `<div class="aigrid" style="margin-top:10px"><div><b>${fmt1(m.len)} cm</b><span>lunghezza</span></div><div><b>${w?fmt1(w)+' kg':'—'}</b><span>peso stimato</span></div><div><b style="font-size:12px">${esc(refName(m.ref))}</b><span>${m.manual?'segnato da te':m.forced?'riferimento scelto':'riferimento trovato'}</span></div></div>
     ${m.kind==='hand'?'<div class="small" style="color:var(--acc2)">✋ Con la mano la misura è approssimativa (le mani sono diverse): meglio una moneta o un bancomat.</div>':''}
+    ${m.preview?`<img src="${m.preview}" alt="" style="width:100%;border-radius:14px;margin:8px 0 4px;display:block" onclick="openMeasureFor('${target}')">
+      <div class="small mut">Linea azzurra: pesce · linea arancione: ${esc(refName(m.ref))}. Se non sono giuste, tocca la foto per correggerle.</div>`:''}
     <div class="small">${manual}</div><details class="small" style="margin-top:4px"><summary class="mut" style="cursor:pointer">Il riferimento è un altro?</summary>${refChips}</details>`;}
   if(!m.fishOk&&m.refOk)return `<div class="small" style="margin-top:8px">📏 Ho trovato «${esc(refName(m.ref))}» ma non riesco a isolare il pesce: fotografalo intero, dall'alto. ${manual}</div>`;
   return `<div class="small" style="margin-top:8px">📏 Non trovo mano, scarpa, moneta o bancomat nella foto. <b>Segna punta e tallone della tua scarpa (n. ${shoeSize()})</b>${m.fishOk?', il pesce l\'ho già trovato':''}.
@@ -2013,6 +2044,15 @@ function applyAuto(t){
   const st=stOf(t),m=st?.m;if(!m?.len)return;const sp=st.r?.species,w=estW(sp,m.len);
   if(t==='live'){LIVEQ.l=String(Math.round(m.len));LIVEQ.w=w?String(Math.round(w*100)/100):LIVEQ.w;}
   else if(t!=='assist'){const c=DRAFT.catches[+t];if(c){c.l=Math.round(m.len);if(w)c.w=Math.round(w*100)/100;}}
+}
+// miniatura della foto con le linee usate per la misura (pesce in azzurro, riferimento in arancione)
+async function measPreview(src,pts){
+  if(!pts||pts.length<2)return null;
+  const img=await loadImg(src),k=Math.min(1,520/Math.max(img.naturalWidth,img.naturalHeight)),W=Math.round(img.naturalWidth*k),H=Math.round(img.naturalHeight*k);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.drawImage(img,0,0,W,H);
+  const P=pts.map(p=>[p[0]*W,p[1]*H]),line=(a,b,col)=>{g.lineCap='round';g.strokeStyle='rgba(0,0,0,.65)';g.lineWidth=7;g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();g.strokeStyle=col;g.lineWidth=4;g.stroke();[a,b].forEach(q=>{g.fillStyle=col;g.beginPath();g.arc(q[0],q[1],6,0,7);g.fill();});};
+  line(P[0],P[1],'#2fe0cf');if(P.length>=4)line(P[2],P[3],'#ffb547');
+  return c.toDataURL('image/jpeg',.8);
 }
 async function runMeasure(t,force){
   const st=stOf(t);if(!st)return;const src=photoOf(t);
@@ -2032,6 +2072,7 @@ async function runMeasure(t,force){
         else if(t!=='assist'){const c=DRAFT.catches[+t];if(c){c.sp=r2.species;c.emb=r2.emb;}}
       }catch(e){}
     }
+    try{m.preview=await measPreview(src,m.pts);}catch(e){}
     st.m=m;applyAuto(t);
     // nessun riferimento trovato: nella sessione di pesca si apre subito la foto per segnare la scarpa
     if(!m.refOk&&!m.forced&&t==='live'&&S.tab==='live'){redraw(t);openMeasureFor(t,3);return;}
