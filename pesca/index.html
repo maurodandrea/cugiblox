@@ -764,8 +764,8 @@ function bestWindows(X,date,n=3){
 }
 
 /* ===================== Render ===================== */
-const PAGES=['home','meteo','spot','diario','altro','stats','ai','live','trofei','cal','compare','guide','settings'];
-const SUBS=['stats','ai','trofei','cal','compare','guide','settings'];
+const PAGES=['home','meteo','spot','diario','altro','stats','ai','pesce','live','trofei','cal','compare','guide','settings'];
+const SUBS=['stats','ai','pesce','trofei','cal','compare','guide','settings'];
 function go(t){if(location.hash.slice(1)!==t)location.hash=t;else{S.tab=t;window.scrollTo(0,0);render();}}
 window.addEventListener('hashchange',()=>{const t=location.hash.slice(1)||'home';if(!PAGES.includes(t))return;closeSheet();S.tab=t;window.scrollTo(0,0);render();});
 function setMode(m){S.mode=m;LS.set('mode',m);if(S.wx)loadWeather();render();}
@@ -773,12 +773,12 @@ function render(){
   document.getElementById('spotName').textContent=activeSpot()?.name||'Nessuno spot';
   const mk=Object.keys(MODES),mi=mk.indexOf(S.mode);
   document.getElementById('modes').innerHTML=`<div class="slider" style="transform:translateX(calc(${mi*100}% + ${mi*4}px))"></div>`+mk.map(k=>`<button class="mode ${S.mode===k?'on':''}" onclick="setMode('${k}')">${svgI(k,2)}${MODES[k].n}</button>`).join('');
-  document.getElementById('modes').style.display=['home','meteo','spot','ai'].includes(S.tab)?'':'none';
+  document.getElementById('modes').style.display=['home','meteo','spot','ai','pesce'].includes(S.tab)?'':'none';
   document.getElementById('nav').innerHTML=TABS.map(t=>t.id==='fab'?`<button class="fab ${S.live?'live':''}" onclick="fabTap()" aria-label="Sessione di pesca"><span class="fb">${svgI(S.live?'fish':'plus',2.4)}</span><em>${S.live?'In pesca':'Pesca'}</em></button>`
     :`<button class="${S.tab===t.id||(t.id==='altro'&&SUBS.includes(S.tab))?'on':''}" onclick="go('${t.id}')">${svgI(t.id)}${t.n}</button>`).join('');
   const v=document.getElementById('view');
   if(S.tab!=='spot'&&MAP){MAP.remove();MAP=null;}
-  ({home:vHome,meteo:vMeteo,spot:vSpot,diario:vDiario,stats:vStats,ai:vAI,altro:vAltro,live:vLive,trofei:vTrofei,cal:vCal,compare:vCompare,guide:vGuide,settings:vSettings}[S.tab]||vHome)(v);
+  ({home:vHome,meteo:vMeteo,spot:vSpot,diario:vDiario,stats:vStats,ai:vAI,pesce:vPesce,altro:vAltro,live:vLive,trofei:vTrofei,cal:vCal,compare:vCompare,guide:vGuide,settings:vSettings}[S.tab]||vHome)(v);
   countUp(v);
   if(S.tab==='settings')modelStatus();
 }
@@ -842,7 +842,7 @@ function vHome(v){
   </section>
   ${S.live?`<div class="alert" style="background:linear-gradient(135deg,rgba(47,224,207,.18),rgba(59,140,255,.1));border-color:rgba(47,224,207,.4);cursor:pointer" onclick="go('live')"><span class="ai"><span class="rec"></span></span><div><b>Sessione in corso · <span id="liveT">${durStr(Date.now()-S.live.start)}</span></b>${S.live.catches.length} catture finora · tocca per aprire</div></div>`:''}
   ${weatherAlerts(X).map(a=>`<div class="alert"><span class="ai">${a[0]}</span><div><b>${a[1]}</b>${a[2]}</div></div>`).join('')}
-  <div class="quick">${[['compare','🧭','Dove pescare'],['ai','🤖','Consigli'],['cal','🌙','Calendario'],['guide','🪢','Nodi']].map(([t,e,n])=>`<button onclick="go('${t}')"><span>${e}</span>${n}</button>`).join('')}</div>
+  <div class="quick">${[['pesce','📸','Che pesce è?'],['compare','🧭','Dove pescare'],['ai','🤖','Consigli'],['cal','🌙','Calendario']].map(([t,e,n])=>`<button onclick="go('${t}')"><span>${e}</span>${n}</button>`).join('')}</div>
   <div class="card"><h3>Prossime ore</h3><div class="hstrip">${X.hours.slice(Math.max(0,i),Math.max(0,i)+18).map((x,k)=>`<div class="hcell ${k?'':'now'}"><span>${k?pad(x.t.getHours()):'Ora'}</span><div class="wi">${wmo(x.code)[0]}</div><b>${fmt0(x.temp)}°</b><div class="ib"><i style="height:${x.idx}%;background:${idxColor(x.idx)}"></i></div><em style="color:${idxColor(x.idx)}">${x.idx}</em></div>`).join('')}</div></div>
   <div class="card"><h3>Finestre migliori oggi</h3>
     ${wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
@@ -1162,6 +1162,17 @@ function importData(inp){
 
 /* ===================== Assistente ===================== */
 let AIQ={sh:null,c:null,t:[]};
+// Riconoscimento e misura come funzione a parte: non serve una sessione di pesca
+function vPesce(v){
+  v.innerHTML=subHead('Riconosci e misura','Che pesce è, quanto è lungo e quanto pesa')+`
+  <div class="card"><h3>📸 Foto del pesce</h3>
+    ${ASSIST?`<div class="cphoto big"><img src="${ASSIST.photo}" alt="" onclick="viewPhoto(ASSIST.photo)"><span onclick="ASSIST=null;render()">✕</span></div>${aiCard(ASSIST.st,'assist')}`
+      :`<div class="shoot2"><label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">📸</span><b>Scatta</b><small>Che pesce è?</small></label>
+        <label class="shoot"><input type="file" accept="image/*" onchange="assistSnap(this)"><span class="cam">🖼️</span><b>Galleria</b><small>Foto già fatta</small></label></div>
+        <p class="small mut" style="margin:0;text-align:center">Lo riconosco sul telefono, gratis e anche offline. Con una moneta o una carta accanto misuro anche lunghezza e peso.</p>`}
+  </div>
+  <p class="small mut" style="text-align:center">Per misurare: pesce intero e disteso, foto dall'alto, accanto una moneta, il bancomat, una scarpa, il piede nudo o la mano aperta (tutti interi nella foto).</p>`;
+}
 function vAI(v){
   const now=new Date(),mo=now.getMonth()+1,X=S.wx;
   const inSeason=SPECIES.filter(s=>s.m.includes(S.mode)&&s.mo.includes(mo));
@@ -1175,12 +1186,7 @@ function vAI(v){
   <div class="card"><h3>In stagione a ${now.toLocaleDateString('it-IT',{month:'long'})}</h3>
     ${inSeason.length?inSeason.map(s=>`<div class="species"><div class="ico">🐟</div><div><b>${s.n}</b> <i class="small mut">${s.s}</i><div class="small">🪱 ${s.b}</div>${s.sz?`<div class="small mut">Misura minima indicativa: ${s.sz} cm</div>`:''}</div></div>`).join(''):'<div class="mut">Nessuna specie di punta in questo periodo.</div>'}
   </div>
-  <div class="card"><h3>Riconosci dalla foto</h3>
-    ${ASSIST?`<div class="cphoto big"><img src="${ASSIST.photo}" alt="" onclick="viewPhoto(ASSIST.photo)"><span onclick="ASSIST=null;render()">✕</span></div>${aiCard(ASSIST.st,'assist')}`
-      :`<div class="shoot2"><label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">📸</span><b>Scatta</b><small>Che pesce è?</small></label>
-        <label class="shoot"><input type="file" accept="image/*" onchange="assistSnap(this)"><span class="cam">🖼️</span><b>Galleria</b><small>Foto già fatta</small></label></div>
-        <p class="small mut" style="margin:0;text-align:center">Lo riconosco sul telefono, gratis e anche offline. Con una moneta o una carta accanto misuro anche lunghezza e peso.</p>`}
-  </div>
+  <div class="card"><h3>Riconosci dalla foto</h3><p class="small mut">Fotografa il pesce: specie, lunghezza e peso, anche senza sessione di pesca.</p><button class="btn" style="width:100%" onclick="go('pesce')">📸 Riconosci e misura</button></div>
   <div class="card"><h3>Riconosci per caratteristiche</h3>
     <p class="small mut">Funziona anche senza internet: seleziona le caratteristiche del pesce.</p>
     <label>Forma</label><div class="chips">${shapes.map(x=>`<span class="chip ${AIQ.sh===x?'on':''}" onclick="AIQ.sh=AIQ.sh==='${x}'?null:'${x}';render()">${x}</span>`).join('')}</div>
@@ -1496,6 +1502,7 @@ function installApp(){
 }
 function vAltro(v){
   const c=career(),hub=[
+    ['pesce','📸','Riconosci e misura','Specie, lunghezza e peso','linear-gradient(140deg,#2fb8e0,#1b4f8a)'],
     ['compare','🧭','Dove pescare','Confronta i tuoi spot','linear-gradient(140deg,#118a8a,#0c4a6e)'],
     ['stats','📊','Statistiche','Le tue performance','linear-gradient(140deg,#2b5fd9,#1a2f7a)'],
     ['trofei','🏆','Trofei',`${c.unlocked.length}/${BADGES.length} sbloccati`,'linear-gradient(140deg,#c9771a,#6e3a10)'],
@@ -1689,7 +1696,7 @@ function measBlock(st,target){
 }
 function stOf(t){return t==='live'?LIVEAI:t==='assist'?ASSIST?.st:ENTRYAI[+t];}
 function photoOf(t){return t==='live'?(LIVEQ.big||LIVEQ.photo):t==='assist'?(ASSIST.big||ASSIST.photo):(DRAFT.catches[+t].big||DRAFT.catches[+t].photo);}
-function redraw(t){if(t==='live'){if(S.tab==='live')render();}else if(t==='assist'){if(S.tab==='ai')render();}else if(document.getElementById('sheet').classList.contains('on')&&DRAFT&&!MEAS_OPEN())drawEntry();}
+function redraw(t){if(t==='live'){if(S.tab==='live')render();}else if(t==='assist'){if(S.tab==='pesce')render();}else if(document.getElementById('sheet').classList.contains('on')&&DRAFT&&!MEAS_OPEN())drawEntry();}
 function applyAuto(t){
   const st=stOf(t),m=st?.m;if(!m?.len)return;const sp=st.r?.species,w=estW(sp,m.len);
   if(t==='live'){LIVEQ.l=String(Math.round(m.len));LIVEQ.w=w?String(Math.round(w*100)/100):LIVEQ.w;}
@@ -1768,7 +1775,7 @@ async function assistAnalyze(){
   if(!(await modelReady())){ASSIST.st={needModel:true};render();return;}
   ASSIST.st={loading:true};render();
   try{ASSIST.st={r:await classifyFish(ASSIST.big||ASSIST.photo,S.mode)};}catch(e){ASSIST.st={err:aiErrMsg(e)};}
-  if(S.tab==='ai')render();
+  if(S.tab==='pesce')render();
 }
 /* Impostazioni: stato del modello */
 async function modelStatus(){
