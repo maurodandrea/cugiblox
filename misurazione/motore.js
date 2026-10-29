@@ -19,7 +19,7 @@ function decI8(o){
 async function fishData(){
   if(FISH)return FISH;
   const j=await (await fetch(BASE+'models/fish.json')).json();
-  FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N),O:decI8(j.O),S:j.S?decI8(j.S):null};if(j.O2)FISH.O2=decI8(j.O2);if(j.F2)FISH.F=decI8(j.F2);return FISH;
+  FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N),O:decI8(j.O),S:j.S?decI8(j.S):null};if(j.O2)FISH.O2=decI8(j.O2);if(j.OH)FISH.O=decI8(j.OH);if(j.LIN)FISH.LIN={W:decI8(j.LIN.W),b:j.LIN.b,a:j.LIN.a};if(j.F2)FISH.F=decI8(j.F2);return FISH;
 }
 async function modelItems(){const F=await fishData();return [{key:MODEL_KEY,parts:F.model.parts,size:F.model.size},...(F.sam||[]).map(s=>({key:s.path,parts:[s.path],size:s.size})),...(F.tc?[{key:F.tc.path,parts:[F.tc.path],size:F.tc.size}]:[])];}
 async function modelReady(){try{const c=await caches.open(MODEL_CACHE);for(const it of await modelItems())if(!(await c.match(it.key)))return false;return true;}catch(e){return false;}}
@@ -99,11 +99,14 @@ async function classifyEmb(e,mode){
   const F=await fishData(),L=F.labels;
   // somiglianza testo e foto di esempio, più le tue catture confermate (stesso nome)
   const mine={};for(const m of myFish()){const v=b64ToEmb(m.e);let s=0;for(let i=0;i<v.length;i++)s+=v[i]*e[i];const k=m.sp.toLowerCase();if(!(k in mine)||s>mine[k])mine[k]=s;}
-  const lg=L.map((l,i)=>{let sp=dotRow(F.P,i,e);const my=mine[l.n.toLowerCase()];if(my!=null)sp=Math.max(sp,my);return F.scale*(dotRow(F.T,i,e)+F.w*sp);});
+  // classificatore addestrato su ~5000 foto iNaturalist (se presente); le tue correzioni aggiungono somiglianza
+  const lg=L.map((l,i)=>{const pp=dotRow(F.P,i,e),my=mine[l.n.toLowerCase()];
+    if(F.LIN)return F.LIN.a*dotRow(F.LIN.W,i,e)+F.LIN.b[i]+(my!=null?F.scale*F.w*Math.max(0,my-pp):0);
+    let sp=pp;if(my!=null)sp=Math.max(sp,my);return F.scale*(dotRow(F.T,i,e)+F.w*sp);});
   // specie confermate da te che non sono in elenco
   const extra=Object.keys(mine).filter(k=>!L.some(l=>l.n.toLowerCase()===k));
   const exNames=extra.map(k=>myFish().find(m=>m.sp.toLowerCase()===k).sp);
-  extra.forEach(k=>lg.push(F.scale*(F.w+1)*mine[k]*F.myk));
+  extra.forEach(k=>lg.push(F.LIN?F.LIN.a*mine[k]*1.2:F.scale*(F.w+1)*mine[k]*F.myk));
   const mx=Math.max(...lg);let p=lg.map(x=>Math.exp(x-mx));
   p=p.map((x,i)=>i<L.length&&!L[i].m.includes(mode)?x*F.outside:x);
   const agg={};p.forEach((x,i)=>{const n=i<L.length?L[i].n:exNames[i-L.length];agg[n]=(agg[n]||0)+x;});
