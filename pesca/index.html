@@ -607,7 +607,26 @@ async function loadWeather(force){
   const r=await fetchRaw(sp,force);
   S.wx=build(r.w,r.m,sp,S.mode);S.wxErr=r.sim;S.loading=false;
   if(WXTABS.includes(S.tab))render();
+  waterInfo(sp).then(()=>{if(WXTABS.includes(S.tab))render();});
 }
+// Acqua vicina (mare, lago, fiume) e località sul mare più vicina, da OpenStreetMap (Overpass, gratuito). Salvato per spot.
+async function waterInfo(sp){
+  if(!sp||sp.lat==null)return null;const k=(+sp.lat).toFixed(3)+','+(+sp.lon).toFixed(3);
+  if(sp.wq&&sp.wq.k===k)return sp.wq;
+  const a=`(around:%R,${sp.lat},${sp.lon})`,q=`[out:json][timeout:25];(way["natural"="coastline"]${a.replace('%R',1500)};way["natural"="water"]${a.replace('%R',1000)};relation["natural"="water"]${a.replace('%R',1000)};way["waterway"~"^(river|canal|stream)$"]${a.replace('%R',700)};);out ids qt 1;way["natural"="coastline"]${a.replace('%R',25000)}->.c;node["place"~"^(city|town|village|suburb|hamlet)$"](around.c:2000)${a.replace('%R',25000)};out qt 60;`;
+  for(const base of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
+    try{
+      const r=await fetch(base+'?data='+encodeURIComponent(q));if(!r.ok)continue;const j=await r.json(),R=6371,rad=Math.PI/180;
+      const d=e=>2*R*Math.asin(Math.sqrt(Math.sin((e.lat-sp.lat)*rad/2)**2+Math.cos(sp.lat*rad)*Math.cos(e.lat*rad)*Math.sin((e.lon-sp.lon)*rad/2)**2));
+      const pl=j.elements.filter(e=>e.type==='node'&&e.tags?.name).sort((x,y)=>d(x)-d(y));
+      sp.wq={k,water:j.elements.some(e=>e.type!=='node'),near:pl[0]?.tags.name||null};
+      if(sp.here)sp.name='Posizione attuale'+(sp.wq.near?' · '+sp.wq.near:'');
+      LS.set('spots',S.spots);return sp.wq;
+    }catch(e){}
+  }
+  return null;
+}
+const noWater=()=>activeSpot()?.wq?.water===false;
 const WXTABS=['home','meteo','ai','live','cal'];
 /* Dati di riserva quando il servizio meteo non risponde */
 function simulate(sp){
@@ -832,8 +851,9 @@ function vHome(v){
     <div class="hero-top"><div><div class="hero-loc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>${esc(activeSpot()?.name||'')}</div>
       <div class="hero-date">${now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} · ${hhmm(now)}</div></div>
       <div class="hero-wx"><div class="ic">${wmo(h.code)[0]}</div><b>${fmt0(h.temp)}°</b></div></div>
-    <div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
-    <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}</p>
+    ${noWater()?`<div class="gauge-wrap">${gauge(0)}<div class="num"><b>NA</b><span>Indice di pesca</span><span class="pill solid" style="background:#5d7381">Niente acqua vicina</span></div></div>
+    <p class="hero-exp">Entro 1,5 km non risultano mare, lago o fiume: qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
+    <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}</p>`}
     <div class="hero-stats">
       <div><div class="ic">${arrow(h.wd)}</div><b>${fmt0(h.ws)}</b><span>km/h</span></div>
       <div><div class="ic">${h.wave!=null?'🌊':'☁️'}</div><b>${h.wave!=null?fmt1(h.wave)+' m':fmt0(h.cc)+'%'}</b><span>${h.wave!=null?'onda':'nuvole'}</span></div>
@@ -844,9 +864,9 @@ function vHome(v){
   ${S.live?`<div class="alert" style="background:linear-gradient(135deg,rgba(47,224,207,.18),rgba(59,140,255,.1));border-color:rgba(47,224,207,.4);cursor:pointer" onclick="go('live')"><span class="ai"><span class="rec"></span></span><div><b>Sessione in corso · <span id="liveT">${durStr(Date.now()-S.live.start)}</span></b>${S.live.catches.length} catture finora · tocca per aprire</div></div>`:''}
   ${weatherAlerts(X).map(a=>`<div class="alert"><span class="ai">${a[0]}</span><div><b>${a[1]}</b>${a[2]}</div></div>`).join('')}
   <div class="quick">${[['pesce','📸','Che pesce è?'],['compare','🧭','Dove pescare'],['ai','🤖','Consigli'],['cal','🌙','Calendario']].map(([t,e,n])=>`<button onclick="go('${t}')"><span>${e}</span>${n}</button>`).join('')}</div>
-  <div class="card"><h3>Prossime ore</h3><div class="hstrip">${X.hours.slice(Math.max(0,i),Math.max(0,i)+18).map((x,k)=>`<div class="hcell ${k?'':'now'}"><span>${k?pad(x.t.getHours()):'Ora'}</span><div class="wi">${wmo(x.code)[0]}</div><b>${fmt0(x.temp)}°</b><div class="ib"><i style="height:${x.idx}%;background:${idxColor(x.idx)}"></i></div><em style="color:${idxColor(x.idx)}">${x.idx}</em></div>`).join('')}</div></div>
+  <div class="card"><h3>Prossime ore</h3><div class="hstrip">${X.hours.slice(Math.max(0,i),Math.max(0,i)+18).map((x,k)=>`<div class="hcell ${k?'':'now'}"><span>${k?pad(x.t.getHours()):'Ora'}</span><div class="wi">${wmo(x.code)[0]}</div><b>${fmt0(x.temp)}°</b><div class="ib"><i style="height:${noWater()?0:x.idx}%;background:${idxColor(x.idx)}"></i></div><em style="color:${idxColor(x.idx)}">${x.idx}</em></div>`).join('')}</div></div>
   <div class="card"><h3>Finestre migliori oggi</h3>
-    ${wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
+    ${noWater()?'<p class="small mut">Indice NA: niente mare, lago o fiume vicino.</p>':wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
   </div>
   <div class="card"><h3>Periodi solunari · ${ph.e} ${ph.name} (${Math.round(ph.illum*100)}%)</h3>
     ${timeline(sol,D)}
@@ -1096,7 +1116,7 @@ function snapshot(e){
   const cond={moon:ph.name,illum:ph.illum};
   if(S.wx&&sp&&sp.id===S.active){
     const h=S.wx.hours.find(x=>Math.abs(x.t-st)<1800e3)||S.wx.hours.find(x=>x.t<=st&&x.t.getTime()+3600e3>st);
-    if(h)Object.assign(cond,{ws:h.ws,wd:h.wd,wave:h.wave,p:h.p,dp:h.dp,temp:h.temp,sst:h.sst,cc:h.cc,idx:h.idx});
+    if(h)Object.assign(cond,{ws:h.ws,wd:h.wd,wave:h.wave,p:h.p,dp:h.dp,temp:h.temp,sst:h.sst,cc:h.cc,idx:noWater()?null:h.idx});
   }
   return cond;
 }
@@ -1283,6 +1303,7 @@ function hereSpot(ok,ko){
     if(s){s.lat=p.coords.latitude;s.lon=p.coords.longitude;}
     else{s={id:uid(),name:'Posizione attuale',here:true,lat:p.coords.latitude,lon:p.coords.longitude,mode:S.mode,note:'',face:null};S.spots.push(s);}
     LS.set('spots',S.spots);ok(s);
+    waterInfo(s).then(()=>{S.spots=S.spots;render();});
   },()=>{toast('Posizione non disponibile: scegli uno spot salvato');ko&&ko();},{enableHighAccuracy:true,timeout:12000});
 }
 // tocco sul nome dello spot in alto: scegli tra gli spot salvati o la posizione attuale
@@ -1313,7 +1334,7 @@ function vLive(v){
   const recent=S.diary.slice().reverse().flatMap(e=>(e.catches||[]).map(c=>c.sp));
   const chips=[...new Set([...L.catches.map(c=>c.sp).reverse(),...recent,...SPECIES.filter(s=>s.m.includes(L.mode)&&s.mo.includes(mo)).map(s=>s.n)])].filter(Boolean).slice(0,10);
   const kg=L.catches.reduce((a,c)=>a+(+c.w||0),0);
-  let idx='—';if(S.wx&&L.spot===S.active){const h=S.wx.hours.find(x=>x.t<=new Date()&&x.t.getTime()+3600e3>Date.now());if(h)idx=`<span style="color:${idxColor(h.idx)}">${h.idx}</span>`;}
+  let idx='—';if(S.wx&&L.spot===S.active){const h=S.wx.hours.find(x=>x.t<=new Date()&&x.t.getTime()+3600e3>Date.now());if(h)idx=noWater()?'NA':`<span style="color:${idxColor(h.idx)}">${h.idx}</span>`;}
   const est=!LIVEQ.w&&LIVEQ.l?estW(LIVEQ.sp,LIVEQ.l):null;
   v.innerHTML=`
   <section class="live-hero"><div class="live-badge"><span class="rec"></span>IN PESCA</div>
