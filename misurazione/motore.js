@@ -19,7 +19,7 @@ function decI8(o){
 async function fishData(){
   if(FISH)return FISH;
   const j=await (await fetch(BASE+'models/fish.json')).json();
-  FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N),O:decI8(j.O),S:j.S?decI8(j.S):null};return FISH;
+  FISH={...j,T:decI8(j.T),P:decI8(j.P),N:decI8(j.N),O:decI8(j.O),S:j.S?decI8(j.S):null};if(j.O2)FISH.O2=decI8(j.O2);if(j.F2)FISH.F=decI8(j.F2);return FISH;
 }
 async function modelItems(){const F=await fishData();return [{key:MODEL_KEY,parts:F.model.parts,size:F.model.size},...(F.sam||[]).map(s=>({key:s.path,parts:[s.path],size:s.size})),...(F.tc?[{key:F.tc.path,parts:[F.tc.path],size:F.tc.size}]:[])];}
 async function modelReady(){try{const c=await caches.open(MODEL_CACHE);for(const it of await modelItems())if(!(await c.match(it.key)))return false;return true;}catch(e){return false;}}
@@ -121,11 +121,13 @@ function aiErrMsg(e){
 }
 
 /* ===================== Misura sulla foto ===================== */
-const REFS=[['Moneta da 2 €',2.575,{t:'coin'}],['Moneta da 1 €',2.325,{t:'coin'}],['Bancomat / carta',8.56,{t:'card'}],['Scarpa',null,{t:'shoe'}],['Mano (palmo)',8.5,{t:'hand'}],['Accendino',8,null],['Lattina 33 cl (altezza)',11.5,null],['Smartphone',15,null],['Metro: 10 cm',10,null]];
+const REFS=[['Moneta da 2 €',2.575,{t:'coin'}],['Moneta da 1 €',2.325,{t:'coin'}],['Bancomat / carta',8.56,{t:'card'}],['Scarpa',null,{t:'shoe'}],['Mano (palmo)',8.5,{t:'hand'}],['Accendino',8,null],['Lattina 33 cl (altezza)',11.5,null],['Smartphone',15,null],['Metro: 10 cm',10,null],['Piede nudo',null,{t:'foot'}]];
+const FOOT=REFS.length-1;
 // scarpa: lunghezza esterna indicativa dal numero europeo (numero × 2/3 + 1 cm)
 const shoeSize=()=>LS.get('shoesize',44);
-const refCm=i=>i===3?Math.round((shoeSize()*2/3+1)*10)/10:REFS[i]?.[1];
-const refName=i=>i===3?`Scarpa n. ${shoeSize()}`:REFS[i]?.[0]||'';
+// piede nudo: 2 cm meno della scarpa dello stesso numero
+const refCm=i=>i===3?Math.round((shoeSize()*2/3+1)*10)/10:i===FOOT?Math.round((shoeSize()*2/3-1)*10)/10:REFS[i]?.[1];
+const refName=i=>i===3?`Scarpa n. ${shoeSize()}`:i===FOOT?`Piede nudo n. ${shoeSize()}`:REFS[i]?.[0]||'';
 let SAMS=null,SEG=null;
 async function samSessions(){if(SAMS)return SAMS;await ensureOrt();const F=await fishData();SAMS={enc:await cachedSession(F.sam[0].path),dec:await cachedSession(F.sam[1].path)};return SAMS;}
 async function samEncode(img){
@@ -209,13 +211,22 @@ async function sceneTrophy(seg){
   const lg=[];for(let r=0;r<F.S.rows;r++)lg.push(100*dotRow(F.S,r,e));
   const mx=Math.max(...lg),ex=lg.map(x=>Math.exp(x-mx));return seg.trophy=ex[0]/(ex[0]+ex[1]);
 }
+function shoe2(m){
+  const O=FISH.O2,lg=[];for(let r=0;r<O.rows;r++)lg.push(100*dotRow(O,r,m.tce));
+  const mx=Math.max(...lg),ex=lg.map(x=>Math.exp(x-mx)),t=ex.reduce((a,b)=>a+b,0),i=FISH.ON2.indexOf('shoe');
+  return ex[i]===Math.max(...ex)?ex[i]/t:0;
+}
+function bareProb(m){
+  const F=FISH;if(!F?.F||!m.tce)return 0;const a=100*dotRow(F.F,0,m.tce),b=100*dotRow(F.F,1,m.tce),mx=Math.max(a,b);
+  return Math.exp(b-mx)/(Math.exp(a-mx)+Math.exp(b-mx));
+}
 async function classifyMask(seg,m){
   if(m.cls)return m.cls;
   const F=await fishData(),s=await tcSession(),cr=maskedCrop(seg,m),fake={naturalWidth:cr.w,naturalHeight:cr.h};
   const o=await s.run({pixels:new ort.Tensor('float32',toTensor(fake,'pad',F.mean,F.std,cr.px),[1,3,224,224])}),e=o.embedding.data;
   const lg=[];for(let r=0;r<F.O.rows;r++)lg.push(100*dotRow(F.O,r,e));
   const mx=Math.max(...lg),ex=lg.map(x=>Math.exp(x-mx)),t=ex.reduce((a,b)=>a+b,0);
-  m.cls={};F.ON.forEach((n,i)=>m.cls[n]=ex[i]/t);return m.cls;
+  m.tce=Float32Array.from(e);m.cls={};F.ON.forEach((n,i)=>m.cls[n]=ex[i]/t);return m.cls;
 }
 // probabilità che un ritaglio sia un pesce secondo BioCLIP (specie ittiche contro oggetti comuni)
 async function embedMask(seg,m){
@@ -278,10 +289,16 @@ async function detectRefs(seg,force,onp){
   for(const t of ['hand','shoe']){  // prima la mano: il modello la riconosce con sicurezza, la sabbia invece si scambia per scarpa
     if(ref||!want(t))continue;
     // scarpa trovata da sola solo se intera nella foto, non enorme e senza persone in posa
-    if(t==='shoe'&&force==null&&person)continue;
+    if(t!=='hand'&&force==null&&person)continue;
     let C=big.filter(m=>m.cls&&(force!=null?m.cls[t]>.15:(m.cls[t]>.5&&m.cls[t]===Math.max(...Object.values(m.cls))&&(t==='hand'||(m.f.border<=1&&m.f.frac<.2&&m.f.rect>.45)))));
     if(C.length){const top=Math.max(...C.map(m=>m.cls[t]));C=C.filter(m=>m.cls[t]>=top-.15);
       ref={m:C.reduce((a,m)=>m.f.A<a.f.A?m:a),idx:t==='shoe'?3:4,kind:t};}  // a parità, la sagoma più piccola: la scarpa senza la gamba
+  }
+  // piede nudo: solo se non c'è altro. Classi con "piede nudo" dentro la scarpa, ma non deve sembrare una mano.
+  if(!ref&&want('foot')&&(force!=null||!person)){
+    const sc=m=>m.tce&&FISH.O2?shoe2(m):0;
+    const C=big.filter(m=>m.cls&&(force!=null?sc(m)>.15:(sc(m)>.5&&m.cls.hand<.2&&m.f.border<=1&&m.f.frac<.2&&m.f.rect>.4)));
+    if(C.length){const top=Math.max(...C.map(sc));const D=C.filter(m=>sc(m)>=top-.15);ref={m:D.reduce((a,m)=>m.f.A<a.f.A?m:a),idx:FOOT,kind:'foot'};}
   }
   return {ref,big,person};
 }
@@ -349,6 +366,17 @@ async function handNearFish(seg,fish){
   }
   return best;
 }
+// pesce meno un'altra sagoma, tenendo solo il pezzo connesso più grande
+function minusMask(m,o,ww,hh){
+  const b=new Uint8Array(m.b.length);for(let i=0;i<b.length;i++)b[i]=m.b[i]&&!o.b[i]?1:0;
+  const lab=new Int32Array(b.length);let best=0,bestN=0,id=0;
+  for(let i=0;i<b.length;i++)if(b[i]&&!lab[i]){id++;let n=0;const st=[i];lab[i]=id;
+    while(st.length){const j=st.pop();n++;const x=j%ww,y=(j/ww)|0;for(const k of [x>0?j-1:-1,x<ww-1?j+1:-1,y>0?j-ww:-1,y<hh-1?j+ww:-1])if(k>=0&&b[k]&&!lab[k]){lab[k]=id;st.push(k);}}
+    if(n>bestN){bestN=n;best=id;}}
+  if(bestN<12||bestN===m.n)return null;
+  let x0=ww,y0=hh,x1=0,y1=0;for(let i=0;i<b.length;i++){b[i]=lab[i]===best?1:0;if(b[i]){const x=i%ww,y=(i/ww)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
+  const r={...m,b,n:bestN,bb:[x0,y0,x1,y1]};r.f=mShape(r,ww,hh);return r;
+}
 async function autoMeasure(src,force,onp){
   if(!SEG||SEG.src!==src){
     onp&&onp(.02);const img=await loadImg(src);const enc=await samEncode(img);onp&&onp(.15);
@@ -356,14 +384,16 @@ async function autoMeasure(src,force,onp){
   }
   const seg=SEG,key='r_'+(force??'auto');
   if(!seg[key]){
-    let {ref,big,person}=await detectRefs(seg,force,onp);const fish=await findFish2(seg,big,ref);
+    let {ref,big,person}=await detectRefs(seg,force,onp);let fish=await findFish2(seg,big,ref);
     // se una mano regge il pesce è il riferimento più affidabile dopo moneta e carta
     if(fish&&(force==null?(!ref||ref.kind==='shoe'||ref.kind==='hand'):force===4)){const h=await handNearFish(seg,fish);if(h)ref={m:h,idx:4,kind:'hand'};}
+    // la mano tocca spesso il pesce: SlimSAM può unirli e il "muso" finisce sulle dita. Tolgo la mano dal pesce.
+    if(fish&&ref?.kind==='hand')fish=minusMask(fish,ref.m,seg.enc.ww,seg.enc.hh)||fish;
     seg[key]={ref,fish,person};
   }
   const {ref,fish,person}=seg[key];onp&&onp(1);
   const {img,enc}=seg,W=img.naturalWidth,H=img.naturalHeight,k=enc.k,P=([x,y])=>[((x*4+2)/k)/W,((y*4+2)/k)/H];
-  const out={ref:ref?.idx??null,fishOk:!!fish,refOk:!!ref,kind:ref?.kind||null,forced:force!=null,fishMask:fish||null,person:!!person,fishCut:!!fish&&fishCut(fish.f,enc.ww,enc.hh)};
+  const out={ref:ref?.idx??null,fishOk:!!fish,refOk:!!ref,kind:ref?.kind||null,forced:force!=null,fishMask:fish||null,person:!!person,fishCut:!!fish&&fishCut(fish.f,enc.ww,enc.hh),refCut:!!ref&&(ref.kind==='shoe'||ref.kind==='foot')&&fishCut(ref.m.f,enc.ww,enc.hh)};
   const ends=fish?[P(fish.f.e1),P(fish.f.e2)]:null;
   if(ref){
     const f=ref.m.f,cx=(f.c[0]*4+2)/k,cy=(f.c[1]*4+2)/k;let half,ax;
