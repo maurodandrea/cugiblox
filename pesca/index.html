@@ -609,41 +609,40 @@ async function loadWeather(force){
   if(WXTABS.includes(S.tab))render();
   waterInfo(sp).then(()=>{if(WXTABS.includes(S.tab))render();});
 }
-// Mare entro 500 m (laghi e fiumi non contano) e località sul mare più vicina, da OpenStreetMap (gratuito). Salvato per spot.
-const OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
-async function overpass(q){
-  let err='';
-  for(const u of OVERPASS){
-    try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),20000);
-      const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});clearTimeout(t);
-      if(r.ok)return await r.json();err=new URL(u).host+' '+r.status;
-    }catch(e){err=new URL(u).host+' '+(e.name==='AbortError'?'tempo scaduto':e.message);}
+// Mare entro 500 m e località sul mare più vicina, calcolati sul telefono (niente servizi esterni, funziona offline).
+// costa.json: linea di costa OpenStreetMap ritagliata sull'Italia e semplificata (~80 m) + centri abitati GeoNames entro 2 km dal mare.
+let COSTA=null;
+async function costa(){
+  if(COSTA)return COSTA;const j=await (await fetch('costa.json')).json(),L=[];
+  for(const a of j.c){let x=0,y=0;const p=[];let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(let i=0;i<a.length;i+=2){x+=a[i];y+=a[i+1];const X=x/1e4,Y=y/1e4;p.push(X,Y);if(X<x0)x0=X;if(X>x1)x1=X;if(Y<y0)y0=Y;if(Y>y1)y1=Y;}
+    L.push({p,bb:[x0,y0,x1,y1]});}
+  return COSTA={L,T:j.t};
+}
+// distanza in km dalla costa (proiezione locale, precisa a pochi metri su queste distanze)
+function seaKm(C,lat,lon){
+  const kx=111.32*Math.cos(lat*Math.PI/180),ky=110.57;let best=1e9;
+  for(const {p,bb} of C.L){
+    const dx=Math.max(bb[0]-lon,0,lon-bb[2])*kx,dy=Math.max(bb[1]-lat,0,lat-bb[3])*ky;if(Math.hypot(dx,dy)>=best)continue;
+    for(let i=0;i+3<p.length;i+=2){
+      const ax=(p[i]-lon)*kx,ay=(p[i+1]-lat)*ky,bx=(p[i+2]-lon)*kx,by=(p[i+3]-lat)*ky,vx=bx-ax,vy=by-ay,l2=vx*vx+vy*vy;
+      const t=l2?Math.max(0,Math.min(1,-(ax*vx+ay*vy)/l2)):0,d=Math.hypot(ax+t*vx,ay+t*vy);if(d<best)best=d;
+    }
   }
-  throw new Error(err||'nessuna risposta');
+  return best;
 }
 const kmTo=(sp,lat,lon)=>{const R=6371,r=Math.PI/180;return 2*R*Math.asin(Math.sqrt(Math.sin((lat-sp.lat)*r/2)**2+Math.cos(sp.lat*r)*Math.cos(lat*r)*Math.sin((lon-sp.lon)*r/2)**2));};
-const WQ={};
-function waterInfo(sp){
-  if(!sp||sp.lat==null)return Promise.resolve(null);const k='m500b:'+(+sp.lat).toFixed(3)+','+(+sp.lon).toFixed(3);
-  if(sp.wq&&sp.wq.k===k)return Promise.resolve(sp.wq);
-  if(WQ[k])return WQ[k];  // una sola richiesta alla volta per lo stesso punto
-  return WQ[k]=(async()=>{
-    try{
-      // 1) costa del mare entro 500 m (richiesta leggerissima)
-      const c=await overpass(`[out:json][timeout:15];way["natural"="coastline"](around:500,${sp.lat},${sp.lon});out ids qt 1;`);
-      const wq={k,water:c.elements.length>0,near:null};
-      // 2) località sul mare: spiaggia o stabilimento più vicino, poi il nome del paese
-      try{
-        const b=await overpass(`[out:json][timeout:20];nwr["natural"="beach"](around:30000,${sp.lat},${sp.lon});nwr["leisure"="beach_resort"](around:30000,${sp.lat},${sp.lon});out center qt 80;`);
-        const pts=b.elements.map(e=>({lat:e.lat??e.center?.lat,lon:e.lon??e.center?.lon})).filter(p=>p.lat!=null).sort((x,y)=>kmTo(sp,x.lat,x.lon)-kmTo(sp,y.lat,y.lon));
-        if(pts[0]){const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=it&lat=${pts[0].lat}&lon=${pts[0].lon}`);
-          const a=(await r.json()).address||{};wq.near=a.village||a.town||a.suburb||a.city||a.hamlet||a.municipality||null;}
-      }catch(e){}
-      sp.wq=wq;if(sp.here)sp.name='Posizione attuale'+(wq.near?' · '+wq.near:'');
-      LS.set('spots',S.spots);return wq;
-    }catch(e){sp.wqErr=e.message;return null;}
-    finally{delete WQ[k];}
-  })();
+async function waterInfo(sp){
+  if(!sp||sp.lat==null)return null;const k='costa1:'+(+sp.lat).toFixed(4)+','+(+sp.lon).toFixed(4);
+  if(sp.wq&&sp.wq.k===k)return sp.wq;
+  // fuori dall'area coperta dai dati (Italia e mari vicini): non so dire, l'indice resta normale
+  if(sp.lat<35.3||sp.lat>47.2||sp.lon<6||sp.lon>19.6)return null;
+  try{
+    const C=await costa(),km=seaKm(C,+sp.lat,+sp.lon);let near=null,nd=1e9;
+    for(const [n,a,o] of C.T){const d=kmTo(sp,a,o);if(d<nd){nd=d;near=n;}}
+    sp.wq={k,water:km<=0.5,km,near};if(sp.here)sp.name='Posizione attuale'+(near?' · '+near:'');
+    LS.set('spots',S.spots);return sp.wq;
+  }catch(e){sp.wqErr=e.message;return null;}
 }
 const noWater=()=>activeSpot()?.wq?.water===false;
 const WXTABS=['home','meteo','ai','live','cal'];
@@ -871,7 +870,7 @@ function vHome(v){
       <div class="hero-date">${now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} · ${hhmm(now)}</div></div>
       <div class="hero-wx"><div class="ic">${wmo(h.code)[0]}</div><b>${fmt0(h.temp)}°</b></div></div>
     ${noWater()?`<div class="gauge-wrap">${gauge(0)}<div class="num"><b>NA</b><span>Indice di pesca</span><span class="pill solid" style="background:#5d7381">Mare lontano</span></div></div>
-    <p class="hero-exp">Il mare è a più di 500 m: qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
+    <p class="hero-exp">Il mare è a ${fmt1(activeSpot().wq.km)} km (più di 500 m): qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
     <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}${!activeSpot()?.wq&&activeSpot()?.wqErr?`<br><span class="small" style="opacity:.75">Distanza dal mare non verificata (${esc(activeSpot().wqErr)})</span>`:''}</p>`}
     <div class="hero-stats">
       <div><div class="ic">${arrow(h.wd)}</div><b>${fmt0(h.ws)}</b><span>km/h</span></div>
@@ -1597,7 +1596,7 @@ function vSettings(v){
     ${standalone()?'':'<button class="btn ghost full" style="margin-bottom:8px" onclick="installApp()">📲 Installa sulla schermata Home</button>'}
     <button class="btn danger full" onclick="wipeAll()">🗑️ Cancella tutti i dati</button></div>
   <div class="card"><h3>Informazioni</h3>
-    <p class="small mut">Riconoscimento: BioCLIP, Imageomics Institute (licenza MIT). Misura: SlimSAM (licenza Apache 2.0). Eseguiti con ONNX Runtime Web. Dati meteo e marini: Open-Meteo.com (CC BY 4.0). Mappe: © OpenStreetMap contributors. Fasi lunari, periodi solunari e alba/tramonto del calendario sono calcolati sul dispositivo.</p>
+    <p class="small mut">Riconoscimento: BioCLIP, Imageomics Institute (licenza MIT). Misura: SlimSAM (licenza Apache 2.0). Eseguiti con ONNX Runtime Web. Linea di costa: © OpenStreetMap contributors (ODbL). Località: GeoNames (CC BY 4.0). Dati meteo e marini: Open-Meteo.com (CC BY 4.0). Mappe: © OpenStreetMap contributors. Fasi lunari, periodi solunari e alba/tramonto del calendario sono calcolati sul dispositivo.</p>
     <p class="small mut" style="margin-top:8px">L'indice di pesca è una stima basata su regole: un aiuto per scegliere, non una garanzia. Misure minime indicative: verifica sempre la normativa vigente. Unità di misura metriche.</p></div>`;
 }
 function wipeAll(){
