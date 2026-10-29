@@ -435,7 +435,7 @@ const MODES = {
   river:{n:'River',e:'🌊',d:'Fiumi e acque correnti'}
 };
 const TABS = [
-  {id:'home',n:'Home'},{id:'meteo',n:'Meteo'},{id:'spot',n:'Spot'},{id:'fab'},{id:'diario',n:'Diario'},{id:'altro',n:'Altro'}
+  {id:'home',n:'Home'},{id:'meteo',n:'Meteo'},{id:'pesce',n:'Riconosci'},{id:'fab'},{id:'spot',n:'Spot'},{id:'altro',n:'Altro'}
 ];
 const TECH = {
   coast:['Surfcasting','Spinning','Bolognese','Beach ledgering','Eging','Rockfishing','Canna fissa'],
@@ -480,6 +480,7 @@ const ICON={
   home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   meteo:'<path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><path d="M7.5 12A4.5 4.5 0 0 1 16 9.6"/><path d="M17.5 21H9a4 4 0 1 1 .9-7.9 5.5 5.5 0 0 1 10.5 2.6 2.7 2.7 0 0 1-2.9 5.3z"/>',
   spot:'<path d="M12 21.5s-7-6.6-7-12.2a7 7 0 0 1 14 0c0 5.6-7 12.2-7 12.2z"/><circle cx="12" cy="9.3" r="2.6"/>',
+  pesce:'<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.4-2h5.8l1.4 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.4"/>',
   diario:'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7.5h6M9 11h4"/>',
   stats:'<path d="M3 21h18"/><rect x="5" y="11" width="3" height="7" rx="1"/><rect x="10.5" y="5" width="3" height="13" rx="1"/><rect x="16" y="14" width="3" height="4" rx="1"/>',
   ai:'<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/>',
@@ -765,7 +766,7 @@ function bestWindows(X,date,n=3){
 
 /* ===================== Render ===================== */
 const PAGES=['home','meteo','spot','diario','altro','stats','ai','pesce','live','trofei','cal','compare','guide','settings'];
-const SUBS=['stats','ai','pesce','trofei','cal','compare','guide','settings'];
+const SUBS=['stats','ai','diario','trofei','cal','compare','guide','settings'];
 function go(t){if(location.hash.slice(1)!==t)location.hash=t;else{S.tab=t;window.scrollTo(0,0);render();}}
 window.addEventListener('hashchange',()=>{const t=location.hash.slice(1)||'home';if(!PAGES.includes(t))return;closeSheet();S.tab=t;window.scrollTo(0,0);render();});
 function setMode(m){}
@@ -1164,7 +1165,7 @@ function importData(inp){
 let AIQ={sh:null,c:null,t:[]};
 // Riconoscimento e misura come funzione a parte: non serve una sessione di pesca
 function vPesce(v){
-  v.innerHTML=subHead('Riconosci e misura','Che pesce è, quanto è lungo e quanto pesa')+`
+  v.innerHTML=subHead('Riconosci e misura','Che pesce è, quanto è lungo e quanto pesa','home')+`
   <div class="card"><h3>📸 Foto del pesce</h3>
     ${ASSIST?`<div class="cphoto big"><img src="${ASSIST.photo}" alt="" onclick="viewPhoto(ASSIST.photo)"><span onclick="ASSIST=null;render()">✕</span></div>${aiCard(ASSIST.st,'assist')}`
       :`<div class="shoot2"><label class="shoot"><input type="file" accept="image/*" capture="environment" onchange="assistSnap(this)"><span class="cam">📸</span><b>Scatta</b><small>Che pesce è?</small></label>
@@ -1521,7 +1522,7 @@ function installApp(){
 }
 function vAltro(v){
   const c=career(),hub=[
-    ['pesce','📸','Riconosci e misura','Specie, lunghezza e peso','linear-gradient(140deg,#2fb8e0,#1b4f8a)'],
+    ['diario','📔','Diario','Uscite e catture','linear-gradient(140deg,#2fb8e0,#1b4f8a)'],
     ['compare','🧭','Dove pescare','Confronta i tuoi spot','linear-gradient(140deg,#118a8a,#0c4a6e)'],
     ['stats','📊','Statistiche','Le tue performance','linear-gradient(140deg,#2b5fd9,#1a2f7a)'],
     ['trofei','🏆','Trofei',`${c.unlocked.length}/${BADGES.length} sbloccati`,'linear-gradient(140deg,#c9771a,#6e3a10)'],
