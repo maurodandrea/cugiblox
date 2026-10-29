@@ -78,13 +78,6 @@ async function measure(force){
   try{
     const m=await autoMeasure(src,force,p=>{P.pct=p;const el=document.getElementById('pct');if(el)el.textContent=Math.round(p*100)+'%';});
     if(P.photo!==src)return;
-    // specie anche sul solo pesce ritagliato, mediata con la foto intera
-    if(m.fishMask&&P.r&&!P.r.cropped&&!P.r.mine){
-      const r2=await classifyEmb(await embedMask(SEG,m.fishMask),P.mode),d1=P.r.dist||{},d2=r2.dist||{},avg={};
-      for(const k of new Set([...Object.keys(d1),...Object.keys(d2)]))avg[k]=((d1[k]||0)+(d2[k]||0))/2;
-      const rk=Object.entries(avg).sort((a,b)=>b[1]-a[1]),lab=(await fishData()).labels.find(l=>l.n===rk[0][0]);
-      P.r={...P.r,species:rk[0][0],scientific_name:lab?.s||'',confidence:rk[0][1],alternatives:rk.slice(1,4).map(([n,c])=>({species:n,confidence:c})),emb:r2.emb,dist:avg,cropped:true};
-    }
     m.preview=await measPreview(src,m.pts).catch(()=>null);m.secs=(performance.now()-t)/1000;
     P.m=m;P.busy='';render();
   }catch(e){P.busy='';P.err='Misura non riuscita: '+aiErrMsg(e);render();}
@@ -148,7 +141,7 @@ function render(){
     const m=P.m;
     if(P.r&&!m&&!P.busy&&!P.err)h+=`<div class="small mut" style="margin-top:6px">Riconosciuto in ${fmt1(P.secs||0)} s</div>
       <button class="btn" style="margin-top:12px;width:100%" onclick="measure(null)">📏 Misura lunghezza e peso</button>
-      <div class="small mut" style="margin-top:6px">Facoltativo, circa 30 secondi. Serve un riferimento accanto al pesce: moneta, bancomat, scarpa, piede o mano aperta.</div>`;
+      <div class="small mut" style="margin-top:6px">Facoltativo: pochi secondi se il telefono usa la scheda grafica, altrimenti circa 20-40 secondi. Serve un riferimento accanto al pesce: moneta, bancomat, scarpa, piede o mano aperta.</div>`;
     if(m&&!P.busy){
       if(m.len){const w=estW(P.r?.species,m.len);h+=`<div class="grid"><div><b>${fmt1(m.len)} cm</b><span>lunghezza</span></div><div><b>${w?fmtW(w):'—'}</b><span>peso stimato</span></div><div><b style="font-size:13px">${esc(refName(m.ref))}</b><span>${m.manual?'segnato da te':m.forced?'scelto da te':'trovato'}</span></div></div>`;
         if(m.kind==='hand'&&!m.manual)h+=`<div class="small warn">✋ Con la mano la misura è approssimativa (palmo di ${fmt1(refCm(4))} cm).</div>`;
@@ -158,7 +151,7 @@ function render(){
       else if(!m.fishOk&&m.refOk)h+=`<p class="small">📏 Ho trovato «${esc(refName(m.ref))}» ma non riesco a isolare il pesce.</p>`;
       else if(m.fishOk)h+=`<p class="small">📏 Pesce trovato, ma nessun riferimento (moneta, bancomat, scarpa, mano).${m.person?' Con il pesce in mano a una persona la misura non è affidabile.':''}</p>`;
       else h+=`<p class="small">📏 Non trovo né il pesce né un riferimento.</p>`;
-      if(m.preview)h+=`<img class="prev" src="${m.preview}" alt="" style="margin-top:8px"><div class="small mut" style="margin-top:4px">Azzurro: pesce · arancione: riferimento${m.secs?` · ${fmt1(m.secs)} s`:''}</div>`;
+      if(m.preview)h+=`<img class="prev" src="${m.preview}" alt="" style="margin-top:8px"><div class="small mut" style="margin-top:4px">Azzurro: pesce · arancione: riferimento${m.secs?` · ${fmt1(m.secs)} s`:''}${window.SAMS_GPU?' · scheda grafica':' · processore'}</div>`;
       h+=`<div class="small" style="margin-top:10px">Il riferimento è un altro? <div class="chips" style="margin-top:6px">${REFS.map((r,i)=>[r,i]).filter(([r])=>r[2]).map(([r,i])=>`<span class="chip ${m.ref===i?'on':''}" onclick="measure(${i})">${esc(refName(i))}</span>`).join('')}</div></div>
         <button class="btn ghost" style="margin-top:12px;width:100%" onclick="startManual()">📏 Segna o correggi i punti a mano</button>`;
     }
