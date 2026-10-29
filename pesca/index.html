@@ -416,7 +416,7 @@
 <div id="app">
   <header>
     <div class="logo"><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#03282a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v9.5a4.5 4.5 0 1 1-9 0V10l3 3"/><circle cx="14" cy="3" r="1"/></svg></div><div><span class="word">Len<b>za</b></span><div class="ver" id="ver" data-build="__BUILD__"></div></div></div>
-    <button class="spotchip" id="spotChip" onclick="go('spot')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span id="spotName">—</span></button>
+    <button class="spotchip" id="spotChip" onclick="pickSpot()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span id="spotName">—</span></button>
   </header>
   <div class="modes" id="modes"></div>
   <main id="view"></main>
@@ -1272,18 +1272,37 @@ function weatherAlerts(X){
 let LIVEDRAFT=null,LIVEQ={sp:'',w:'',l:'',rel:false,photo:null};
 async function liveSnap(inp){const d=await readPhoto(inp);if(d){LIVEQ.photo=d;LIVEQ.big=readPhoto.big;LIVEQ.emb=null;LIVEAI=null;liveAnalyze();}}
 function fabTap(){if(S.live)go('live');else startLive();}
-function startLive(){LIVEDRAFT={spot:S.active,mode:S.mode,tech:TECH[S.mode][0],bait:''};drawStart();}
+function startLive(){LIVEDRAFT={spot:'__here',mode:S.mode,tech:TECH[S.mode][0],bait:''};drawStart();}
+// posizione attuale: un solo spot "Posizione attuale", aggiornato ogni volta
+function hereSpot(ok,ko){
+  if(!navigator.geolocation){toast('Geolocalizzazione non disponibile');ko&&ko();return;}
+  toast('Cerco la tua posizione…');
+  navigator.geolocation.getCurrentPosition(p=>{
+    let s=S.spots.find(x=>x.here);
+    if(s){s.lat=p.coords.latitude;s.lon=p.coords.longitude;}
+    else{s={id:uid(),name:'Posizione attuale',here:true,lat:p.coords.latitude,lon:p.coords.longitude,mode:S.mode,note:'',face:null};S.spots.push(s);}
+    LS.set('spots',S.spots);ok(s);
+  },()=>{toast('Posizione non disponibile: scegli uno spot salvato');ko&&ko();},{enableHighAccuracy:true,timeout:12000});
+}
+// tocco sul nome dello spot in alto: scegli tra gli spot salvati o la posizione attuale
+function pickSpot(){
+  openSheet(`<h2>📍 Scegli lo spot</h2>
+  <div class="spotlist">
+    <button class="btn ghost full" style="justify-content:flex-start;margin-bottom:8px" onclick="hereSpot(s=>{closeSheet();useSpot(s.id);})">🎯 Posizione attuale</button>
+    ${S.spots.filter(x=>!x.here).map(x=>`<button class="btn ${x.id===S.active?'':'ghost'} full" style="justify-content:flex-start;margin-bottom:8px" onclick="closeSheet();useSpot('${x.id}')">📍 ${esc(x.name)}</button>`).join('')||'<p class="small mut">Nessuno spot salvato.</p>'}
+  </div>
+  <button class="btn ghost full" style="margin-top:6px" onclick="closeSheet();go('spot')">🗺️ Gestisci gli spot sulla mappa</button>`);
+}
 function drawStart(){
   const d=LIVEDRAFT;
   openSheet(`<h2>🎣 Inizia a pescare</h2><p class="small mut">Cronometro, catture con un tocco e condizioni meteo salvate in automatico.</p>
-  <label>Spot</label><select onchange="LIVEDRAFT.spot=this.value">${S.spots.map(s=>`<option value="${s.id}" ${s.id===d.spot?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
-  <label>Ambiente</label><div class="chips">${Object.entries(MODES).map(([k,m])=>`<span class="chip ${d.mode===k?'on':''}" onclick="LIVEDRAFT.mode='${k}';LIVEDRAFT.tech=TECH['${k}'][0];drawStart()">${m.e} ${m.n}</span>`).join('')}</div>
+  <label>Dove peschi</label><select onchange="LIVEDRAFT.spot=this.value"><option value="__here" ${d.spot==='__here'?'selected':''}>🎯 Posizione attuale</option>${S.spots.filter(s=>!s.here).map(s=>`<option value="${s.id}" ${s.id===d.spot?'selected':''}>📍 ${esc(s.name)}</option>`).join('')}</select>
   <label>Tecnica</label><div class="chips">${TECH[d.mode].map(t=>`<span class="chip ${d.tech===t?'on':''}" onclick="LIVEDRAFT.tech='${t.replace(/'/g,"\\'")}';drawStart()">${t}</span>`).join('')}</div>
   <label>Esche / artificiali</label><input value="${esc(d.bait)}" oninput="LIVEDRAFT.bait=this.value" placeholder="Es. arenicola, minnow 12 cm">
   <button class="btn full" style="margin-top:18px" onclick="beginLive()">Inizia la sessione</button>`);
 }
 function beginLive(){
-  if(!S.spots.length){toast('Aggiungi prima uno spot');closeSheet();go('spot');return;}
+  if(LIVEDRAFT.spot==='__here'){hereSpot(s=>{LIVEDRAFT.spot=s.id;S.active=s.id;LS.set('active',s.id);S.wx=null;loadWeather();beginLive();});return;}
   S.live={...LIVEDRAFT,start:Date.now(),catches:[]};LS.set('live',S.live);LIVEQ={sp:'',w:'',l:'',rel:false,photo:null};
   closeSheet();toast('Buona pesca! 🎣');go('live');
 }
