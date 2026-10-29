@@ -1941,7 +1941,7 @@ async function detectRefs(seg,force,onp){
     if(ref||!want(t))continue;
     // scarpa trovata da sola solo se intera nella foto, non enorme e senza persone in posa
     if(t==='shoe'&&force==null&&person)continue;
-    let C=big.filter(m=>m.cls&&(force!=null?m.cls[t]>.15:(m.cls[t]>(t==='hand'?.5:.7)&&m.cls[t]===Math.max(...Object.values(m.cls))&&(t==='hand'||(m.f.border<=1&&m.f.frac<.2)))));
+    let C=big.filter(m=>m.cls&&(force!=null?m.cls[t]>.15:(m.cls[t]>.5&&m.cls[t]===Math.max(...Object.values(m.cls))&&(t==='hand'||(m.f.border<=1&&m.f.frac<.2)))));
     if(C.length){const top=Math.max(...C.map(m=>m.cls[t]));C=C.filter(m=>m.cls[t]>=top-.15);
       ref={m:C.reduce((a,m)=>m.f.A<a.f.A?m:a),idx:t==='shoe'?3:4,kind:t};}  // a parità, la sagoma più piccola: la scarpa senza la gamba
   }
