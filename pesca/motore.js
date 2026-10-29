@@ -110,7 +110,6 @@ async function classifyEmb(e,mode){
   const exNames=extra.map(k=>myFish().find(m=>m.sp.toLowerCase()===k).sp);
   extra.forEach(k=>lg.push(F.LIN?F.LIN.a*mine[k]*1.2:F.scale*(F.w+1)*mine[k]*F.myk));
   const mx=Math.max(...lg);let p=lg.map(x=>Math.exp(x-mx));
-  p=p.map((x,i)=>i<L.length&&!L[i].m.includes(mode)?x*F.outside:x);
   const agg={};p.forEach((x,i)=>{const n=i<L.length?L[i].n:exNames[i-L.length];agg[n]=(agg[n]||0)+x;});
   const tot=Object.values(agg).reduce((a,b)=>a+b,0),rk=Object.entries(agg).map(([n,x])=>[n,x/tot]).sort((a,b)=>b[1]-a[1]);
   // pesce o no: confronto solo testuale con descrizioni di oggetti comuni
