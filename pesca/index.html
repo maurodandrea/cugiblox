@@ -708,7 +708,7 @@ function build(w,m,sp,mode=S.mode){
 
 /* ===================== Indice di Pesca ===================== */
 const WEIGHTS={
-  coast:{press:16,wind:12,wave:20,sol:14,moon:8,light:14,cloud:5,rain:5,sst:6,expo:6},
+  coast:{press:16,wind:6,wave:20,sol:14,moon:8,light:14,cloud:0,rain:0,sst:6,expo:6,tide:20},  // pioggia e nuvole tolte; marea: 2 ore prima e 1 dopo l'alta
   sea:{press:16,wind:20,wave:18,sol:14,moon:8,light:12,cloud:4,rain:4,sst:4,expo:6},
   lake:{press:24,wind:12,wave:0,sol:16,moon:8,light:18,cloud:10,rain:8,sst:4},
   river:{press:20,wind:8,wave:0,sol:12,moon:6,light:18,cloud:10,rain:20,sst:6}
@@ -756,16 +756,21 @@ function factors(X,i,mode){
   if([95,96,99].includes(h.code)) f.rain=0;
   if(h.sst!=null) f.sst= h.sst<11?.4: h.sst<14?.7: h.sst<=24?1: h.sst<=27?.75:.55;
   else { const tt=h.temp; f.sst= tt<4?.4: tt<10?.65: tt<=26?.95:.7; }
-  if(X.hours[i].lvl!=null&&i>0&&i<X.hours.length-1){
-    const a=X.hours[i-1].lvl,b=X.hours[i+1].lvl;
-    if(a!=null&&b!=null){f.tide=clamp(.55+Math.abs(b-a)*6,.55,1);}
-  }
+  // alta marea: favorevole dalle 2 ore prima del picco fino a 1 ora dopo
+  const hi=highTides(X);
+  if(hi){const t=mid.getTime();f.tide=hi.some(p=>t>=p-2*3600e3&&t<=p+3600e3)?1:.3;}
   return f;
+}
+// istanti dei picchi di alta marea (massimi locali del livello del mare, con interpolazione parabolica)
+function highTides(X){
+  if(X._hi!==undefined)return X._hi;const H=X.hours,out=[];
+  for(let i=1;i<H.length-1;i++){const a=H[i-1].lvl,b=H[i].lvl,c=H[i+1].lvl;if(a==null||b==null||c==null)continue;
+    if(b>a&&b>=c){const d=a-2*b+c,off=d?clamp((a-c)/(2*d),-.5,.5):0;out.push(H[i].t.getTime()+off*3600e3);}}
+  return X._hi=out.length?out:null;
 }
 function fishIndex(X,i,mode){
   const f=factors(X,i,mode),W=WEIGHTS[mode];let s=0,tw=0;
   for(const k in W){ if(!W[k]||f[k]==null) continue; s+=W[k]*f[k]; tw+=W[k]; }
-  if(f.tide!=null&&(mode==='coast'||mode==='sea')){ s+=6*f.tide; tw+=6; }
   let v=tw?s/tw*100:0;
   v+=personalBoost(X.hours[i],f,mode);
   X.hours[i].f=f;
