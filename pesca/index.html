@@ -795,7 +795,7 @@ function idxColor(v){return idxLabel(v)[1];}
 function dayHours(X,date){const ds=date.toDateString();return X.hours.filter(h=>h.t.toDateString()===ds);}
 function dayScore(X,date){
   const hs=dayHours(X,date);if(!hs.length)return 0;
-  const top=hs.map(h=>h.idx).sort((a,b)=>b-a).slice(0,6);
+  const top=hs.map(h=>h.idx).sort((a,b)=>b-a).slice(0,3);  // media delle 3 ore migliori
   return Math.round(top.reduce((a,b)=>a+b,0)/top.length);
 }
 function bestWindows(X,date,n=3){
