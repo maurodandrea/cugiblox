@@ -1891,7 +1891,7 @@ function coinType(seg,m){
     if(d<.4){gi+=g;ni++;}else if(d>.72&&d<.93){go+=g;no++;}
   }
   const diff=(ni?gi/ni:0)-(no?go/no:0);
-  return diff<-8?1:0; // 1 = moneta da 1 €, 0 = moneta da 2 € (anche se incerto)
+  return diff<-20?1:0; // 1 = moneta da 1 € solo se i colori sono netti, altrimenti 2 €
 }
 async function growCoin(seg,m){
   if(m.grown)return;m.grown=true;const f=m.f,r0=Math.sqrt(f.A/Math.PI);
@@ -1911,8 +1911,8 @@ async function detectRefs(seg,force,onp){
   const want=t=>force==null||REFS[force]?.[2]?.t===t;
   let ref=null;
   if(want('coin')){
-    const C=M.filter(m=>m.f.asp<1.25&&m.f.circ>.75&&m.f.frac<.06&&m.f.border===0&&!big.some(b=>b.cls?.fish>.5&&b.cls.fish===Math.max(...Object.values(b.cls))&&insideMask(b,m.f.c[0],m.f.c[1],ww))).sort((a,b)=>b.f.circ*b.s-a.f.circ*a.s).slice(0,2);
-    for(const m of C){const c=await classifyMask(seg,m);if(c.coin>(force!=null?.15:.4)){await growCoin(seg,m);ref={m,idx:force??coinType(seg,m),kind:'coin'};break;}}
+    const C=M.filter(m=>m.f.asp<1.25&&m.f.circ>.75&&m.f.frac<.06&&m.f.border===0&&!big.some(b=>isFishShape(b.f,1)&&b.cls?.fish>.5&&b.cls.fish===Math.max(...Object.values(b.cls))&&insideMask(b,m.f.c[0],m.f.c[1],ww))).sort((a,b)=>b.f.circ*b.s-a.f.circ*a.s).slice(0,2);
+    for(const m of C){const c=await classifyMask(seg,m);if(force!=null?c.coin>.1:(c.coin>.4||(m.f.frac<.02&&c.coin>.1&&c.coin>c.hand&&c.coin>c.shoe&&c.coin>c.card))){await growCoin(seg,m);ref={m,idx:force??coinType(seg,m),kind:'coin'};break;}}
   }
   if(!ref&&want('card')){
     const C=M.filter(m=>m.f.asp>1.4&&m.f.asp<1.8&&m.f.rect>.85&&m.f.frac<.25&&m.f.border===0).sort((a,b)=>b.f.rect*b.s-a.f.rect*a.s).slice(0,2);
