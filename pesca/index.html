@@ -736,13 +736,13 @@ function factors(X,i,mode){
   else f.wave= h.wave<=0.5?1: h.wave<=1?.75: h.wave<=1.6?.35:.05;
   const day=X.sol[new Date(h.t.getFullYear(),h.t.getMonth(),h.t.getDate()).toDateString()]||[];
   const mid=new Date(h.t.getTime()+30*60000);
-  f.sol=.35;
+  f.sol=.1;  // fuori dai periodi solunari
   for(const s of day){
     if(mid>=s.from&&mid<=s.to) f.sol=Math.max(f.sol,s.type==='major'?1:.75);
-    else { const dist=Math.min(Math.abs(mid-s.from),Math.abs(mid-s.to))/60000; if(dist<60) f.sol=Math.max(f.sol,.55); }
+    else { const dist=Math.min(Math.abs(mid-s.from),Math.abs(mid-s.to))/60000; if(dist<60) f.sol=Math.max(f.sol,.4); }
   }
   const ph=moonPhase(h.t); const nearSyz=Math.min(ph.angle,Math.abs(ph.angle-180),360-ph.angle);
-  f.moon=1-nearSyz/90*0.5; f.moon=clamp(f.moon,.5,1);
+  f.moon=1-nearSyz/90*0.85; f.moon=clamp(f.moon,.15,1);  // luna nuova/piena 1, quarti 0,15
   const D=X.days.find(d=>d.date.toDateString()===new Date(h.t.getFullYear(),h.t.getMonth(),h.t.getDate()).toDateString());
   if(D){
     const tm=mid.getTime(),sr=D.sr.getTime(),ss=D.ss.getTime();
