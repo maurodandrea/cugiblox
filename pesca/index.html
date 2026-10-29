@@ -609,11 +609,11 @@ async function loadWeather(force){
   if(WXTABS.includes(S.tab))render();
   waterInfo(sp).then(()=>{if(WXTABS.includes(S.tab))render();});
 }
-// Acqua vicina (mare, lago, fiume) e località sul mare più vicina, da OpenStreetMap (Overpass, gratuito). Salvato per spot.
+// Mare entro 500 m (laghi e fiumi non contano) e località sul mare più vicina, da OpenStreetMap (Overpass, gratuito). Salvato per spot.
 async function waterInfo(sp){
-  if(!sp||sp.lat==null)return null;const k=(+sp.lat).toFixed(3)+','+(+sp.lon).toFixed(3);
+  if(!sp||sp.lat==null)return null;const k='m500:'+(+sp.lat).toFixed(3)+','+(+sp.lon).toFixed(3);
   if(sp.wq&&sp.wq.k===k)return sp.wq;
-  const a=`(around:%R,${sp.lat},${sp.lon})`,q=`[out:json][timeout:25];(way["natural"="coastline"]${a.replace('%R',1500)};way["natural"="water"]${a.replace('%R',1000)};relation["natural"="water"]${a.replace('%R',1000)};way["waterway"~"^(river|canal|stream)$"]${a.replace('%R',700)};);out ids qt 1;way["natural"="coastline"]${a.replace('%R',25000)}->.c;node["place"~"^(city|town|village|suburb|hamlet)$"](around.c:2000)${a.replace('%R',25000)};out qt 60;`;
+  const a=`(around:%R,${sp.lat},${sp.lon})`,q=`[out:json][timeout:25];way["natural"="coastline"]${a.replace('%R',500)};out ids qt 1;way["natural"="coastline"]${a.replace('%R',25000)}->.c;node["place"~"^(city|town|village|suburb|hamlet)$"](around.c:2000)${a.replace('%R',25000)};out qt 60;`;
   for(const base of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
     try{
       const r=await fetch(base+'?data='+encodeURIComponent(q));if(!r.ok)continue;const j=await r.json(),R=6371,rad=Math.PI/180;
@@ -851,8 +851,8 @@ function vHome(v){
     <div class="hero-top"><div><div class="hero-loc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>${esc(activeSpot()?.name||'')}</div>
       <div class="hero-date">${now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})} · ${hhmm(now)}</div></div>
       <div class="hero-wx"><div class="ic">${wmo(h.code)[0]}</div><b>${fmt0(h.temp)}°</b></div></div>
-    ${noWater()?`<div class="gauge-wrap">${gauge(0)}<div class="num"><b>NA</b><span>Indice di pesca</span><span class="pill solid" style="background:#5d7381">Niente acqua vicina</span></div></div>
-    <p class="hero-exp">Entro 1,5 km non risultano mare, lago o fiume: qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
+    ${noWater()?`<div class="gauge-wrap">${gauge(0)}<div class="num"><b>NA</b><span>Indice di pesca</span><span class="pill solid" style="background:#5d7381">Mare lontano</span></div></div>
+    <p class="hero-exp">Il mare è a più di 500 m: qui l'indice di pesca non si applica.</p>`:`<div class="gauge-wrap">${gauge(h.idx)}<div class="num"><b data-count="${h.idx}">0</b><span>Indice di pesca</span><span class="pill solid" style="background:${col}">${lbl}</span></div></div>
     <p class="hero-exp">${esc(explain(h))}${PROFILE?`<br><b>✨ Personalizzato su ${PROFILE.n} uscite fruttuose</b>`:''}</p>`}
     <div class="hero-stats">
       <div><div class="ic">${arrow(h.wd)}</div><b>${fmt0(h.ws)}</b><span>km/h</span></div>
@@ -866,7 +866,7 @@ function vHome(v){
   <div class="quick">${[['pesce','📸','Che pesce è?'],['compare','🧭','Dove pescare'],['ai','🤖','Consigli'],['cal','🌙','Calendario']].map(([t,e,n])=>`<button onclick="go('${t}')"><span>${e}</span>${n}</button>`).join('')}</div>
   <div class="card"><h3>Prossime ore</h3><div class="hstrip">${X.hours.slice(Math.max(0,i),Math.max(0,i)+18).map((x,k)=>`<div class="hcell ${k?'':'now'}"><span>${k?pad(x.t.getHours()):'Ora'}</span><div class="wi">${wmo(x.code)[0]}</div><b>${fmt0(x.temp)}°</b><div class="ib"><i style="height:${noWater()?0:x.idx}%;background:${idxColor(x.idx)}"></i></div><em style="color:${idxColor(x.idx)}">${x.idx}</em></div>`).join('')}</div></div>
   <div class="card"><h3>Finestre migliori oggi</h3>
-    ${noWater()?'<p class="small mut">Indice NA: niente mare, lago o fiume vicino.</p>':wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
+    ${noWater()?'<p class="small mut">Indice NA: il mare è a più di 500 m.</p>':wins.length?wins.map(w=>{const c=idxColor(w.max),hr=w.from.getHours();return `<div class="win"><div class="clock" style="background:${c}22">${hr<6||hr>=20?'🌙':hr<9?'🌅':hr>=17?'🌇':'☀️'}</div><div class="t"><b>${hhmm(w.from)} – ${hhmm(w.to)}</b><div class="meter"><div style="width:${w.max}%;background:${c}"></div></div></div><span class="pill solid" style="background:${c}">${w.max}</span></div>`;}).join(''):'<div class="mut">Nessuna finestra favorevole rimasta oggi: guarda i prossimi giorni.</div>'}
   </div>
   <div class="card"><h3>Periodi solunari · ${ph.e} ${ph.name} (${Math.round(ph.illum*100)}%)</h3>
     ${timeline(sol,D)}
