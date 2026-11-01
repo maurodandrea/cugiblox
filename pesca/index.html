@@ -1030,6 +1030,7 @@ function hourAxis(hs,x,H,p){
   // una linea verticale leggera per ogni ora, un po' più marcata ogni 3 ore (dove c'è l'etichetta)
   return hs.map((h,i)=>{const k=h.t.getHours()%3===0;return `<line x1="${x(i)}" x2="${x(i)}" y1="${p}" y2="${H-p}" stroke="rgba(255,255,255,${k?.16:.07})" stroke-width="${k?1.2:1}"/>`+(k?`<text x="${x(i)}" y="${H+16}" fill="#c3d6e8" font-size="21" font-weight="700" text-anchor="middle">${pad(h.t.getHours())}</text>`:'');}).join('');
 }
+function nowIdx(hs){const t=Date.now();const i=hs.findIndex(h=>h.t.getTime()<=t&&h.t.getTime()+3600e3>t);return i>=0?i:null;}
 function nowLine(hs,x,y0,y1){
   const now=Date.now(),t0=hs[0]?.t.getTime();if(!hs.length||now<t0||now>hs[hs.length-1].t.getTime()+3600e3)return '';
   const f=(now-t0)/3600e3,X=x(0)+(x(1)-x(0))*f;
@@ -1043,7 +1044,7 @@ function tideChart(hs){
   const vv=vals.filter(q=>q!=null),mn=Math.min(...vv),mx=Math.max(...vv),rg=mx-mn||1,x=i=>p+i*(W-2*p)/(n-1||1),y=q=>H-p-(q-mn)/rg*(H-2*p-14);
   const pts=vals.map((q,i)=>q==null?null:[x(i),y(q)]);const ok=pts.filter(Boolean);
   const cm=q=>(q>0?'+':'')+q+' cm',iMax=vals.indexOf(mx),iMin=vals.indexOf(mn);
-  CHARTS.tide={W,xs:pts.map(q=>q?q[0]:null),ys:pts.map(q=>q?q[1]:null),txt:i=>`${cm(vals[i])} · ${pad(hs[i].t.getHours())}:00`,top:p,bot:H-p};
+  CHARTS.tide={now:nowIdx(hs),W,xs:pts.map(q=>q?q[0]:null),ys:pts.map(q=>q?q[1]:null),txt:i=>`${cm(vals[i])} · ${pad(hs[i].t.getHours())}:00`,top:p,bot:H-p};
   return `<svg viewBox="0 -66 ${W} ${H+88}" data-ch="tide" style="touch-action:pan-y;width:calc(100% + 20px);margin:0 -10px;display:block">${hourAxis(hs,x,H,p)}
     ${mn<0&&mx>0?`<line x1="${p}" x2="${W-p}" y1="${y(0)}" y2="${y(0)}" stroke="rgba(255,255,255,.25)" stroke-dasharray="4 5"/>`:''}
     <path d="${smooth(ok)}" fill="none" stroke="${var_('--acc2')}" stroke-width="2.5"/>
@@ -1055,11 +1056,13 @@ const CHARTS={};
 function bindCharts(root){
   root.querySelectorAll('svg[data-ch]').forEach(svg=>{
     const C=CHARTS[svg.dataset.ch];if(!C)return;const g=svg.querySelector('.sel');
-    const pick=ev=>{const r=svg.getBoundingClientRect(),vx=(ev.clientX-r.left)/r.width*C.W;let b=-1,bd=1e9;
-      C.xs.forEach((q,i)=>{if(q!=null&&C.ys[i]!=null&&Math.abs(q-vx)<bd){bd=Math.abs(q-vx);b=i;}});if(b<0)return;
+    const show=b=>{if(b==null||C.xs[b]==null||C.ys[b]==null)return;
       const X=C.xs[b],Y=C.ys[b],t=C.txt(b),tw=t.length*11.5+24,tx=clamp(X-tw/2,2,C.W-tw-2);
       g.innerHTML=`<line x1="${X}" x2="${X}" y1="-24" y2="${C.bot}" stroke="#2fe0cf" stroke-width="1.5"/><circle cx="${X}" cy="${Y}" r="6" fill="#fff" stroke="#2fe0cf" stroke-width="3"/>
         <rect x="${tx}" y="-64" width="${tw}" height="40" rx="12" fill="rgba(6,20,28,.94)" stroke="#2fe0cf" stroke-width="2"/><text x="${tx+tw/2}" y="-36" fill="#fff" font-size="22" font-weight="800" text-anchor="middle">${t}</text>`;};
+    const pick=ev=>{const r=svg.getBoundingClientRect(),vt=svg.viewBox.baseVal,vx=vt.x+(ev.clientX-r.left)/r.width*vt.width;let b=-1,bd=1e9;
+      C.xs.forEach((q,i)=>{if(q!=null&&C.ys[i]!=null&&Math.abs(q-vx)<bd){bd=Math.abs(q-vx);b=i;}});if(b>=0)show(b);};
+    show(C.now);  // all'apertura il valore dell'ora attuale
     svg.addEventListener('pointerdown',e=>{pick(e);svg._drag=true;});
     svg.addEventListener('pointermove',e=>{if(svg._drag||e.pointerType==='mouse')pick(e);});
     svg.addEventListener('pointerup',()=>{svg._drag=false;});svg.addEventListener('pointerleave',()=>{svg._drag=false;});
@@ -1081,14 +1084,15 @@ function chart(hs){
   const W=500,H=210,p=16,n=hs.length;if(!n)return '';
   const x=i=>p+i*(W-2*p)/(n-1||1),y=v=>H-p-v*(H-2*p-10);
   const wmx=Math.max(30,...hs.map(h=>h.ws));
-  // scala sull'intervallo dei valori del giorno (almeno 20 punti): alti e bassi più visibili
-  const vi=hs.map(h=>h.idx);let lo=Math.min(...vi)-4,hi=Math.max(...vi)+4;if(hi-lo<20){const c=(hi+lo)/2;lo=c-10;hi=c+10;}
+  // scala ingrandita ma ancorata a 0–100: l'asse va da metà strada tra 0 e il minimo a metà strada tra il massimo e 100,
+  // così un massimo di 60 non sembra 100 e un minimo di 70 non sembra 0
+  const vi=hs.map(h=>h.idx),lo=Math.min(...vi)/2,hi=Math.max(...vi)+(100-Math.max(...vi))/2;
   const ip=hs.map((h,i)=>[x(i),y((h.idx-lo)/(hi-lo))]),wp=hs.map((h,i)=>[x(i),y(h.ws/wmx)]);
   const line=smooth(ip),area=line+` L${x(n-1)} ${H-p} L${x(0)} ${H-p}Z`;
   const best=hs.reduce((a,h,i)=>h.idx>hs[a].idx?i:a,0);
   const grid=[.25,.5,.75,1].map(k=>`<line x1="${p}" x2="${W-p}" y1="${y(k)}" y2="${y(k)}" stroke="rgba(255,255,255,.06)"/>`).join('');
   const lbl=hourAxis(hs,x,H,p);
-  CHARTS.idx={W,xs:ip.map(q=>q[0]),ys:ip.map(q=>q[1]),txt:i=>`${hs[i].idx} · vento ${fmt0(hs[i].ws)} km/h`,top:p,bot:H-p};
+  CHARTS.idx={now:nowIdx(hs),W,xs:ip.map(q=>q[0]),ys:ip.map(q=>q[1]),txt:i=>`${hs[i].idx} · vento ${fmt0(hs[i].ws)} km/h`,top:p,bot:H-p};
   return `<svg viewBox="0 -66 ${W} ${H+88}" data-ch="idx" style="touch-action:pan-y;width:calc(100% + 20px);margin:0 -10px;display:block"><defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fe0cf" stop-opacity=".55"/><stop offset="1" stop-color="#3b8cff" stop-opacity="0"/></linearGradient>
     <linearGradient id="ln" x1="0" x2="1"><stop offset="0" stop-color="#2fe0cf"/><stop offset="1" stop-color="#3b8cff"/></linearGradient></defs>
     ${grid}<path d="${area}" fill="url(#ar)"/><path d="${line}" fill="none" stroke="url(#ln)" stroke-width="3" stroke-linecap="round"/>
